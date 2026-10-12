@@ -1,0 +1,37 @@
+name: Slop slipped through
+description: A report noro produced or rewrote still had slop, an untraced number or a claim it should have flagged.
+title: "Slop: <short description>"
+labels: ["rule"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Synthetic or anonymized only.** Change client and brand names and every number before you paste.
+  - type: textarea
+    id: input
+    attributes:
+      label: Input
+      description: The export (a few synthetic rows) or the report you ran noro on.
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: output
+    attributes:
+      label: Output
+      description: What noro gave back.
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: line
+    attributes:
+      label: Which line is slop
+      description: Quote the line and say what's wrong with it.
+    validations:
+      required: true
+  - type: input
+    id: rule
+    attributes:
+      label: Rule that should have caught it
+      description: An existing rule id (for example T-hedge-stack), or "new rule".
