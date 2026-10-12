@@ -167,7 +167,7 @@ async function interactiveDecide(flag: Flag): Promise<Decision> {
     if (a === '' || a === 'k' || a === 'keep') return { flagId: flag.id, action: 'keep' };
     if (a === 'c' || a === 'cut') return { flagId: flag.id, action: 'cut' };
     if (a === 'r' || a === 'reword') {
-      const text = await ask('  new words (cite numbers as {{f12}} or exactly as shown): ');
+      const text = await ask('  new sentence, replaces the whole sentence (cite numbers as {{f12}} or exactly as shown): ');
       if (text) return { flagId: flag.id, action: 'reword', text };
     }
   }

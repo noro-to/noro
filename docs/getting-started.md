@@ -71,8 +71,10 @@ noro this google-ads.csv
 You'll see each step as it runs: ingest, compute, classify, draft, check, panel, deliver. noro also says which classifier it picked. Then it shows each flag it has for you, one at a time:
 
 - **keep**: leave the sentence as it is
-- **cut**: remove it
-- **reword**: type a replacement. Use the numbers already in the report; noro refuses any it can't trace.
+- **cut**: remove the whole sentence the flag is about
+- **reword**: type a new sentence; it replaces that whole sentence. Use the numbers already in the report; noro refuses any it can't trace.
+
+A flag on a single word (a jargon term like "CPA") still acts on its whole sentence, and the flag says which sentence that is.
 
 The report prints at the end, with a footer like `Checked: 9 numbers traced. Panel: 2 notes, 1 applied.`
 

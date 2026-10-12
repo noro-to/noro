@@ -11,7 +11,10 @@
 // reviewer notes have their {{fN}} references rendered.
 //
 // Decisions: keep (leave the text), cut (remove the sentence(s) holding the
-// flag's quote), reword (replace the quote with the user's words). A reword
+// flag's quote), reword (replace those same sentence(s) with the user's
+// words). Cut and reword act on the same span, so a flag on one word ("CPA")
+// cuts or rewrites its whole sentence; every flag with a quote says so in its
+// text and carries the span as `sentence`. A reword
 // is held to the same digit rule as a model's template (validateTemplate):
 // it may cite {{fN}} or type a figure exactly as the report shows it, and
 // any other number — digits, other numerals ("½", "⁴¹"), numbers in words
@@ -143,6 +146,16 @@ export function buildFlags(check: CheckReport, notes: PanelNote[], labels?: Clas
       });
     }
   }
+  // Say what cut and reword act on: the whole sentence the quote sits in.
+  for (const f of flags) {
+    if (!f.quote) continue;
+    const sentence = rendered ? sentenceWith(rendered, f.quote) : undefined;
+    if (sentence === undefined) continue;
+    f.sentence = sentence;
+    const shown = scrubForUser(sentence, facts, allow);
+    const same = sentence.replace(/[.!?]$/, '') === f.quote.trim().replace(/[.!?]$/, '');
+    f.text += same ? ' Cut removes this sentence; reword replaces it.' : ` Cut removes the sentence; reword replaces it: "${shown}"`;
+  }
   // Same text and quote once.
   const seen = new Set<string>();
   return flags
@@ -235,11 +248,14 @@ export async function deliver(input: DeliverInput): Promise<Report> {
     if (decision.action === 'keep' || !flag.quote) continue;
     const at = text.indexOf(flag.quote);
     if (at < 0) continue;
+    // Cut and reword act on the same span: the whole sentence(s) holding the quote.
+    const [s, e] = sentenceSpan(text, at, at + flag.quote.length);
     if (decision.action === 'cut') {
-      const [s, e] = sentenceSpan(text, at, at + flag.quote.length);
       text = text.slice(0, s) + text.slice(e);
     } else {
-      text = text.slice(0, at) + decision.text + text.slice(at + flag.quote.length);
+      const words = decision.text.trim();
+      const end = /[.!?]$/.test(text.slice(s, e)) && !/[.!?]["')\]]?$/.test(words) ? text[e - 1] : '';
+      text = text.slice(0, s) + words + end + text.slice(e);
     }
     text = tidy(text);
   }

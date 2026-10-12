@@ -220,9 +220,14 @@ describe('buildFlags and deliver', () => {
     expect(flags[1].quote).toBe(d.rendered.split('. ')[0]);
     expect(flags[2].text).toContain('luck risk');
     expect(flags[2].quote).toContain('DG-05 Demand Gen CPA moved');
+    // Every flag with a quote names the whole sentence that cut removes and reword replaces.
+    expect(flags[0].sentence).toBe('Next: review bids by Friday.');
+    expect(flags[0].text).toContain('Cut removes the sentence; reword replaces it: "Next: review bids by Friday."');
+    expect(flags[1].sentence).toBe(`${flags[1].quote}.`);
+    expect(flags[1].text).toContain('Cut removes this sentence; reword replaces it.');
   });
 
-  it('deliver: keep leaves the text, cut removes the sentence, reword replaces the quote', async () => {
+  it('deliver: keep leaves the text, cut removes the sentence, reword replaces the same whole sentence', async () => {
     const d = draftFor();
     const [s1, s2] = d.rendered.split(/(?<=\.) /);
     const flags: Flag[] = [
@@ -233,15 +238,31 @@ describe('buildFlags and deliver', () => {
     const answers: Record<string, Decision> = {
       F1: { flagId: 'F1', action: 'keep' },
       F2: { flagId: 'F2', action: 'cut' },
-      F3: { flagId: 'F3', action: 'reword', text: 'climbed' },
+      F3: { flagId: 'F3', action: 'reword', text: 'PR-07 Prospecting cost more per conversion' },
     };
     const report = await deliver({ text: d.rendered, facts, flags, decide: async (f) => answers[f.id] });
-    expect(report.text).toBe(`${s1.replace('rose', 'climbed')} Next: review bids by Friday.`);
+    // The reword replaced the whole first sentence (not just "rose"); the sentence's period is kept.
+    expect(s1).toContain('rose');
+    expect(report.text).toBe('PR-07 Prospecting cost more per conversion. Next: review bids by Friday.');
     expect(report.text).not.toContain('DG-05');
     expect(s2).toContain('DG-05');
     expect(report.decisions.map((x) => x.action)).toEqual(['keep', 'cut', 'reword']);
-    // The change renders after "rose" without its sign, and traces in that form.
-    expect(report.traces).toEqual([{ raw: facts.facts.find((f) => f.id === d.factIds[0])!.display.replace(/^\+/, ''), factId: d.factIds[0] }]);
+    expect(report.traces).toEqual([]);
+  });
+
+  it('deliver: a reword sentence keeps its own punctuation and traces its cited facts', async () => {
+    const d = draftFor();
+    const fid = d.factIds[0];
+    const display = facts.facts.find((f) => f.id === fid)!.display;
+    const report = await deliver({
+      text: d.rendered,
+      facts,
+      flags: [{ id: 'F1', source: 'panel', text: 'reword me', quote: 'rose' }],
+      decide: async () => ({ flagId: 'F1', action: 'reword', text: `CPA moved {{${fid}}}!` }),
+    });
+    expect(report.text.startsWith(`CPA moved ${display}! `)).toBe(true);
+    expect(report.text).not.toContain('rose');
+    expect(report.traces[0]).toEqual({ raw: display, factId: fid });
   });
 
   it('deliver: a reword may cite {{fN}} or an exact display; any other number is refused and asked again', async () => {

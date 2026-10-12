@@ -207,7 +207,7 @@ noro this ~/Downloads/campaign-report.csv --json --yes \
   --decisions '[{"flagId":"F1","action":"keep"},{"flagId":"F2","action":"cut"},{"flagId":"F3","action":"reword","text":"Search carried most of the spend this week."}]'
 ```
 
-`--decisions` takes a JSON array or a path to a file holding one. Each entry has a `flagId` from the first run's `flags`, an `action` of `keep`, `cut` or `reword`, and `text` for a reword. Flags you leave out are kept. A reword can only use numbers already in the report; noro refuses any it can't trace.
+`--decisions` takes a JSON array or a path to a file holding one. Each entry has a `flagId` from the first run's `flags`, an `action` of `keep`, `cut` or `reword`, and `text` for a reword. Cut and reword act on the same span: the whole sentence the flag's quote sits in (the flag's `sentence`), even when the quote is a single word. Cut removes that sentence; a reword's `text` replaces all of it, so write a full sentence. Flags you leave out are kept. A reword can only use numbers already in the report; noro refuses any it can't trace.
 
 The second run reuses the first run's checkpoints, so only the deliver step runs again and no model is called. Through MCP, pass the same array as the `decisions` input of `noro_this`.
 

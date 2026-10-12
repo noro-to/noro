@@ -163,6 +163,11 @@ export interface Flag {
   text: string;
   /** The span of the report the flag is about, if any. */
   quote?: string;
+  /**
+   * The whole sentence (or sentences) holding the quote: what cut removes and
+   * reword replaces. A flag on one word acts on its entire sentence.
+   */
+  sentence?: string;
 }
 
 export type Decision = { flagId: string; action: 'keep' } | { flagId: string; action: 'cut' } | { flagId: string; action: 'reword'; text: string };

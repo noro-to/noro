@@ -57,7 +57,8 @@ export function createNoroMcpServer(deps: McpDeps = {}): McpServer {
       description:
         'Generate a short paid-media report from an ad-platform export (.csv, .tsv, .xlsx: Google Ads, Meta, Amazon DSP), ' +
         'or audit and rewrite an existing report (.md, .txt). Every number is computed by code and traced to a fact; never edit numbers yourself. ' +
-        'The first call keeps every flag and returns them in `flags`: show each to the user, ask keep, cut or reword, then call again with `decisions` ' +
+        'The first call keeps every flag and returns them in `flags`: show each to the user with its `sentence`, ask keep, cut or reword, then call again with `decisions` ' +
+        '(cut removes the whole sentence; a reword replaces the whole sentence) ' +
         '(only the deliver step reruns). A run takes a few minutes.',
       inputSchema: z.object({
         path: z.string().describe('Absolute path to the export or report'),
@@ -67,7 +68,7 @@ export function createNoroMcpServer(deps: McpDeps = {}): McpServer {
             z.object({
               flagId: z.string().describe('A flag id from the first call, e.g. F1'),
               action: z.enum(['keep', 'cut', 'reword']),
-              text: z.string().optional().describe('New words for a reword. Only numbers already in the report'),
+              text: z.string().optional().describe('For a reword: a full sentence that replaces the whole sentence the flag is about (its `sentence`). Only numbers already in the report'),
             }),
           )
           .optional()

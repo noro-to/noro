@@ -40,7 +40,7 @@ A run takes a few minutes. Progress goes to stderr; stdout is one JSON object.
 
 ## 3. Ask about each flag
 
-The first run keeps every flag and lists them in `flags` (`id`, `source`, `text`, and `quote`, the part of the report it is about). Show each flag with its quote and ask the user: keep, cut or reword. For a reword, take the user's words. A reword may only use numbers already in the report, written exactly as the report shows them.
+The first run keeps every flag and lists them in `flags` (`id`, `source`, `text`, `quote`, the part of the report it is about, and `sentence`, the whole sentence holding the quote). Show each flag with its sentence and ask the user: keep, cut or reword. Cut and reword both act on the whole sentence, even when the quote is one word: cut removes the sentence, and a reword replaces the entire sentence. So take a full replacement sentence from the user, not a single word. A reword may only use numbers already in the report, written exactly as the report shows them.
 
 If there are no flags, you're done.
 
