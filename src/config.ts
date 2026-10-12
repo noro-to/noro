@@ -8,9 +8,10 @@
 //   3. NORO_MODEL
 //   4. NORO_WRITER=claude-cli, kept as an alias for NORO_MODEL=claude-cli:claude-opus-5-5
 //   5. openrouter:anthropic/claude-opus-5.5
-// A value with no provider prefix is an OpenRouter id, except under
-// NORO_WRITER=claude-cli, where a bare NORO_DRAFT_MODEL / NORO_PANEL_MODEL keeps
-// its v0.1 meaning (that model, through Claude Code).
+// A value with no provider prefix is an OpenRouter id, except when the base
+// writer is claude-cli (NORO_WRITER=claude-cli or NORO_MODEL=claude-cli:...),
+// where a bare NORO_DRAFT_MODEL / NORO_PANEL_MODEL keeps its v0.1 meaning (that
+// model, through Claude Code).
 
 import { DEFAULT_MODEL_REF, getProvider, parseModelRef, unknownProvider } from './providers/registry.js';
 
@@ -63,20 +64,18 @@ function refFrom(value: string, setting: string, bareProvider?: string): string 
 
 export function loadConfig(env: NodeJS.ProcessEnv = process.env, overrides: { model?: string } = {}): Config {
   let base = DEFAULT_MODEL_REF;
-  let bareProvider: string | undefined;
   const writerAlias = nonEmpty(env.NORO_WRITER);
   if (writerAlias) {
     const info = getProvider(writerAlias.toLowerCase());
     if (!info) throw unknownProvider(writerAlias, 'NORO_WRITER');
     base = `${info.id}:${info.defaultModel}`;
-    if (info.id === 'claude-cli') bareProvider = 'claude-cli';
   }
   const model = nonEmpty(env.NORO_MODEL);
-  if (model) {
-    base = refFrom(model, 'NORO_MODEL');
-    bareProvider = undefined;
-  }
+  if (model) base = refFrom(model, 'NORO_MODEL');
   base = refFrom(base, 'NORO_MODEL');
+  // A v0.1 .env may still carry NORO_DRAFT_MODEL=anthropic/claude-opus-5.5 next to a claude-cli
+  // writer: that bare id kept meaning "through Claude Code", so it still does.
+  const bareProvider = parseModelRef(base).provider === 'claude-cli' ? 'claude-cli' : undefined;
 
   const flag = nonEmpty(overrides.model);
   let draftModel: string;

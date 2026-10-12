@@ -92,6 +92,13 @@ function envRecord(env: NodeJS.ProcessEnv, names: string[]): Record<string, stri
   return out;
 }
 
+/** Rewrite a top-level Anthropic `output_config.effort` to the requested level; other payloads unchanged. */
+export function effortPayload(payload: unknown, level: string | undefined): unknown {
+  const p = payload as { output_config?: { effort?: unknown } } | null;
+  if (!level || !p || typeof p !== 'object' || !p.output_config || typeof p.output_config.effort !== 'string') return undefined;
+  return { ...p, output_config: { ...p.output_config, effort: level === 'minimal' ? 'low' : level } };
+}
+
 export function textOf(msg: AssistantMessage): string {
   return msg.content
     .filter((b): b is { type: 'text'; text: string } => b.type === 'text')
@@ -123,12 +130,16 @@ export function createPiAiClient(provider: string, modelId: string, deps: PiAiDe
       const model = findModel(models, piId, modelId);
       if (!model) throw new ModelError(`${what}: pi-ai has no ${piId} models`);
       const user = req.json ? `${req.user}${JSON_SUFFIX}` : req.user;
+      const reasoning = lowestReasoning(model);
       const msg = await models.completeSimple(
         model,
         { systemPrompt: req.system, messages: [{ role: 'user', content: user, timestamp: Date.now() }] },
         {
           maxTokens: Math.min(MAX_TOKENS, model.maxTokens || MAX_TOKENS),
-          reasoning: lowestReasoning(model),
+          reasoning,
+          // pi-ai sends a top-level effort of "high" on Claude models whose thinking can't be turned
+          // off, whatever the reasoning option says. Keep it at the level asked for.
+          onPayload: (payload: unknown) => effortPayload(payload, reasoning),
           timeoutMs: deps.timeoutMs ?? 300_000,
           maxRetries: deps.maxRetries ?? 2,
           ...(apiKey ? { apiKey } : {}),

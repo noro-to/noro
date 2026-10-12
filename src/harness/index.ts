@@ -230,7 +230,7 @@ export function runKeyFor(file: string, mode: string, format: string, cfg: Confi
 }
 
 /** The jev host a classifier describe names ("jev (m on host)"), for the run key. */
-function classifierSource(c: ResolvedClassifier): { mode: string; host?: string } {
+export function classifierSource(c: ResolvedClassifier): { mode: string; host?: string } {
   if (c.mode !== 'jev') return { mode: c.mode };
   const host = c.describe.match(/ on ([^)\s]+)\)?\s*$/)?.[1];
   return { mode: 'jev', host: host ?? OPENROUTER_HOST };
