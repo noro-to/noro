@@ -149,17 +149,34 @@ Exit codes: 0 all checks pass, 1 a check failed, 3 some items could not be verif
 noro this fixtures/exports/google-ads.csv      # in a source checkout
 noro this ~/Downloads/campaign-report.csv
 noro this weekly-update.md --format slack
+noro this google-ads.csv meta.csv amazon-dsp.csv   # one report across platforms
 ```
+
+### One report across platforms
+
+Give `noro this` several exports and it writes one combined report instead of one per file:
+
+```bash
+noro this google-ads.csv meta.csv amazon-dsp.csv
+```
+
+Code adds the platforms up into blended totals (labelled "all channels"), computes each platform's totals, rates and week-over-week changes, and each platform's share of total spend and of conversions. Campaign facts stay per platform ("CPA, Meta campaign PR-07 Prospecting"). When the platforms move differently, the writer leads with that cross-channel story. The order of the files doesn't matter.
+
+- **One currency.** Exports in different currencies are refused. noro does no currency conversion, because code would have to invent a rate.
+- **The same dates.** When the exports cover different dates, noro uses only the dates they all cover and says how many rows it dropped. That warning stops the run before any model call unless you pass `--accept-warnings`, so different weeks are never compared silently. Exports with no day in common are refused.
+- **Exports only.** A written report (`.md`, `.txt`) is audited on its own, never combined.
+
+`--json` lists the files in `sources` (file, platform, adapter, currency and rows used), and ingest warnings name the file they come from. `noro facts` takes several files the same way.
 
 | Flag | What it does |
 | --- | --- |
 | `--format slack\|email\|one-page\|slide-notes` | Output shape. Default `one-page` |
 | `--yes` | Keep every flag without asking |
-| `--json` | Print the report as JSON (ingest warnings are in `warnings`) |
-| `--accept-warnings` | Go on when the export looks wrong. A cost column that looks like micros otherwise stops the run before any model call |
+| `--json` | Print the report as JSON (ingest warnings are in `warnings`, the input files in `sources`) |
+| `--accept-warnings` | Go on when the export looks wrong. A cost column that looks like micros, or combined exports whose dates differ, otherwise stops the run before any model call |
 | `--model <provider>:<id>` | Use this writing model for this run only. See [providers.md](providers.md#switching-model-for-one-run) |
 | `--decisions <file\|json>` | Apply keep, cut and reword choices without asking. See [agents.md](agents.md#passing-choices-back-with---decisions) |
 
-`noro facts <file>` runs only ingest and compute and prints the facts table. It calls no model and needs no key. Add `--json` for the full table.
+`noro facts <file> [file…]` runs only ingest and compute and prints the facts table (several exports give the combined table). It calls no model and needs no key. Add `--json` for the full table.
 
 Exit codes for `noro this`: 0 delivered, 2 the report can't pass the number check, 1 a usage or input error.

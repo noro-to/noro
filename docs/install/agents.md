@@ -88,8 +88,8 @@ The skill lives in the repo at `skills/noro/SKILL.md`. It is a thin wrapper: it 
 
 | Tool | Input | Returns |
 | --- | --- | --- |
-| `noro_this` | `path` (absolute), optional `format`, optional `decisions` | The report text, traces, flags and run summary |
-| `noro_facts` | `path` (absolute) | The facts table: id, label, display value and formula for each fact. No model, no key |
+| `noro_this` | `path` (absolute) or `paths` (several absolute export paths, one combined cross-channel report), optional `format`, optional `decisions` | The report text, traces, flags, `sources` and run summary |
+| `noro_facts` | `path` or `paths` (absolute) | The facts table: id, label, display value and formula for each fact, and the `sources` read. No model, no key |
 
 A run takes a few minutes. Raise your tool's MCP timeout to 600 seconds where it has one. noro writes progress to stderr and only protocol messages to stdout.
 

@@ -30,6 +30,14 @@ Options:
 - `--format one-page|slack|email|slide-notes` when the user asks for a shape (default `one-page`).
 - `--model <provider>:<id>` only when the user names a writing model for this run.
 
+When the user wants one combined report for several exports (for example Google Ads, Meta and Amazon DSP for the same weeks), pass them all in one call, not one run per file:
+
+```bash
+noro this "/abs/google-ads.csv" "/abs/meta.csv" "/abs/amazon-dsp.csv" --json --yes
+```
+
+noro adds them up into one cross-channel report (blended totals, each platform's share). It refuses exports in different currencies and a written report mixed with exports; tell the user why. If their dates differ it stops with a warning (exit 1): show it, and rerun with `--accept-warnings` only if the user agrees to report on the dates the files share. `sources` in the JSON lists the files used. Use the same files for `--decisions` and `noro facts`.
+
 A run takes a few minutes. Progress goes to stderr; stdout is one JSON object.
 
 ## 2. Read the exit code

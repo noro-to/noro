@@ -44,6 +44,26 @@ What ingest returns (`Dataset` in `src/schema.ts`):
 - `mapping`: the raw header each field came from, for this file.
 - `rows`: the mapped rows, in file order.
 - `warnings`: everything ingest did that you might want to know: preamble lines and total rows skipped, micros converted, blanks read as 0, values that weren't numbers, missing optional columns.
+- `sources`: set when the dataset comes from `ingestAll` (every run does): one entry per file with `file`, `platform`, `adapter`, `currency`, `rows` (rows used, after period alignment), and that file's own `mapping` and `warnings`.
+
+### Several exports in one dataset
+
+`ingestAll(files)` in `src/ingest/index.ts` reads several exports into one
+dataset for a combined cross-channel report (`noro this a.csv b.csv c.csv`).
+Every row already carries its `platform`, so the rows simply merge, in a fixed
+order (platform, then path) so the order of the files never changes a number.
+
+- `source` joins the paths with ` + `, `platform` joins the sorted platform names with ` + `, `adapter` is `combined`, `mapping` is empty (each file's is in `sources`), and each file's warnings are prefixed with its file name.
+- **One currency.** Files in different currencies throw `MixedCurrencyError`. There is no conversion: code would have to invent an exchange rate.
+- **Aligned periods.** With daily rows, only the dates every file covers are kept. With period labels (weeks, months, ranges), only the labels every file has. Dropping rows adds a warning that stops a run before any model call unless the user accepts it (`--accept-warnings`), like the micros warning. No shared date or period throws `CombineError`, as do a file with no data rows and the same file given twice.
+- One file gives the same dataset as `ingest()`, plus `sources`.
+
+When the rows come from more than one platform, compute adds a channel scope:
+blended totals labelled "all channels", each platform as a channel
+(`scope.platform`), each channel's share of total spend and conversions, and
+campaign facts per platform. The facts table then lists the platforms in
+`channels`. With one platform the facts table is exactly what a single file
+gives.
 
 ## Rules every adapter follows
 

@@ -113,8 +113,11 @@ For a folder of exports, `noro init --workspace` creates `noro-reports/` with an
 ```bash
 noro this ~/Downloads/campaign-report.csv
 noro this weekly-update.md --format slack
+noro this google-ads.csv meta.csv amazon-dsp.csv   # one cross-channel report for all three
 noro facts ~/Downloads/campaign-report.csv     # the facts table only, no model, no key
 ```
+
+Several exports make one combined report: blended totals across platforms, each platform's share of spend and conversions, and the cross-channel story first. They must share a currency; differing dates are cut to the days they all cover, with a warning. Details in [cli.md](docs/install/cli.md#one-report-across-platforms).
 
 In a source checkout, `fixtures/exports/` holds synthetic Google Ads, Meta and Amazon DSP exports to try it on.
 
@@ -122,10 +125,10 @@ In a source checkout, `fixtures/exports/` holds synthetic Google Ads, Meta and A
 | --- | --- |
 | `--format slack\|email\|one-page\|slide-notes` | Output shape. Default `one-page` |
 | `--yes` | Keep every flag without asking |
-| `--json` | The report as JSON, with ingest warnings in `warnings` |
+| `--json` | The report as JSON, with ingest warnings in `warnings` and the input files in `sources` |
 | `--model <provider>:<id>` | The writing model for this run only |
 | `--decisions <file\|json>` | Apply keep, cut and reword choices without asking |
-| `--accept-warnings` | Go on when the export looks wrong. A cost column that looks like micros otherwise stops the run before any model call |
+| `--accept-warnings` | Go on when the export looks wrong. A cost column that looks like micros, or combined exports whose dates differ, otherwise stops the run before any model call |
 
 Exit codes: 0 delivered, 2 the report can't pass the check, 1 a usage or input error.
 

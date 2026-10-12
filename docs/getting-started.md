@@ -88,6 +88,12 @@ noro this ~/Downloads/your-export.csv
 
 From another platform? noro guesses which column is spend, clicks and so on, and asks you to confirm before it uses them.
 
+Running ads on several platforms? Export the same dates from each and give noro all of them for one report across platforms:
+
+```bash
+noro this google-ads.csv meta.csv amazon-dsp.csv
+```
+
 Already have a written report? Give noro the text:
 
 ```bash
