@@ -1,0 +1,19 @@
+{
+  "name": "noro",
+  "image": "mcr.microsoft.com/devcontainers/typescript-node:24-bookworm",
+  "postCreateCommand": "npm ci && npm link && (cp -n .env.example .env || true)",
+  "secrets": {
+    "OPENROUTER_API_KEY": {
+      "description": "OpenRouter key for classify (jev) and writing. noro reads it from the environment; it is never written to .env.",
+      "documentationUrl": "https://openrouter.ai/keys"
+    }
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": ["ms-python.python"]
+    },
+    "codespaces": {
+      "openFiles": ["README.md"]
+    }
+  }
+}

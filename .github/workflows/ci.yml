@@ -32,8 +32,12 @@ jobs:
         run: python -m unittest discover -s tests/engine -v && python -m unittest discover -s tests/rules -v
 
   node:
-    name: TypeScript framework
+    name: TypeScript framework (Node ${{ matrix.node }})
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node: ["22", "24"]
     steps:
       - uses: actions/checkout@v7
 
@@ -41,9 +45,9 @@ jobs:
         with:
           python-version: "3.11"
 
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v7
         with:
-          node-version: "22"
+          node-version: ${{ matrix.node }}
           cache: npm
 
       - run: npm ci
@@ -51,3 +55,47 @@ jobs:
       - run: npm run build
       # No API keys in CI: the model calls are mocked in tests.
       - run: npm test
+
+  package:
+    name: npm package installs and runs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+          cache: npm
+
+      - run: npm ci
+      - name: Pack, install globally, run from another folder
+        run: |
+          npm pack --pack-destination "$RUNNER_TEMP"
+          npm i -g "$RUNNER_TEMP"/noro-to-noro-*.tgz
+          mkdir "$RUNNER_TEMP/elsewhere"
+          cp fixtures/exports/google-ads.csv "$RUNNER_TEMP/elsewhere/"
+          cd "$RUNNER_TEMP/elsewhere"
+          NORO_MOCK_MODELS=1 noro this google-ads.csv --yes
+
+  docker:
+    name: Docker image builds and runs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: docker/setup-buildx-action@v4
+
+      - uses: docker/build-push-action@v7
+        with:
+          context: .
+          load: true
+          tags: noro:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Run the image on a fixture (mocked models)
+        run: |
+          mkdir -p "$RUNNER_TEMP/work"
+          cp fixtures/exports/google-ads.csv "$RUNNER_TEMP/work/"
+          docker run --rm --user "$(id -u):$(id -g)" -e NORO_MOCK_MODELS=1 \
+            -v "$RUNNER_TEMP/work:/work" -w /work noro:ci this google-ads.csv --yes
