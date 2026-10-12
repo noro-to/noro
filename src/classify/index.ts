@@ -1,8 +1,12 @@
 // Classify: label each fact signal | noise | luck_risk, give it a priority and
-// attach the watchouts that apply. jev (typesafe/jev-1.13) makes the judgment
-// calls through OpenRouter's Decisions API; code makes the deterministic ones.
+// attach the watchouts that apply. Three classifiers, picked by resolveClassifier:
 //
-// What jev sees, per fact (state.facts.<id>): the fact's label (compute's
+//   jev     a System One decision model (jev on OpenRouter or TypeSafe, or a
+//           local decision model) makes the judgment calls; see systemone.ts.
+//   rules   deterministic labels from compute flags and describe.ts buckets; rules.ts.
+//   writer  opt-in: the writing model answers the same questions as JSON; writer.ts.
+//
+// What a model sees, per fact (state.facts.<id>): the fact's label (compute's
 // labels hold no numbers except campaign codes) and the coarse descriptors
 // from describe.ts: metric, scope, period, change kind, direction, magnitude
 // bucket, sample (small/adequate), flags. Never value, display, formula or
@@ -20,38 +24,63 @@
 // small sample or a missing baseline becomes 'luck_risk'. Facts with no value
 // are 'noise', priority 3, without a call.
 //
-// Batching: jev has a 32k-token context covering state + questions, so facts
-// go in batches of at most MAX_FACTS_PER_CALL and an estimated
+// Batching: jev has a 32k-token context covering state + questions, and Ollama
+// takes at most 64 questions per request, so facts go in batches of at most
+// MAX_FACTS_PER_CALL facts, MAX_QUESTIONS_PER_CALL questions and an estimated
 // TOKEN_BUDGET tokens (chars / 3.5, a deliberate overestimate).
 
 import type { Config } from '../config.js';
-import type { Classification, Fact, FactLabel, FactsTable, JevClient } from '../schema.js';
-import { describeFact } from './describe.js';
+import type { ChatClient, Classification, Fact, FactLabel, FactsTable, JevClient } from '../schema.js';
+import { classifyByRules } from './rules.js';
+import {
+  ClassifyConfigError,
+  LABEL_CRITERIA,
+  LABELS,
+  ModelError,
+  PRIORITY_CRITERIA,
+  fallback,
+  finalize,
+  isRateChange,
+  postJson,
+  stateFor,
+} from './shared.js';
+import {
+  OPENROUTER_CLASSIFY_BASE,
+  OPENROUTER_JEV_MODEL,
+  TYPESAFE_CLASSIFY_BASE,
+  classifyKeyEnv,
+  classifySettings,
+  createSystemOneClient,
+  defaultClassifyModel,
+  displayHost,
+} from './systemone.js';
+import { classifyWithWriter } from './writer.js';
 
 export { describeFact } from './describe.js';
 export type { FactDescriptor } from './describe.js';
+export { ClassifyConfigError, MissingApiKeyError, ModelError, codeWatchouts } from './shared.js';
+export { PRIMARY_METRICS, classifyByRules } from './rules.js';
+export { buildWriterRequests, classifyWithWriter } from './writer.js';
+export {
+  OPENROUTER_CLASSIFY_BASE,
+  OPENROUTER_JEV_MODEL,
+  TYPESAFE_CLASSIFY_BASE,
+  TYPESAFE_JEV_MODEL,
+  classifyHost,
+  classifyKeyEnv,
+  classifySettings,
+  createSystemOneClient,
+  defaultClassifyModel,
+  systemOneUrl,
+} from './systemone.js';
+export type { ClassifySettings } from './systemone.js';
 
 export const MAX_FACTS_PER_CALL = 40;
+/** Ollama's System One limit; the lowest of the servers noro supports. */
+export const MAX_QUESTIONS_PER_CALL = 64;
 export const TOKEN_BUDGET = 24_000;
 
-export class MissingApiKeyError extends Error {
-  constructor() {
-    super('OPENROUTER_API_KEY is not set. Copy .env.example to .env and add your OpenRouter key.');
-    this.name = 'MissingApiKeyError';
-  }
-}
-
-export class ModelError extends Error {
-  constructor(
-    message: string,
-    readonly status?: number,
-  ) {
-    super(message);
-    this.name = 'ModelError';
-  }
-}
-
-/** One jev question. The client sends `questions` as the object keyed by `id` that the Decisions API expects. */
+/** One jev question. The client sends `questions` as the object keyed by `id` that System One expects. */
 export type JevQuestion =
   | { id: string; type: 'choice'; instructions: string; criteria: Record<string, string> }
   | { id: string; type: 'noul'; instructions: string; criteria?: { true: string; false: string } }
@@ -62,88 +91,35 @@ export type JevAnswer =
   | { type: 'noul'; noul: number }
   | { type: 'score'; score: number; confidence?: number; probabilities?: Record<string, number> };
 
-/** The Decisions API response, as far as noro reads it. */
+/** The System One response, as far as noro reads it. */
 export interface JevResponse {
   answers: Record<string, JevAnswer>;
   model?: string;
   usage?: { input_tokens?: number; output_tokens?: number; cost?: number };
 }
 
-async function postJson(url: string, apiKey: string, body: unknown, what: string): Promise<any> {
-  let last: unknown;
-  for (let attempt = 0; attempt < 2; attempt++) {
-    let res: Response;
-    try {
-      res = await fetch(url, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-          'Content-Type': 'application/json',
-          'HTTP-Referer': 'https://github.com/noro-to/noro',
-          'X-Title': 'noro',
-        },
-        body: JSON.stringify(body),
-        signal: AbortSignal.timeout(180_000),
-      });
-    } catch (err) {
-      last = new ModelError(`${what}: request failed: ${(err as Error).message}`);
-      continue;
-    }
-    const text = await res.text();
-    if (res.ok) {
-      try {
-        return JSON.parse(text);
-      } catch {
-        throw new ModelError(`${what}: response was not JSON`);
-      }
-    }
-    let msg = text.slice(0, 300);
-    try {
-      msg = JSON.parse(text)?.error?.message ?? msg;
-    } catch {
-      /* keep raw */
-    }
-    last = new ModelError(`${what}: HTTP ${res.status}: ${msg}`, res.status);
-    if (res.status !== 429 && res.status < 500) break;
-    await new Promise((r) => setTimeout(r, 1500 * (attempt + 1)));
-  }
-  throw last;
-}
-
 export { postJson as _postJson };
 
-/** jev over OpenRouter: POST {baseUrl}/alpha/decisions (default https://openrouter.ai/api/alpha/decisions). */
-export function createJevClient(cfg: Config): JevClient {
-  return {
-    async decide(req) {
-      if (!cfg.apiKey) throw new MissingApiKeyError();
-      const questions: Record<string, unknown> = {};
-      for (const q of req.questions as JevQuestion[]) {
-        const { id, ...rest } = q;
-        questions[id] = rest;
-      }
-      const base = cfg.baseUrl.replace(/\/+$/, '');
-      return postJson(`${base}/alpha/decisions`, cfg.apiKey, { model: req.model, state: req.state, questions }, 'jev');
-    },
-  };
+/**
+ * A System One client for this config: the classify base URL (NORO_CLASSIFY_BASE_URL,
+ * else OpenRouter, else TypeSafe when only TYPESAFE_API_KEY is set) with the key its host takes.
+ */
+export function createJevClient(cfg: Config, env: NodeJS.ProcessEnv = process.env): JevClient {
+  const s = classifySettings(cfg, env);
+  const base = jevBase(s);
+  return createSystemOneClient({ baseUrl: base, apiKey: keyFor(base, s) });
 }
 
-const LABEL_CRITERIA: Record<FactLabel, string> = {
-  signal:
-    'A real change a media buyer should act on or report: a moderate or large move, on an adequate sample, in a metric that bears on cost or results.',
-  noise:
-    'Not worth the reader’s attention: a small move, a level with nothing to compare, or a metric that does not change the decision.',
-  luck_risk:
-    'A move that could be chance: it rests on a small sample, a volatile rate, a single window, or a missing baseline, so reading it as real is risky.',
-};
+function jevBase(s: { baseUrl?: string; openrouterKey?: string; typesafeKey?: string }): string {
+  if (s.baseUrl) return s.baseUrl;
+  if (!s.openrouterKey && s.typesafeKey) return TYPESAFE_CLASSIFY_BASE;
+  return OPENROUTER_CLASSIFY_BASE;
+}
 
-const PRIORITY_CRITERIA = [
-  'Lead with it: the headline or the cause behind it.',
-  'Supporting: worth one line under the headline.',
-  'Background: leave it out unless the reader asks.',
-];
-
-const RATE_METRICS = new Set(['ctr', 'cvr', 'cpa', 'cpc', 'roas']);
+function keyFor(base: string, s: { openrouterKey?: string; typesafeKey?: string }): string | undefined {
+  const env = classifyKeyEnv(base);
+  return env === 'OPENROUTER_API_KEY' ? s.openrouterKey : env === 'TYPESAFE_API_KEY' ? s.typesafeKey : undefined;
+}
 
 function questionsFor(f: Fact): JevQuestion[] {
   const path = `\`facts.${f.id}\``;
@@ -151,8 +127,7 @@ function questionsFor(f: Fact): JevQuestion[] {
     { id: `${f.id}__label`, type: 'choice', instructions: `Classify the fact at ${path} for a weekly paid-media report.`, criteria: LABEL_CRITERIA },
     { id: `${f.id}__priority`, type: 'score', instructions: `How prominent should the fact at ${path} be in a short report?`, criteria: PRIORITY_CRITERIA },
   ];
-  const d = describeFact(f);
-  if (RATE_METRICS.has(d.metric) && (d.change === 'percent change' || d.change === 'percentage-point change')) {
+  if (isRateChange(f)) {
     qs.push({
       id: `${f.id}__volatile`,
       type: 'noul',
@@ -163,32 +138,27 @@ function questionsFor(f: Fact): JevQuestion[] {
   return qs;
 }
 
-function stateFor(batch: Fact[], facts: FactsTable): Record<string, unknown> {
-  const out: Record<string, unknown> = {};
-  for (const f of batch) {
-    const { flags, ...d } = describeFact(f);
-    out[f.id] = { label: f.label, ...d, ...(flags.length ? { flags } : {}) };
-  }
-  return { task: 'Classify facts for a paid-media performance report. Each fact is described in words; values are withheld.', currency: facts.currency, facts: out };
-}
-
 const estimateTokens = (x: unknown) => Math.ceil(JSON.stringify(x).length / 3.5);
 
-/** Split facts into jev calls that fit the context budget. Exported for tests. */
-export function batchFacts(facts: FactsTable, maxFacts = MAX_FACTS_PER_CALL, budget = TOKEN_BUDGET): Fact[][] {
+/** Split facts into jev calls that fit the context budget and the question cap. Exported for tests. */
+export function batchFacts(facts: FactsTable, maxFacts = MAX_FACTS_PER_CALL, budget = TOKEN_BUDGET, maxQuestions = MAX_QUESTIONS_PER_CALL): Fact[][] {
   const askable = facts.facts.filter((f) => f.value !== null);
   const batches: Fact[][] = [];
   let cur: Fact[] = [];
   let tokens = estimateTokens(stateFor([], facts));
+  let questions = 0;
   for (const f of askable) {
-    const cost = estimateTokens({ [f.id]: stateFor([f], facts).facts }) + estimateTokens(questionsFor(f));
-    if (cur.length && (cur.length >= maxFacts || tokens + cost > budget)) {
+    const qs = questionsFor(f);
+    const cost = estimateTokens({ [f.id]: stateFor([f], facts).facts }) + estimateTokens(qs);
+    if (cur.length && (cur.length >= maxFacts || tokens + cost > budget || questions + qs.length > maxQuestions)) {
       batches.push(cur);
       cur = [];
       tokens = estimateTokens(stateFor([], facts));
+      questions = 0;
     }
     cur.push(f);
     tokens += cost;
+    questions += qs.length;
   }
   if (cur.length) batches.push(cur);
   return batches;
@@ -198,8 +168,6 @@ export function batchFacts(facts: FactsTable, maxFacts = MAX_FACTS_PER_CALL, bud
 export function buildJevRequests(facts: FactsTable, model: string): { model: string; state: Record<string, unknown>; questions: JevQuestion[] }[] {
   return batchFacts(facts).map((batch) => ({ model, state: stateFor(batch, facts), questions: batch.flatMap(questionsFor) }));
 }
-
-const LABELS: FactLabel[] = ['signal', 'noise', 'luck_risk'];
 
 function readAnswers(raw: unknown): Record<string, JevAnswer> {
   const answers = (raw as JevResponse | undefined)?.answers;
@@ -217,24 +185,93 @@ export async function classify(facts: FactsTable, jev: JevClient, opts: { model:
       const la = answers[`${id}__label`];
       const pa = answers[`${id}__priority`];
       const va = answers[`${id}__volatile`];
-      let label: FactLabel = la?.type === 'choice' && (LABELS as string[]).includes(la.choice) ? (la.choice as FactLabel) : 'noise';
+      const label: FactLabel = la?.type === 'choice' && (LABELS as string[]).includes(la.choice) ? (la.choice as FactLabel) : 'noise';
       const score = pa?.type === 'score' && Number.isFinite(pa.score) ? pa.score : 2;
-      const priority = (Math.min(3, Math.max(1, Math.round(score) + 1)) as 1 | 2 | 3);
-      const watchouts = codeWatchouts(f);
-      if (va?.type === 'noul' && va.noul >= 0.5) watchouts.push('W-volatile-rate-claim');
-      if (label === 'signal' && (f.flags.includes('small_sample') || f.flags.includes('no_baseline'))) label = 'luck_risk';
-      out.set(id, { factId: id, label, priority, watchouts: [...new Set(watchouts)] });
+      const priority = Math.min(3, Math.max(1, Math.round(score) + 1)) as 1 | 2 | 3;
+      out.set(id, finalize(f, label, priority, va?.type === 'noul' && va.noul >= 0.5));
     }
   }
-  return facts.facts.map(
-    (f) => out.get(f.id) ?? { factId: f.id, label: 'noise' as const, priority: 3 as const, watchouts: codeWatchouts(f) },
-  );
+  return facts.facts.map((f) => out.get(f.id) ?? fallback(f));
 }
 
-function codeWatchouts(f: Fact): string[] {
-  const w: string[] = [];
-  if (f.flags.includes('small_sample')) w.push('W-small-sample-size');
-  if (f.flags.includes('no_baseline')) w.push('W-metric-without-baseline');
-  if (f.scope.metric === 'roas' || f.scope.metric === 'conversion_value') w.push('W-platform-roas-as-cause');
-  return w;
+// ---------------------------------------------------------------- picking a classifier
+
+export interface ResolvedClassifier {
+  mode: 'jev' | 'rules' | 'writer';
+  /** For the CLI line and the report footer, e.g. "jev (typesafe/jev-1.13 on openrouter.ai)", "rules". */
+  describe: string;
+  /**
+   * jev only: the env var this host needs that isn't set (the run would throw
+   * MissingApiKeyError), so the CLI and doctor can say so before any work.
+   */
+  missingKey?: 'OPENROUTER_API_KEY' | 'TYPESAFE_API_KEY';
+  run(facts: FactsTable): Promise<Classification[]>;
 }
+
+export interface ClassifierDeps {
+  /** Overrides the System One client (tests, mocks). Also selects jev when nothing else would. */
+  jev?: JevClient;
+  /** The writing model's client, needed for NORO_CLASSIFY=writer. */
+  chat?: ChatClient;
+  /** The model id writer mode sends; defaults to config.draftModel. */
+  writerModel?: string;
+  /** Where to read settings a Config doesn't carry yet (NORO_CLASSIFY, NORO_CLASSIFY_BASE_URL, TYPESAFE_API_KEY). */
+  env?: NodeJS.ProcessEnv;
+}
+
+const MODES = ['jev', 'rules', 'writer'] as const;
+
+/**
+ * Pick the classifier. NORO_CLASSIFY (jev | rules | writer) wins when set. Unset:
+ * NORO_CLASSIFY_BASE_URL → that System One endpoint; else OPENROUTER_API_KEY →
+ * jev on OpenRouter; else TYPESAFE_API_KEY → jev on TypeSafe; else rules. An
+ * injected deps.jev (tests) stands in for the endpoint when nothing explicit
+ * says otherwise. Bad settings throw ClassifyConfigError now; a missing key or
+ * model throws when run() is called, so a resumed run past classify needs neither.
+ */
+export function resolveClassifier(config: Config, deps: ClassifierDeps = {}): ResolvedClassifier {
+  const s = classifySettings(config, deps.env ?? process.env);
+  if (s.mode && !(MODES as readonly string[]).includes(s.mode)) {
+    throw new ClassifyConfigError(`NORO_CLASSIFY must be jev, rules or writer, not "${s.mode}"`);
+  }
+  let mode = s.mode as (typeof MODES)[number] | undefined;
+  if (!mode) mode = s.baseUrl || s.openrouterKey || s.typesafeKey || deps.jev ? 'jev' : 'rules';
+
+  if (mode === 'rules') {
+    return { mode, describe: 'rules', run: async (facts) => classifyByRules(facts) };
+  }
+
+  if (mode === 'writer') {
+    const model = deps.writerModel ?? config.draftModel;
+    return {
+      mode,
+      describe: `writer (${model})`,
+      async run(facts) {
+        if (!deps.chat) throw new ClassifyConfigError('NORO_CLASSIFY=writer needs the writing model client, and none was given');
+        return classifyWithWriter(facts, deps.chat, { model });
+      },
+    };
+  }
+
+  const base = jevBase(s);
+  const host = displayHost(base);
+  const model = s.model ?? defaultClassifyModel(base) ?? (deps.jev ? config.classifyModel || OPENROUTER_JEV_MODEL : undefined);
+  const key = keyFor(base, s);
+  const keyEnv = classifyKeyEnv(base);
+  const missingKey = !deps.jev && keyEnv && !key ? keyEnv : undefined;
+  const client = deps.jev ?? createSystemOneClient({ baseUrl: base, apiKey: key });
+  return {
+    mode,
+    describe: `jev (${model ?? 'no model set'} on ${host})`,
+    ...(missingKey ? { missingKey } : {}),
+    async run(facts) {
+      if (!model) {
+        throw new ClassifyConfigError(
+          `NORO_CLASSIFY_MODEL is not set. ${host} has no default decision model (only openrouter.ai and api.typesafe.ai do). Set it, e.g. NORO_CLASSIFY_MODEL=nimble for Ollama.`,
+        );
+      }
+      return classify(facts, client, { model });
+    },
+  };
+}
+
