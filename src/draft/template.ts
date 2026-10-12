@@ -160,6 +160,38 @@ export function numberWordsIn(text: string): string[] {
   return out;
 }
 
+/**
+ * Every number-word phrase in text with its span in `text` ("five times", "Half", "twenty").
+ * Spans come from the prepared text when it keeps the length (the usual case); otherwise each
+ * phrase is found again in order, on word boundaries.
+ */
+export function numberWordSpans(text: string): { raw: string; span: [number, number] }[] {
+  let t = prepareWords(text);
+  const same = t.length === text.length;
+  const out: { raw: string; span: [number, number] }[] = [];
+  let from = 0;
+  for (let m = firstNumberWord(t); m; m = firstNumberWord(t)) {
+    t = t.slice(0, m.at) + ' '.repeat(m.end - m.at) + t.slice(m.end);
+    let at = -1;
+    let end = -1;
+    if (same) {
+      const lead = text.slice(m.at, m.end).search(/\S/);
+      at = m.at + Math.max(0, lead);
+      end = at + m.text.length;
+    } else {
+      const esc = m.text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/[\s-]+/g, '[\\s-]+');
+      const re = new RegExp(`(?<![\\p{L}\\p{N}])${esc}(?![\\p{L}\\p{N}])`, 'giu');
+      re.lastIndex = from;
+      const found = re.exec(text);
+      if (found) (at = found.index), (end = found.index + found[0].length);
+    }
+    if (at < 0) continue;
+    out.push({ raw: text.slice(at, end), span: [at, end] });
+    from = end;
+  }
+  return out.sort((a, b) => a.span[0] - b.span[0]);
+}
+
 /** How number-word phrases are compared: lowercase, hyphens and whitespace as one space. */
 const wordKey = (phrase: string) => phrase.toLowerCase().replace(/[\s-]+/gu, ' ').trim();
 

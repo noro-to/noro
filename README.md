@@ -141,7 +141,7 @@ A written report (`.md` or `.txt`) enters at step 5 in revision mode: its number
 
 ## Privacy
 
-noro has no telemetry, no analytics and no noro server. It sends data only to the model providers you configure, and never sends raw export rows, metric values, formulas or sample sizes. Labels such as campaign names do go out as written, and revision mode sends your prose with its numbers replaced by ids. With a local writer and a local decision model (or `NORO_CLASSIFY=rules`), nothing leaves your machine. Run state stays in `.noro/` in the folder you run from.
+noro has no telemetry, no analytics and no noro server. It sends data only to the model providers you configure, and never sends raw export rows, metric values, formulas or sample sizes. Labels such as campaign names do go out as written, and revision mode sends your prose with every number it recognizes, digits and number words ("five times", "Half") alike, replaced by ids. With a local writer and a local decision model (or `NORO_CLASSIFY=rules`), nothing leaves your machine. Run state stays in `.noro/` in the folder you run from.
 
 Details: [PRIVACY.md](PRIVACY.md). The full policy for the software and noro.to is at [noro.to/privacy](https://noro.to/privacy). To report a vulnerability, see [SECURITY.md](SECURITY.md). Use synthetic data in issues, never real client data.
 

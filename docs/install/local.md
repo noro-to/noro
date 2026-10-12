@@ -134,7 +134,7 @@ In every setup, metric values, formulas, sample sizes and the raw export rows st
 
 | Setup | What leaves | Who receives it |
 | --- | --- | --- |
-| Default (OpenRouter for writing and classify) | Fact labels (metric, campaign and ad-group names, period labels), coarse descriptors and flags for classify. Fact cards, reviewer personas and `{{f12}}` templates for writing. In revision mode, your report text with its numbers replaced by ids | OpenRouter, TypeSafe and the writing model's provider |
+| Default (OpenRouter for writing and classify) | Fact labels (metric, campaign and ad-group names, period labels), coarse descriptors and flags for classify. Fact cards, reviewer personas and `{{f12}}` templates for writing. In revision mode, your report text with its numbers (digits and number words) replaced by ids | OpenRouter, TypeSafe and the writing model's provider |
 | `claude-cli` or `codex-cli` writer | The same writing payload, under your own plan. Classify as above | Anthropic or OpenAI, plus OpenRouter and TypeSafe |
 | A direct API (`anthropic`, `openai`, `bedrock` and so on) | The same payloads | That provider, plus whichever classify endpoint you use |
 | Local writer with jev for classify | Classify payload only | OpenRouter and TypeSafe, or TypeSafe alone |

@@ -9,7 +9,7 @@ import { join, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { runEngine } from '../../src/check/index.js';
 import { loadConfig } from '../../src/config.js';
-import { RawNumberError, allowedNumberWords, numberWordsIn, templatize, validateTemplate } from '../../src/draft/index.js';
+import { RawNumberError, allowedNumberWords, numberWordsIn, renderTemplate, templatize, validateTemplate } from '../../src/draft/index.js';
 import type { FoundNumber, Templatized } from '../../src/draft/index.js';
 import { runNoro } from '../../src/harness/index.js';
 import { createMockChat, createMockJev } from '../../src/harness/mock.js';
@@ -118,7 +118,9 @@ describe('revision mode: number words from the original', () => {
     const t = templatize(text, [{ raw: '$5 million', span: [at, at + '$5 million'.length], value: 5_000_000, kind: 'currency', unit: '$' }]);
     expect(t.allow).toContain('two');
     expect(t.allow).not.toContain('million');
-    expect(numberWordsIn(t.template)).toEqual(['two']);
+    // "two" is a fact as written; the template a model sees has no number word left.
+    expect(numberWordsIn(t.template)).toEqual([]);
+    expect(t.facts.facts.map((f) => f.display)).toEqual(['$5 million', 'two']);
   });
 
   it('a revision run keeps a number word from the original and delivers', async () => {
@@ -130,5 +132,20 @@ describe('revision mode: number words from the original', () => {
     const config = { ...loadConfig({}), apiKey: undefined };
     const report = await runNoro({ file, cwd: dir, config, stateDir: tmp(), clients: { chat: createMockChat({ log }), jev: createMockJev(log) } });
     expect(report.text).toContain('six months');
+    // No model saw the number word: every prompt had it as a fact reference.
+    for (const c of log.chat) expect(`${c.system}\n${c.user}`).not.toMatch(/\bsix\b/i);
+  });
+
+  it('number words become facts as written, so no model sees "five times", "Half" or "twenty more leads"', () => {
+    const text = 'Half the budget went to search. Leads rose five times, with twenty more leads from PR-07. No one expected it.';
+    const t = templatize(text, []);
+    expect(numberWordsIn(t.template)).toEqual([]);
+    expect(t.template).not.toMatch(/\b(?:half|five|twenty)\b/i);
+    expect(t.template).toContain('No one expected it.'); // a phrase that only looks like a number stays
+    expect(t.facts.facts.map((f) => f.display)).toEqual(['Half', 'five times', 'twenty']);
+    expect(t.facts.facts.every((f) => f.formula === 'as written in the original report')).toBe(true);
+    // Rendering gives the original back, and a rewrite may still repeat the words verbatim.
+    expect(renderTemplate(t.template, t.facts, { allow: t.allow }).rendered.replace(/\s+/g, ' ')).toBe(text);
+    expect(verdict('Leads rose five times.', t.facts, t.allow)).toBe('ok');
   });
 });

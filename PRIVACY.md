@@ -12,7 +12,7 @@ noro connects only to the model providers you configure.
 |---|---|---|
 | Classify | Fact labels (metric, campaign and ad-group names, period labels), coarse descriptors with no digits ("up", "large", "small sample"), rule flags, currency code | OpenRouter + TypeSafe (default), TypeSafe directly, or a local decision model |
 | Draft, panel, revise | Fact cards (id, label, classification), personas, instructions, and the draft as a template where every number is an id like `{{f12}}` | Your writing provider |
-| Revision mode (`.md`, `.txt`) | Your prose, with each number noro recognizes replaced by an id | Your writing provider |
+| Revision mode (`.md`, `.txt`) | Your prose, with each number noro recognizes replaced by an id: digits ("$41.40", "38%") and number words ("five times", "Half", "twenty", "first") alike. Words that only look like numbers ("no one") stay as written | Your writing provider |
 | `noro doctor --live` | A one-token test, only after you confirm | Each configured provider |
 
 **Never sent:** raw export rows, metric values, display strings, formulas, sample sizes. Code computes every number and assembles the report locally.

@@ -8,7 +8,7 @@
 import type { Classification, ChatClient, Draft, Fact, FactKind, FactsTable, PanelNote } from '../schema.js';
 import { parseJsonObject, stripFence } from './chat.js';
 import { DEFAULT_FORMAT, FORMATS, buildDraftPrompt, buildRetryNote, buildRevisePrompt, noteKey } from './prompts.js';
-import { DATE_LABEL, NUMERAL, RawNumberError, isIdentifierShape, numberWordsIn, renderTemplate, scrubNumbers } from './template.js';
+import { DATE_LABEL, NUMERAL, RawNumberError, isIdentifierShape, numberWordSpans, numberWordsIn, renderTemplate, scrubNumbers } from './template.js';
 import type { TemplateOptions } from './template.js';
 
 export { createChatClient, parseJsonObject, stripFence } from './chat.js';
@@ -22,6 +22,7 @@ export {
   findNumberWords,
   isIdentifierShape,
   maskIdentifiers,
+  numberWordSpans,
   numberWordsIn,
   renderFragment,
   renderTemplate,
@@ -159,7 +160,8 @@ export interface Templatized {
   /**
    * What the rewrite may repeat from the original: digit-bearing tokens left in the template
    * (strict identifiers and dates only), plus the number-word phrases the original used verbatim
-   * ("two", "six", "nine"), which no code computed.
+   * ("two", "six", "nine"), which no code computed. The template itself carries none of those
+   * words: they are facts "as written" like the digits, so no model sees them.
    */
   allow: string[];
 }
@@ -171,6 +173,9 @@ export interface FoundNumber {
   kind?: string;
   unit?: string;
 }
+
+/** A bare scale word belongs to the number beside it; it stays in the template, as before. */
+const BARE_SCALE_WORD = /^(?:hundreds?|thousands?|millions?|billions?|trillions?)$/iu;
 
 const KINDS = new Set<FactKind>(['currency', 'percent', 'pp', 'multiplier', 'count', 'ratio']);
 
@@ -263,9 +268,21 @@ export function coverNumbers(text: string, numbers: FoundNumber[]): { numbers: F
  * written. Labels carry the templated sentence around the number, so they hold no numbers.
  * Digits the extractor ignored are covered too (coverNumbers): only strict identifiers and dates
  * are left in the template, and they are the `allow` list, with the original's number words.
+ * Number words ("five times", "Half", "twenty more leads") become facts as written too, so the
+ * template a model sees carries no number in any form; they stay on the allow list, so a rewrite
+ * may still repeat one of them verbatim.
  */
 export function templatize(text: string, found: FoundNumber[]): Templatized {
-  const { numbers: sorted, allow } = coverNumbers(text, found);
+  const covered = coverNumbers(text, found);
+  const allow = covered.allow;
+  // Number words outside the numbers found (a word inside "$2 million" belongs to that number).
+  let blanked = text;
+  for (const n of covered.numbers) blanked = blanked.slice(0, n.span[0]) + ' '.repeat(n.span[1] - n.span[0]) + blanked.slice(n.span[1]);
+  const words: FoundNumber[] = numberWordSpans(blanked)
+    .filter((w) => !BARE_SCALE_WORD.test(w.raw.trim()))
+    .map((w) => ({ raw: text.slice(w.span[0], w.span[1]), span: w.span, value: 0, kind: 'count' }));
+  for (const w of words) if (!allow.includes(w.raw)) allow.push(w.raw);
+  const sorted = [...covered.numbers, ...words].sort((a, b) => a.span[0] - b.span[0]);
   let template = '';
   let at = 0;
   const refAt: { id: string; start: number; end: number }[] = [];
@@ -278,7 +295,7 @@ export function templatize(text: string, found: FoundNumber[]): Templatized {
     at = n.span[1];
   });
   template += text.slice(at);
-  // Number words read off the template, so a word that belonged to a templated number isn't kept.
+  // Any number word left in the template (a bare scale word next to a number) stays allowed as before.
   for (const w of numberWordsIn(template)) if (!allow.includes(w)) allow.push(w);
 
   const facts: Fact[] = sorted.map((n, i) => {
