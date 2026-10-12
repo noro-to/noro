@@ -40,29 +40,54 @@ function between(user: string): string {
   return m ? m[1] : '';
 }
 
-/** A short report built from the fact cards: the biggest campaign CPA move, its level, and account spend. */
+/**
+ * A short report built from the fact cards: the biggest campaign CPA move, its level, and account spend.
+ * In a combined cross-channel run (labels name a platform), a channel whose share of spend or
+ * conversions moved (signal) leads, campaigns are named with their platform, and spend is "all channels".
+ */
 export function mockDraftFrom(user: string): string {
   const cs = cards(user);
+  const esc = (x: string) => x.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   const find = (re: RegExp, cls?: RegExp) => cs.find((c) => re.test(c.label) && (!cls || cls.test(c.cls)));
-  const move =
-    find(/^CPA, campaign .+, percent change, .*\((up|down)\)$/, /^signal/) ??
-    find(/^CPA, campaign .+, percent change, .*\((up|down)\)$/) ??
-    find(/percent change, .*\((up|down)\)$/);
-  const spend = find(/^Spend, (account|all accounts), current/);
+  const spend = find(/^Spend, (account|all accounts|all channels), current/);
+  const combined = cs.some((c) => / channel, /.test(c.label) || /, all channels, /.test(c.label));
+  const shareMove = /^Share of total (spend|conversions), .+ channel, change in percentage points, .*\((up|down)\)$/;
+  const shift = combined ? (find(shareMove, /^signal/) && (cs.find((c) => shareMove.test(c.label) && /\(up\)$/.test(c.label) && /^signal/.test(c.cls)) ?? find(shareMove, /^signal/))) : undefined;
+  const channel = shift?.label.match(/^Share of total (?:spend|conversions), (.+) channel, /)?.[1];
+  const cpaMove = /^CPA, (?:.+? )?campaign .+, percent change, .*\((up|down)\)$/;
+  const onChannel = channel ? new RegExp(`^CPA, ${esc(channel)} campaign .+, percent change, .*\\((up|down)\\)$`) : undefined;
+  const move = (onChannel && find(onChannel, /^signal/)) ?? find(cpaMove, /^signal/) ?? find(cpaMove) ?? find(/percent change, .*\((up|down)\)$/);
   const lines: string[] = [];
+  if (shift && channel) {
+    const what = shift.label.match(/^Share of total (spend|conversions)/)![1];
+    const dir = /\(up\)$/.test(shift.label) ? 'rose' : 'fell';
+    const level = find(new RegExp(`^Share of total ${what}, ${esc(channel)} channel, current`));
+    lines.push(`${channel}'s share of total ${what} ${dir} {{${shift.id}}}${level ? ` to {{${level.id}}}` : ''}.`);
+    const cpa = find(new RegExp(`^CPA, ${esc(channel)} channel, percent change, .*\\((up|down)\\)$`));
+    if (cpa) lines.push(`CPA on ${channel} ${/\(up\)$/.test(cpa.label) ? 'rose' : 'fell'} {{${cpa.id}}}.`);
+  }
+  let where = 'the account';
   if (move) {
-    const campaign = move.label.match(/campaign (.+?), percent change/)?.[1];
+    const m = move.label.match(/^[^,]+, (?:(.+?) )?campaign (.+?), percent change/);
+    const platform = m?.[1];
+    const campaign = m?.[2];
     const metric = move.label.split(',')[0];
     const dir = /\(up\)$/.test(move.label) ? 'rose' : 'fell';
-    const level = campaign ? find(new RegExp(`^${metric}, campaign ${campaign.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}, current`)) : undefined;
-    lines.push(`${metric} for ${campaign ?? 'the account'} ${dir} {{${move.id}}}${level ? ` to {{${level.id}}}` : ''}.`);
+    const level = campaign ? find(new RegExp(`^${metric}, ${platform ? `${esc(platform)} ` : ''}campaign ${esc(campaign)}, current`)) : undefined;
+    where = campaign ? (platform ? `${campaign} on ${platform}` : campaign) : 'the account';
+    lines.push(`${metric} for ${where} ${dir} {{${move.id}}}${level ? ` to {{${level.id}}}` : ''}.`);
+    const blended = combined ? find(/^CPA, all channels, percent change, .*\((up|down)\)$/) : undefined;
+    if (blended) {
+      const now = find(/^CPA, all channels, current/);
+      lines.push(`Blended CPA across all channels ${/\(up\)$/.test(blended.label) ? 'rose' : 'fell'} {{${blended.id}}}${now ? ` to {{${now.id}}}` : ''}.`);
+    }
     lines.push('');
-    lines.push(`Why: the move is in ${campaign ?? 'the account'}; the other campaigns held steady. Likely bids or audience, to be confirmed by the media buyer.`);
-  } else {
+    lines.push(`Why: the move is in ${where}; the other campaigns held steady. Likely bids or audience, to be confirmed by the media buyer.`);
+  } else if (!shift) {
     lines.push('A quiet week in the account.');
   }
-  if (spend) lines.push(`Account spend landed at {{${spend.id}}}.`);
-  lines.push(`Next: the media buyer reviews ${move?.label.match(/campaign (.+?), percent change/)?.[1] ?? 'the account'} bids by Friday.`);
+  if (spend) lines.push(combined ? `Spend across all channels landed at {{${spend.id}}}.` : `Account spend landed at {{${spend.id}}}.`);
+  lines.push(`Next: the media buyer reviews ${where} bids by Friday.`);
   return lines.join('\n');
 }
 

@@ -7,7 +7,8 @@
 // direction in words), the classification (signal / noise / luck_risk,
 // priority, watchout ids) and its flags. Never value, display, formula or
 // sampleSize. Period labels ("Oct 6–12") and the currency code are also
-// shown; they are identifiers, not metric values.
+// shown; they are identifiers, not metric values. In a combined run, the
+// platform names (facts.channels) are shown too, with CROSS_CHANNEL_RULES.
 
 import type { Classification, Fact, FactsTable, PanelNote } from '../schema.js';
 import { allowedIdentifiers } from './template.js';
@@ -126,6 +127,11 @@ function context(facts: FactsTable, allow: string[] = []): string {
   if (facts.currency) lines.push(`Currency: ${facts.currency}.`);
   if (facts.periods.current) lines.push(`Current window: ${facts.periods.current}.`);
   if (facts.periods.previous) lines.push(`Previous window: ${facts.periods.previous}.`);
+  if (facts.channels) {
+    lines.push(
+      `Channels (one report across platforms): ${facts.channels.join(', ')}. Facts labelled "all channels" are blended totals across them; "<platform> channel" facts are one platform's totals; campaign facts name their platform.`,
+    );
+  }
   const ids = allowedIdentifiers(facts, allow);
   if (ids.length) lines.push(`Names you may copy exactly (they contain digits but are not numbers): ${ids.map((x) => `"${x}"`).join(', ')}.`);
   return lines.join('\n');
@@ -136,6 +142,13 @@ export interface Prompt {
   user: string;
 }
 
+/** Added to the draft prompt only for a combined run (facts.channels set). */
+export const CROSS_CHANNEL_RULES = `CROSS-CHANNEL REPORT: the facts cover several platforms in one report.
+- When the channels diverge (one channel's CPA, ROAS or share of spend or conversions moves differently from the others), lead with that cross-channel story, then the campaign that explains it.
+- When they move together, say so in one line and lead with the blended "all channels" result.
+- Name the platform with every campaign ("Brand Search on Meta"): the same campaign name can run on several platforms.
+- Never add up or compare figures yourself; cite the "all channels" and share facts.`;
+
 export function buildDraftPrompt(input: { facts: FactsTable; labels: Classification[]; format?: string }): Prompt {
   const fmt = FORMATS[input.format ?? DEFAULT_FORMAT] ?? FORMATS[DEFAULT_FORMAT];
   const cls = new Map(input.labels.map((c) => [c.factId, c]));
@@ -143,7 +156,7 @@ export function buildDraftPrompt(input: { facts: FactsTable; labels: Classificat
   const system = `${HOUSE_RULES}
 
 ${NUMBER_RULES}
-
+${input.facts.channels ? `\n${CROSS_CHANNEL_RULES}\n` : ''}
 FORMAT: ${fmt.name}. Stay under ${fmt.ceiling} words. Shape:
 ${fmt.skeleton}
 

@@ -1,8 +1,11 @@
 // `noro mcp`: a stdio MCP server in the same package as the CLI.
 //
 // Tools:
-//   noro_this   {path (absolute), format?, decisions?} → the report text, traces, flags and run summary
-//   noro_facts  {path (absolute)}                      → the facts table (no model, no key)
+//   noro_this   {path | paths (absolute), format?, decisions?} → the report text, traces, flags, sources and run summary
+//   noro_facts  {path | paths (absolute)}                      → the facts table (no model, no key)
+//
+// `paths` (several exports) makes one combined cross-channel report or facts
+// table; `path` stays for one file. Give one of them.
 //
 // stdout carries only MCP protocol messages. Progress goes to stderr, and as
 // MCP progress notifications when the client sent a progress token. The run
@@ -37,6 +40,16 @@ export interface McpDeps {
 }
 
 const text = (t: string, isError = false) => ({ content: [{ type: 'text' as const, text: t }], ...(isError ? { isError: true } : {}) });
+
+/** The files a call names: `paths`, or `path` alone. A message when neither, both, or a relative path. */
+export function inputFiles(path: string | undefined, paths: string[] | undefined): string[] | string {
+  if (path !== undefined && paths !== undefined) return 'Give either path or paths, not both.';
+  const files = paths ?? (path !== undefined ? [path] : []);
+  if (!files.length) return 'Give path (one file) or paths (several exports for one combined report).';
+  const relative = files.find((f) => !isAbsolute(f));
+  if (relative !== undefined) return `path must be absolute, got "${relative}".`;
+  return files;
+}
 
 function version(): string {
   try {
@@ -78,11 +91,17 @@ export function createNoroMcpServer(deps: McpDeps = {}): McpServer {
       description:
         'Generate a short paid-media report from an ad-platform export (.csv, .tsv, .xlsx: Google Ads, Meta, Amazon DSP), ' +
         'or audit and rewrite an existing report (.md, .txt). Every number is computed by code and traced to a fact; never edit numbers yourself. ' +
+        'For one combined cross-channel report from several exports (e.g. Google Ads, Meta and Amazon DSP for the same dates), pass them all in `paths` in one call. ' +
         'The first call keeps every flag and returns them in `flags`: show each to the user with its `sentence`, ask keep, cut or reword, then call again with `decisions` ' +
         '(cut removes the whole sentence; a reword replaces the whole sentence) ' +
         '(only the deliver step reruns). A run takes a few minutes.',
       inputSchema: z.object({
-        path: z.string().describe('Absolute path to the export or report'),
+        path: z.string().optional().describe('Absolute path to the export or report (one file)'),
+        paths: z
+          .array(z.string())
+          .min(1)
+          .optional()
+          .describe('Absolute paths to several exports (.csv, .tsv, .xlsx) for one combined cross-channel report. Same currency; dates are aligned to the window they share'),
         format: z.enum(FORMATS).optional().describe('Output shape. Default one-page'),
         decisions: z
           .array(
@@ -96,8 +115,9 @@ export function createNoroMcpServer(deps: McpDeps = {}): McpServer {
           .describe('Keep, cut or reword choices from the user. Flags left out are kept'),
       }),
     },
-    async ({ path, format, decisions }, ctx) => {
-      if (!isAbsolute(path)) return text(`path must be absolute, got "${path}".`, true);
+    async ({ path, paths, format, decisions }, ctx) => {
+      const files = inputFiles(path, paths);
+      if (typeof files === 'string') return text(files, true);
       const progressToken = ctx.mcpReq._meta?.progressToken;
       let step = 0;
       let describe = '';
@@ -144,7 +164,7 @@ export function createNoroMcpServer(deps: McpDeps = {}): McpServer {
         const { runNoro } = await import('../harness/index.js');
         type RunInput = Parameters<typeof runNoro>[0];
         const input: RunInput = {
-          file: path,
+          files,
           cwd: deps.cwd,
           config,
           clients,
@@ -161,6 +181,7 @@ export function createNoroMcpServer(deps: McpDeps = {}): McpServer {
           decisions: report.decisions,
           summary: report.summary,
           warnings: report.warnings,
+          ...(report.sources ? { sources: report.sources } : {}),
           classifier: report.summary.classifier ?? classifier.describe,
         };
         const flagLines = report.flags.length ? `\n\n${flagSummary(report.flags, decisionList ? report.decisions : undefined)}` : '';
@@ -179,17 +200,28 @@ export function createNoroMcpServer(deps: McpDeps = {}): McpServer {
       title: 'Look up the facts table',
       description:
         'Run ingest and compute only on an ad-platform export and return every fact: id, label, display value and formula. ' +
-        'No model and no key. Use it to answer "where does this number come from".',
+        'No model and no key. Use it to answer "where does this number come from". Pass `paths` for the combined facts of a cross-channel report.',
       inputSchema: z.object({
-        path: z.string().describe('Absolute path to the export (.csv, .tsv, .xlsx)'),
+        path: z.string().optional().describe('Absolute path to the export (.csv, .tsv, .xlsx)'),
+        paths: z.array(z.string()).min(1).optional().describe('Absolute paths to several exports, for the combined cross-channel facts table'),
       }),
     },
-    async ({ path }) => {
-      if (!isAbsolute(path)) return text(`path must be absolute, got "${path}".`, true);
+    async ({ path, paths }) => {
+      const files = inputFiles(path, paths);
+      if (typeof files === 'string') return text(files, true);
       try {
-        const r = await factsFor(path, { cwd: deps.cwd });
+        const r = await factsFor(files.length === 1 ? files[0] : files, { cwd: deps.cwd });
         const facts = r.facts.map((f) => ({ id: f.id, label: f.label, display: f.value === null ? null : f.display, formula: f.formula, flags: f.flags }));
-        const structured = { source: r.source, platform: r.platform, currency: r.currency, periods: r.periods, warnings: r.warnings, facts };
+        const structured = {
+          source: r.source,
+          platform: r.platform,
+          currency: r.currency,
+          periods: r.periods,
+          ...(r.channels ? { channels: r.channels } : {}),
+          sources: r.sources.map(({ file, platform, adapter, currency, rows }) => ({ file, platform, adapter, currency, rows })),
+          warnings: r.warnings,
+          facts,
+        };
         const lines = facts.map((f) => `${f.id}\t${f.label}\t${f.display ?? 'n/a'}\t${f.formula}`);
         return { content: [{ type: 'text' as const, text: `${r.platform}, ${r.currency}, ${facts.length} facts\nid\tlabel\tvalue\tformula\n${lines.join('\n')}` }], structuredContent: structured };
       } catch (err) {

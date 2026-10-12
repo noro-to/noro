@@ -112,7 +112,16 @@ export function stateFor(batch: Fact[], facts: FactsTable): Record<string, unkno
     const { flags, ...d } = describeFact(f);
     out[f.id] = { label: f.label, ...d, ...(flags.length ? { flags } : {}) };
   }
-  return { task: 'Classify facts for a paid-media performance report. Each fact is described in words; values are withheld.', currency: facts.currency, facts: out };
+  const base = { task: 'Classify facts for a paid-media performance report. Each fact is described in words; values are withheld.', currency: facts.currency };
+  if (!facts.channels) return { ...base, facts: out };
+  return {
+    ...base,
+    channels: facts.channels,
+    combined:
+      'This report combines several ad platforms (channels). Scope "account" is the blended total across all channels; scope "channel" is one platform; campaign facts name their platform. ' +
+      'A channel whose cost, return or share of spend or conversions moves differently from the others is the cross-channel story and usually leads.',
+    facts: out,
+  };
 }
 
 export function codeWatchouts(f: Fact): string[] {

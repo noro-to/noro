@@ -9,6 +9,9 @@
 //   change     level | percent change | absolute change | percentage-point change | share
 //   flags      divide_by_zero, small_sample, no_baseline
 // None of these contain a digit, and none can be combined into a number.
+// In a combined cross-channel run, scope can also be 'channel' (one platform's
+// total) and `platform` names the platform; the blended total stays 'account'
+// (its label says "all channels"). Platform names are identifiers, not values.
 
 import type { Fact } from '../schema.js';
 
@@ -17,7 +20,9 @@ export type Magnitude = 'small' | 'moderate' | 'large' | 'n/a';
 
 export interface FactDescriptor {
   metric: string;
-  scope: 'account' | 'campaign' | 'ad group';
+  /** 'channel' (one platform's total) and `platform` appear only in a combined cross-channel run. */
+  scope: 'account' | 'channel' | 'campaign' | 'ad group';
+  platform?: string;
   campaign?: string;
   period: string;
   change: 'level' | 'percent change' | 'absolute change' | 'percentage-point change' | 'share' | 'share change';
@@ -57,10 +62,11 @@ export function describeFact(f: Fact): FactDescriptor {
     if (change === 'percent change') magnitude = bucket(abs, PCT_BUCKETS);
     else if (change === 'percentage-point change' || change === 'share change') magnitude = bucket(abs, PP_BUCKETS);
   }
-  const scope: FactDescriptor['scope'] = f.scope.adGroup ? 'ad group' : f.scope.campaign !== undefined ? 'campaign' : 'account';
+  const scope: FactDescriptor['scope'] = f.scope.adGroup ? 'ad group' : f.scope.campaign !== undefined ? 'campaign' : f.scope.platform !== undefined ? 'channel' : 'account';
   return {
     metric: f.scope.metric,
     scope,
+    ...(f.scope.platform !== undefined ? { platform: f.scope.platform } : {}),
     ...(f.scope.campaign !== undefined ? { campaign: f.scope.campaign } : {}),
     period: f.scope.period === 'previous_to_current' ? 'change between windows' : `${f.scope.period ?? 'whole export'} window`,
     change,

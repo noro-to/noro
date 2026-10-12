@@ -62,8 +62,11 @@ describe('noro mcp (in process)', () => {
     const tools = (await c.request('tools/list')).result.tools as { name: string; inputSchema: any }[];
     expect(tools.map((t) => t.name).sort()).toEqual(['noro_facts', 'noro_this']);
     const this_ = tools.find((t) => t.name === 'noro_this')!;
-    expect(Object.keys(this_.inputSchema.properties).sort()).toEqual(['decisions', 'format', 'path']);
-    expect(this_.inputSchema.required).toEqual(['path']);
+    expect(Object.keys(this_.inputSchema.properties).sort()).toEqual(['decisions', 'format', 'path', 'paths']);
+    // path (one file) or paths (several exports, one combined report): the tool checks that exactly one is given.
+    expect(this_.inputSchema.required ?? []).toEqual([]);
+    const facts = tools.find((t) => t.name === 'noro_facts')!;
+    expect(Object.keys(facts.inputSchema.properties).sort()).toEqual(['path', 'paths']);
   });
 
   it('noro_facts returns the facts table, with no model and no key', async () => {

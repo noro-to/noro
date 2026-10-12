@@ -7,11 +7,12 @@
 // ("$1,234.56", "--") but computes nothing: sums, ratios and comparisons are
 // src/compute's job.
 
+import { createHash } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';
-import { extname, resolve } from 'node:path';
+import { basename, extname, resolve } from 'node:path';
 import ExcelJS from 'exceljs';
 import { parse as parseCsv } from 'csv-parse/sync';
-import type { ColumnMapping, Dataset, Row, SchemaField } from '../schema.js';
+import type { ColumnMapping, Dataset, DatasetSource, Row, SchemaField } from '../schema.js';
 import {
   type Adapter,
   type SkipRule,
@@ -95,13 +96,16 @@ export class UnknownExportError extends Error {
 
 /** Marks an ingest warning that should stop a run until the user accepts it. */
 const MICROS_SUSPECT = 'which looks like micros';
+/** Marks the combined-run warning that the exports' dates differ and were cut to the shared window. */
+const PERIODS_TRIMMED = 'using only the dates every export covers';
 
 /**
  * Warnings serious enough to stop a run before any model call: a plain cost column whose values
- * look like micros (every money number in the report would be a million times too big).
+ * look like micros (every money number in the report would be a million times too big), and, in a
+ * combined run, exports whose dates differ (cut to the window they share).
  */
 export function blockingWarnings(d: Pick<Dataset, 'warnings'>): string[] {
-  return d.warnings.filter((w) => w.includes(MICROS_SUSPECT));
+  return d.warnings.filter((w) => w.includes(MICROS_SUSPECT) || w.includes(PERIODS_TRIMMED));
 }
 
 /** Ingest found something that would make every number wrong; the user has to accept it to go on. */
@@ -112,6 +116,25 @@ export class IngestWarningError extends Error {
         'Fix the export (or its adapter), or rerun with --accept-warnings to report on it as it is.',
     );
     this.name = 'IngestWarningError';
+  }
+}
+
+/** Exports in different currencies can't be combined: code would have to invent an exchange rate. */
+export class MixedCurrencyError extends Error {
+  constructor(readonly sources: { file: string; currency: string }[]) {
+    super(
+      `These exports are in different currencies (${sources.map((s) => `${basename(s.file)}: ${s.currency}`).join(', ')}), so they can't be added up in one report. ` +
+        'noro does no currency conversion (code would have to invent a rate). Run each currency on its own, or export them in one currency.',
+    );
+    this.name = 'MixedCurrencyError';
+  }
+}
+
+/** Exports that can't share one report: no dates in common, the same file twice, or a file with no rows. */
+export class CombineError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'CombineError';
   }
 }
 
@@ -183,6 +206,109 @@ export async function ingest(file: string, opts: IngestOptions = {}): Promise<Da
     mapping,
     rows: rows.rows,
     warnings,
+  };
+}
+
+// ------------------------------------------------------------ several files
+
+/**
+ * Read several exports into one dataset for a combined cross-channel report. One file gives the
+ * same dataset as ingest(), plus `sources`. Several files must share a currency (no conversion)
+ * and are aligned to the dates (or period labels) every one of them covers: rows outside that
+ * window are dropped with a blocking warning, so different weeks are never compared silently.
+ * Rows merge in a fixed order (platform, then path), so argument order never changes a number.
+ */
+export async function ingestAll(files: string[], opts: IngestOptions = {}): Promise<Dataset> {
+  if (!files.length) throw new CombineError('No export given.');
+  const datasets: Dataset[] = [];
+  for (const f of files) datasets.push(await ingest(f, opts));
+  const sourceOf = (d: Dataset, rows = d.rows.length): DatasetSource => ({
+    file: d.source,
+    platform: d.platform,
+    adapter: d.adapter,
+    currency: d.currency,
+    rows,
+    mapping: d.mapping,
+    warnings: [...d.warnings],
+  });
+  if (datasets.length === 1) return { ...datasets[0], sources: [sourceOf(datasets[0])] };
+
+  // The same bytes twice would count every row twice.
+  const seen = new Map<string, string>();
+  for (const f of files) {
+    const h = createHash('sha256').update(readFileSync(f)).digest('hex');
+    const prev = seen.get(h);
+    if (prev) throw new CombineError(`${basename(f)} and ${basename(prev)} are the same export; give each file once.`);
+    seen.set(h, f);
+  }
+
+  const currencies = [...new Set(datasets.map((d) => (d.currency || 'USD').toUpperCase()))];
+  if (currencies.length > 1) throw new MixedCurrencyError(datasets.map((d) => ({ file: d.source, currency: d.currency })));
+
+  const empty = datasets.find((d) => !d.rows.length);
+  if (empty) throw new CombineError(`${basename(empty.source)} has no data rows, so there is no window to compare it in.`);
+
+  const order = datasets.map((d, i) => ({ d, i })).sort((a, b) => cmp(a.d.platform, b.d.platform) || cmp(a.d.source, b.d.source) || a.i - b.i);
+  const { keep, warning } = alignPeriods(order.map((x) => x.d));
+  const kept = order.map((x, j) => x.d.rows.filter(keep[j]));
+  const warnings: string[] = [];
+  for (const { d } of order) for (const w of d.warnings) warnings.push(`${basename(d.source)}: ${w}`);
+  if (warning) warnings.push(warning);
+  const platforms = [...new Set(datasets.map((d) => d.platform))].sort(cmp);
+  return {
+    source: order.map((x) => x.d.source).join(' + '),
+    platform: platforms.join(' + '),
+    adapter: 'combined',
+    currency: currencies[0],
+    mapping: {},
+    rows: kept.flat(),
+    warnings,
+    sources: order.map((x, j) => sourceOf(x.d, kept[j].length)),
+  };
+}
+
+const cmp = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
+
+/** Which rows of each dataset fall in the window every dataset covers, and the warning when some don't. */
+function alignPeriods(ds: Dataset[]): { keep: ((r: Row) => boolean)[]; warning?: string } {
+  const daily = ds.every((d) => d.rows.every((r) => r.date));
+  const name = (d: Dataset) => basename(d.source);
+  if (daily) {
+    const ranges = ds.map((d) => {
+      const days = d.rows.map((r) => r.date!.slice(0, 10)).sort();
+      return { first: days[0], last: days[days.length - 1] };
+    });
+    const first = ranges.map((r) => r.first).sort().at(-1)!;
+    const last = ranges.map((r) => r.last).sort()[0];
+    const shown = ranges.map((r, i) => `${name(ds[i])} ${r.first} to ${r.last}`).join(', ');
+    if (first > last) {
+      throw new CombineError(`These exports cover different dates with no day in common (${shown}), so one report would compare different weeks. Export the same date range from each platform.`);
+    }
+    const inside = (r: Row) => r.date!.slice(0, 10) >= first && r.date!.slice(0, 10) <= last;
+    const keep = ds.map(() => inside);
+    if (ranges.every((r) => r.first === first && r.last === last)) return { keep };
+    const dropped = ds.reduce((n, d) => n + d.rows.filter((r) => !inside(r)).length, 0);
+    return {
+      keep,
+      warning: `The exports cover different dates (${shown}); ${PERIODS_TRIMMED}, ${first} to ${last}, and dropped ${dropped} row${dropped === 1 ? '' : 's'} outside it. Export the same date range from each platform to use them all.`,
+    };
+  }
+  // Period labels (weeks, months, date ranges), or daily rows mixed with them: compare labels as given.
+  const keyOf = (r: Row) => r.period ?? r.date?.slice(0, 10) ?? '';
+  const sets = ds.map((d) => new Set(d.rows.map(keyOf)));
+  const common = [...sets[0]].filter((k) => sets.every((s) => s.has(k))).sort((a, b) => a.localeCompare(b, 'en', { numeric: true }));
+  const shown = ds.map((d, i) => `${name(d)}: ${[...sets[i]].sort((a, b) => a.localeCompare(b, 'en', { numeric: true })).join(', ')}`).join('; ');
+  if (!common.length) {
+    throw new CombineError(`These exports share no period (${shown}), so one report would compare different periods. Export the same days, weeks or months from each platform.`);
+  }
+  const set = new Set(common);
+  const inside = (r: Row) => set.has(keyOf(r));
+  const keep = ds.map(() => inside);
+  if (sets.every((s) => s.size === set.size)) return { keep };
+  const dropped = ds.reduce((n, d) => n + d.rows.filter((r) => !inside(r)).length, 0);
+  return {
+    keep,
+    warning: `The exports cover different periods (${shown}); ${PERIODS_TRIMMED}, ${common.join(', ')}, and dropped ${dropped} row${dropped === 1 ? '' : 's'} outside it. Export the same periods from each platform to use them all.`,
   };
 }
 

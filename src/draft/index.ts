@@ -35,7 +35,7 @@ export {
   validateTemplate,
 } from './template.js';
 export type { NumberTrace, TemplateErrorKind, TemplateOptions, ValidateOptions } from './template.js';
-export { DEFAULT_FORMAT, FORMATS, HOUSE_RULES, NUMBER_RULES, buildDraftPrompt, buildPanelPrompt, buildRevisePrompt, factCard } from './prompts.js';
+export { CROSS_CHANNEL_RULES, DEFAULT_FORMAT, FORMATS, HOUSE_RULES, NUMBER_RULES, buildDraftPrompt, buildPanelPrompt, buildRevisePrompt, factCard } from './prompts.js';
 
 /** What the retry is told: the error, with any raw number the model wrote scrubbed out. */
 function retryMessage(err: RawNumberError, facts: FactsTable, opts: TemplateOptions): string {

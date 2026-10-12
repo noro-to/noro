@@ -10,6 +10,10 @@
 // phase from the last checkpoint, so every step is written to be safe to
 // repeat (pure code, or a model call whose output is checked again).
 //
+// Combined runs: several exports (input.files) go through ingestAll into one
+// dataset, and the run key hashes every file (sorted by content hash, so the
+// argument order doesn't matter). A written report can't be combined.
+//
 // Resume: a run is keyed by a hash of the input file's bytes, the mode, the
 // format, the three models and where the models come from (real clients,
 // injected ones, or the CLI's NORO_MOCK_MODELS canned ones), so a mock run
@@ -50,7 +54,7 @@ import { draft, reviseDetailed, scrubNumbers, templateQuote, templatize } from '
 import type { FoundNumber, ReviseResult } from '../draft/index.js';
 import { DEFAULT_FORMAT, FORMATS } from '../draft/prompts.js';
 import { buildFlags, deliver } from '../deliver/index.js';
-import { IngestWarningError, blockingWarnings, ingest } from '../ingest/index.js';
+import { IngestWarningError, blockingWarnings, ingestAll } from '../ingest/index.js';
 import type { IngestOptions } from '../ingest/index.js';
 import { panel } from '../panel/index.js';
 import { createChatClientFor, nativeModelId, parseModelRef } from '../providers/index.js';
@@ -59,6 +63,7 @@ import type {
   CheckReport,
   Classification,
   Dataset,
+  DatasetSource,
   Decision,
   Draft,
   FactsTable,
@@ -110,6 +115,8 @@ export interface NoroReport extends Report {
   summary: RunSummary;
   /** Ingest warnings (skipped rows, coerced values, micros converted or suspected). Empty in revision mode. */
   warnings: string[];
+  /** The exports the report was built from (one per file: platform, adapter, currency, rows). Absent in revision mode. */
+  sources?: DatasetSource[];
 }
 
 /** A bad argument to runNoro (an unknown format). */
@@ -121,7 +128,13 @@ export class UsageError extends Error {
 }
 
 export interface RunNoroInput {
-  file: string;
+  /** The export or written report. Ignored when `files` is set. */
+  file?: string;
+  /**
+   * Several exports for one combined cross-channel report (see ingestAll). One entry is the same
+   * as `file`. A written report (.md, .txt) can't be combined with anything.
+   */
+  files?: string[];
   cwd?: string;
   config?: Config;
   clients?: { chat?: ChatClient; jev?: JevClient };
@@ -163,6 +176,8 @@ interface RunData {
   panel?: { notes: number; applied: number };
   /** Ingest warnings, carried to the report. */
   warnings?: string[];
+  /** The exports behind the dataset, carried to the report. */
+  sources?: DatasetSource[];
 }
 
 type Checkpoint = { phase: StepName; data: RunData };
@@ -228,8 +243,11 @@ function legacyModel(provider: string, id: string): string {
  * The run's identity: input bytes, mode, format, models, classifier, and where the models come from.
  * A setup v0.1 could express (openrouter or claude-cli for both writing steps, jev on OpenRouter) hashes
  * exactly as v0.1 did, so in-flight runs keep resuming after the upgrade. Anything else adds fields.
+ * Several files (a combined run) add `files: <count>` and hash each file's SHA-256, sorted, instead of
+ * the bytes: the same exports in any order are the same run. One file hashes exactly as before.
  */
-export function runKeyFor(file: string, mode: string, format: string, cfg: Config, source: ModelSource = {}): string {
+export function runKeyFor(file: string | string[], mode: string, format: string, cfg: Config, source: ModelSource = {}): string {
+  const files = typeof file === 'string' ? [file] : file;
   const h = createHash('sha256');
   const origin = { injected: source.injected ?? { chat: false, jev: false }, mock: source.mock ?? false };
   const d = parseModelRef(cfg.draftModel);
@@ -249,8 +267,10 @@ export function runKeyFor(file: string, mode: string, format: string, cfg: Confi
       key.endpoint = cfg.noroBaseUrl;
     }
   }
+  if (files.length > 1) key.files = files.length;
   h.update(JSON.stringify(key));
-  h.update(readFileSync(file));
+  if (files.length === 1) h.update(readFileSync(files[0]));
+  else for (const d of files.map((f) => createHash('sha256').update(readFileSync(f)).digest('hex')).sort()) h.update(d);
   return h.digest('hex').slice(0, 32);
 }
 
@@ -332,8 +352,17 @@ function alignSpans(text: string, numbers: { raw: string; span: [number, number]
 export async function runNoro(input: RunNoroInput): Promise<NoroReport> {
   const cwd = resolve(input.cwd ?? process.cwd());
   const config = input.config ?? loadConfig();
-  const file = resolve(cwd, input.file);
-  const mode: 'generate' | 'revise' = REVISION_EXTS.has(extname(file).toLowerCase()) ? 'revise' : 'generate';
+  const given = input.files ?? (input.file !== undefined ? [input.file] : []);
+  if (!given.length) throw new UsageError('No input file given.');
+  const files = given.map((f) => resolve(cwd, f));
+  const file = files[0];
+  const reports = files.filter((f) => REVISION_EXTS.has(extname(f).toLowerCase()));
+  if (reports.length && files.length > 1) {
+    throw new UsageError(
+      `A written report (${reports.map((f) => basename(f)).join(', ')}) is audited on its own: run \`noro this <report>\` with just that file. Several files combine only exports (.csv, .tsv, .xlsx).`,
+    );
+  }
+  const mode: 'generate' | 'revise' = reports.length ? 'revise' : 'generate';
   const format = input.format ?? DEFAULT_FORMAT;
   if (!FORMATS[format]) throw new UsageError(`Unknown format "${format}". Use one of: ${Object.keys(FORMATS).join(', ')}.`);
   // One client per writing step (draft + revise share one). Creating them never needs a credential.
@@ -346,7 +375,7 @@ export async function runNoro(input: RunNoroInput): Promise<NoroReport> {
   const decisions = input.decisions;
   const decide = decisions ? decideFrom(decisions) : (input.decide ?? (async (f: Flag): Promise<Decision> => ({ flagId: f.id, action: 'keep' })));
   const stateDir = resolve(cwd, input.stateDir ?? config.stateDir);
-  const runKey = runKeyFor(file, mode, format, config, {
+  const runKey = runKeyFor(files, mode, format, config, {
     injected: { chat: input.clients?.chat !== undefined, jev: input.clients?.jev !== undefined },
     mock: process.env.NORO_MOCK_MODELS === '1',
     classifier: input.clients?.jev ? undefined : classifierSource(classifier),
@@ -358,7 +387,7 @@ export async function runNoro(input: RunNoroInput): Promise<NoroReport> {
   // Each returns the data for the next checkpoint. They only read `data`.
   const steps: Record<StepName, (data: RunData) => Promise<RunData>> = {
     async ingest() {
-      const dataset = await ingest(file, {
+      const dataset = await ingestAll(files, {
         confirmMapping: input.confirmMapping,
         // The built-ins plus <cwd>/.noro/adapters (ingest alone would look under process.cwd()).
         adaptersDir: [builtinAdaptersDir(), join(cwd, '.noro', 'adapters')],
@@ -370,7 +399,8 @@ export async function runNoro(input: RunNoroInput): Promise<NoroReport> {
       return { dataset };
     },
     async compute(d) {
-      return { facts: computeFacts(d.dataset!), warnings: d.dataset!.warnings }; // the dataset is dropped from here on
+      // The dataset is dropped from here on; its warnings and per-file sources travel to the report.
+      return { facts: computeFacts(d.dataset!), warnings: d.dataset!.warnings, ...(d.dataset!.sources ? { sources: d.dataset!.sources } : {}) };
     },
     async classify(d) {
       return { ...d, labels: await classifier.run(d.facts!) };
@@ -453,6 +483,7 @@ export async function runNoro(input: RunNoroInput): Promise<NoroReport> {
           ...runInfo,
         },
         warnings: d.warnings ?? [],
+        ...(d.sources ? { sources: d.sources } : {}),
       };
       return { ...d, result: { ...result, [DELIVER_INPUT]: d } } as RunData & { result: NoroReport };
     },
@@ -553,7 +584,7 @@ export async function runNoro(input: RunNoroInput): Promise<NoroReport> {
     }
     const resumed = live !== undefined;
     const id = (live ??
-      (await root.commit((tx) => tx.createTask(Pipeline, { runKey, mode, file, format }, { ownership: { kind: 'conversation' } }), ctx))) as TaskId<NoroReport>;
+      (await root.commit((tx) => tx.createTask(Pipeline, { runKey, mode, file: files.join('\n'), format }, { ownership: { kind: 'conversation' } }), ctx))) as TaskId<NoroReport>;
 
     const settled = harness.waitForTask(id, ctx);
     const first = await Promise.race([settled, parked]);

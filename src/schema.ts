@@ -42,17 +42,37 @@ export type SchemaField =
 /** Schema field (or `extra.<name>`) → raw column header in the export. */
 export type ColumnMapping = Partial<Record<SchemaField, string>> & { extra?: Record<string, string> };
 
-export interface Dataset {
-  /** Source file path as given. */
-  source: string;
+/** One export file in a dataset built from several (a combined cross-channel run). */
+export interface DatasetSource {
+  /** The file path as given. */
+  file: string;
   platform: string;
-  /** Adapter id, e.g. "google-ads", or "guessed" when the user confirmed a guessed mapping. */
+  /** Adapter id, or "guessed". */
   adapter: string;
   currency: string;
+  /** Rows this file contributed, after period alignment. */
+  rows: number;
+  /** The raw header each field came from, for this file. */
+  mapping: ColumnMapping;
+  /** This file's own ingest warnings, unprefixed. */
+  warnings: string[];
+}
+
+export interface Dataset {
+  /** Source file path as given. A combined dataset joins its files with " + ". */
+  source: string;
+  /** Platform display name. A combined dataset lists its platforms, sorted, joined with " + ". */
+  platform: string;
+  /** Adapter id, e.g. "google-ads", or "guessed" when the user confirmed a guessed mapping; "combined" for several files. */
+  adapter: string;
+  currency: string;
+  /** For one file, the raw header each field came from. Empty for a combined dataset (see sources). */
   mapping: ColumnMapping;
   rows: Row[];
-  /** Non-fatal notes from ingest (skipped total rows, coerced values, micros converted). */
+  /** Non-fatal notes from ingest (skipped total rows, coerced values, micros converted). A combined dataset prefixes each file's with its name. */
   warnings: string[];
+  /** Set when the dataset was built from several exports (ingestAll): one entry per file, in the order given. */
+  sources?: DatasetSource[];
 }
 
 // ---------------------------------------------------------------- 2. compute
@@ -80,8 +100,8 @@ export interface Fact {
   formula: string;
   /** Fact ids this fact was computed from, or "row:<field>" for sums straight off the rows. */
   inputs: string[];
-  /** What the fact is about. Any of these may be absent for account-level facts. */
-  scope: { metric: string; campaign?: string; adGroup?: string; period?: 'current' | 'previous' | string; dimension?: string };
+  /** What the fact is about. Any of these may be absent for account-level facts. `platform` is set only in a combined (multi-platform) run. */
+  scope: { metric: string; platform?: string; campaign?: string; adGroup?: string; period?: 'current' | 'previous' | string; dimension?: string };
   /** Sample behind the fact (conversions for CPA/CVR, clicks for CTR, etc.). */
   sampleSize?: number;
   flags: FactFlag[];
@@ -91,6 +111,12 @@ export interface FactsTable {
   currency: string;
   /** Labels of the current and comparison windows, e.g. {current: "Oct 6–12", previous: "Sep 29–Oct 5"}. */
   periods: { current: string; previous?: string };
+  /**
+   * Set only when the rows come from more than one platform (a combined run): the platform names,
+   * sorted. Facts then have a channel scope (scope.platform without a campaign), and blended totals
+   * are labelled "all channels". Absent for a single platform, so single-file tables are unchanged.
+   */
+  channels?: string[];
   facts: Fact[];
 }
 

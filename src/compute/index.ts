@@ -28,6 +28,17 @@
 //   spend, impressions, clicks, share             → none (sums, not estimates)
 //   'small_sample' when sampleSize < opts.smallSample (default 30).
 //
+// Combined runs (rows from more than one platform, from ingestAll): the scopes
+// become the blended total first (labelled "all channels", key part "account"),
+// then each platform as a channel ("Meta channel", key part "platform=Meta"),
+// then each platform's campaigns sorted by platform and name ("Meta campaign
+// PR-07 Prospecting", key part "platform=Meta:campaign=PR-07 Prospecting").
+// Every scope gets the same metrics and changes as above. Then each channel's
+// share of all-channel spend and of all-channel conversions (current, previous,
+// pp change), then each campaign's share of its channel's spend. facts.channels
+// lists the platforms. With one platform none of this applies, and the table is
+// exactly what a single-file run gives.
+//
 // Labels hold no numbers except names from the data (campaign codes). Change
 // labels end with the direction in words, read off the display: (up), (down)
 // or (no change) when the display rounds to zero; nothing when the value is null.
@@ -211,24 +222,46 @@ export function computeFacts(ds: Dataset, opts: ComputeOptions = {}): FactsTable
   }
 
   const accounts = uniq(ds.rows.map((r) => r.account)).filter(Boolean);
-  const accountWord = accounts.length > 1 ? 'all accounts' : 'account';
-  const campaigns = uniq(ds.rows.map((r) => r.campaign ?? '')).sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
+  const byName = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
+  // More than one platform: a combined cross-channel run (see the header comment).
+  const platforms = uniq(ds.rows.map((r) => r.platform)).sort(byName);
+  const multi = platforms.length > 1;
+  const accountWord = multi ? 'all channels' : accounts.length > 1 ? 'all accounts' : 'account';
 
   interface Scope {
     label: string;
     keyPart: string;
+    platform?: string;
     campaign?: string;
     filter: (r: Row) => boolean;
   }
-  const scopes: Scope[] = [
-    { label: accountWord, keyPart: 'account', filter: () => true },
-    ...campaigns.map((c) => ({
-      label: `campaign ${c || '(none)'}`,
-      keyPart: `campaign=${c}`,
-      campaign: c,
-      filter: (r: Row) => (r.campaign ?? '') === c,
-    })),
-  ];
+  const campaignsOf = (rows: Row[]) => uniq(rows.map((r) => r.campaign ?? '')).sort(byName);
+  const scopes: Scope[] = [{ label: accountWord, keyPart: 'account', filter: () => true }];
+  if (!multi) {
+    scopes.push(
+      ...campaignsOf(ds.rows).map((c) => ({
+        label: `campaign ${c || '(none)'}`,
+        keyPart: `campaign=${c}`,
+        campaign: c,
+        filter: (r: Row) => (r.campaign ?? '') === c,
+      })),
+    );
+  } else {
+    for (const p of platforms) scopes.push({ label: `${p} channel`, keyPart: `platform=${p}`, platform: p, filter: (r: Row) => r.platform === p });
+    for (const p of platforms) {
+      scopes.push(
+        ...campaignsOf(ds.rows.filter((r) => r.platform === p)).map((c) => ({
+          label: `${p} campaign ${c || '(none)'}`,
+          keyPart: `platform=${p}:campaign=${c}`,
+          platform: p,
+          campaign: c,
+          filter: (r: Row) => r.platform === p && (r.campaign ?? '') === c,
+        })),
+      );
+    }
+  }
+  /** scope.platform / scope.campaign for a fact, present only when set (single-platform facts never carry platform). */
+  const where = (sc: Scope) => ({ ...(sc.platform !== undefined ? { platform: sc.platform } : {}), ...(sc.campaign !== undefined ? { campaign: sc.campaign } : {}) });
 
   const winName = (w: WindowKey) => `${w} ${win.word}`;
   const changeName = `previous to current ${win.word}`;
@@ -247,7 +280,7 @@ export function computeFacts(ds: Dataset, opts: ComputeOptions = {}): FactsTable
           key: `${m.key}:${scope.keyPart}:period=${w.key}`,
           label: `${m.name}, ${scope.label}, ${winName(w.key)}`,
           kind: m.kind as FactKind,
-          scope: { metric: m.key, ...(scope.campaign !== undefined ? { campaign: scope.campaign } : {}), period: w.key },
+          scope: { metric: m.key, ...where(scope), period: w.key },
         };
         const sampleFact = m.sample ? got.get(`${m.sample}:${w.key}`) : undefined;
         const sampleSize = m.key === 'conversions' ? undefined : sampleFact?.value ?? undefined;
@@ -287,7 +320,7 @@ export function computeFacts(ds: Dataset, opts: ComputeOptions = {}): FactsTable
       const sampleSize =
         prev.sampleSize !== undefined && cur.sampleSize !== undefined ? Math.min(prev.sampleSize, cur.sampleSize) : undefined;
       const sampleProp = sampleSize !== undefined ? { sampleSize } : {};
-      const scopeBase = { metric: m.key, ...(scope.campaign !== undefined ? { campaign: scope.campaign } : {}), period: 'previous_to_current' };
+      const scopeBase = { metric: m.key, ...where(scope), period: 'previous_to_current' };
 
       const pct = ops.pctChange(prev.value, cur.value);
       push({
@@ -321,38 +354,69 @@ export function computeFacts(ds: Dataset, opts: ComputeOptions = {}): FactsTable
     }
   }
 
-  // Campaign share of account spend.
-  const account = byScope.get('account')!;
-  for (const scope of scopes.slice(1)) {
-    const got = byScope.get(scope.keyPart)!;
+  /** part / whole * 100 for each window, then the pp change. */
+  function shareFacts(o: {
+    scope: Scope;
+    metric: 'spend' | 'conversions';
+    keyName: string;
+    label: string;
+    formulaWords: string;
+    whole: Map<string, Fact>;
+  }): void {
+    const got = byScope.get(o.scope.keyPart)!;
     const shares: Partial<Record<WindowKey, Fact>> = {};
     for (const w of windows) {
-      const part = got.get(`spend:${w.key}`)!;
-      const whole = account.get(`spend:${w.key}`)!;
+      const part = got.get(`${o.metric}:${w.key}`)!;
+      const whole = o.whole.get(`${o.metric}:${w.key}`)!;
       const r = ops.share(part.value, whole.value);
       shares[w.key] = push({
-        key: `spend_share:${scope.keyPart}:period=${w.key}`,
-        label: `Share of total spend, ${scope.label}, ${winName(w.key)}`,
+        key: `${o.keyName}:${o.scope.keyPart}:period=${w.key}`,
+        label: `${o.label}, ${o.scope.label}, ${winName(w.key)}`,
         value: r.value,
         kind: 'percent',
-        formula: `campaign spend / account spend * 100 = ${plain(part.value)} / ${plain(whole.value)} * 100`,
+        formula: `${o.formulaWords} * 100 = ${plain(part.value)} / ${plain(whole.value)} * 100`,
         inputs: [part.id, whole.id],
-        scope: { metric: 'spend', campaign: scope.campaign, period: w.key, dimension: 'share' },
+        scope: { metric: o.metric, ...where(o.scope), period: w.key, dimension: 'share' },
         flags: r.flags,
       });
     }
     if (shares.previous && shares.current) {
       const dv = ops.diff(shares.previous.value, shares.current.value);
       push({
-        key: `spend_share:${scope.keyPart}:change=pp`,
-        label: `Share of total spend, ${scope.label}, change in percentage points, ${changeName}`,
+        key: `${o.keyName}:${o.scope.keyPart}:change=pp`,
+        label: `${o.label}, ${o.scope.label}, change in percentage points, ${changeName}`,
         value: dv.value,
         kind: 'pp',
         formula: `current - previous = ${plain(shares.current.value)} - ${plain(shares.previous.value)}`,
         inputs: [shares.previous.id, shares.current.id],
-        scope: { metric: 'spend', campaign: scope.campaign, period: 'previous_to_current', dimension: 'share_pp_change' },
+        scope: { metric: o.metric, ...where(o.scope), period: 'previous_to_current', dimension: 'share_pp_change' },
         flags: uniq([...dv.flags, ...shares.previous.flags, ...shares.current.flags].filter((x) => x === 'divide_by_zero')),
         signed: true,
+      });
+    }
+  }
+
+  const account = byScope.get('account')!;
+  if (!multi) {
+    // Campaign share of account spend.
+    for (const scope of scopes.slice(1)) {
+      shareFacts({ scope, metric: 'spend', keyName: 'spend_share', label: 'Share of total spend', formulaWords: 'campaign spend / account spend', whole: account });
+    }
+  } else {
+    // Each channel's share of all-channel spend and conversions, then each campaign's share of its channel's spend.
+    const channels = scopes.filter((sc) => sc.platform !== undefined && sc.campaign === undefined);
+    for (const scope of channels) {
+      shareFacts({ scope, metric: 'spend', keyName: 'spend_share', label: 'Share of total spend', formulaWords: 'channel spend / all-channel spend', whole: account });
+      shareFacts({ scope, metric: 'conversions', keyName: 'conversions_share', label: 'Share of total conversions', formulaWords: 'channel conversions / all-channel conversions', whole: account });
+    }
+    for (const scope of scopes.filter((sc) => sc.campaign !== undefined)) {
+      shareFacts({
+        scope,
+        metric: 'spend',
+        keyName: 'spend_share',
+        label: `Share of ${scope.platform} channel spend`,
+        formulaWords: 'campaign spend / channel spend',
+        whole: byScope.get(`platform=${scope.platform}`)!,
       });
     }
   }
@@ -360,6 +424,7 @@ export function computeFacts(ds: Dataset, opts: ComputeOptions = {}): FactsTable
   return {
     currency,
     periods: win.previous ? { current: win.current.label, previous: win.previous.label } : { current: win.current.label },
+    ...(multi ? { channels: platforms } : {}),
     facts,
   };
 }

@@ -8,6 +8,10 @@
 //   change, magnitude small (or no bucket)     → noise
 //   change, magnitude moderate | large         → signal
 //   rate change at campaign / ad-group scope   → + W-volatile-rate-claim
+//   combined runs: a channel's share-of-spend or share-of-conversions change
+//               of moderate or large magnitude is a headline candidate too, ranked
+//               ahead of account changes of the same size (the cross-channel story),
+//               the biggest share move first
 //   level / share                              → noise, except current-window
 //                                                account totals of primary metrics: signal, priority 2
 //   priority 1: at most two account-scope signal changes in primary metrics
@@ -28,7 +32,7 @@ function isCurrentWindow(f: Fact): boolean {
 }
 
 export function classifyByRules(facts: FactsTable): Classification[] {
-  const judged = new Map<string, { label: FactLabel; priority: 1 | 2 | 3; volatile: boolean; headline: boolean; large: boolean }>();
+  const judged = new Map<string, { label: FactLabel; priority: 1 | 2 | 3; volatile: boolean; headline: boolean; large: boolean; channel: boolean }>();
   for (const f of facts.facts) {
     if (f.value === null) continue;
     const d = describeFact(f);
@@ -36,13 +40,15 @@ export function classifyByRules(facts: FactsTable): Classification[] {
     let label: FactLabel;
     let priority: 1 | 2 | 3 = 3;
     let headline = false;
+    let channel = false;
     if (f.flags.some((x) => LUCK_FLAGS.includes(x))) {
       label = 'luck_risk';
     } else if (isChange) {
       label = d.magnitude === 'moderate' || d.magnitude === 'large' ? 'signal' : 'noise';
       if (label === 'signal') {
         priority = 2;
-        headline = d.scope === 'account' && PRIMARY_METRICS.has(d.metric);
+        channel = d.scope === 'channel' && d.change === 'share change';
+        headline = (d.scope === 'account' && PRIMARY_METRICS.has(d.metric)) || channel;
       }
     } else if (d.change === 'level' && d.scope === 'account' && isCurrentWindow(f) && PRIMARY_METRICS.has(d.metric)) {
       label = 'signal';
@@ -50,13 +56,15 @@ export function classifyByRules(facts: FactsTable): Classification[] {
     } else {
       label = 'noise';
     }
-    const volatile = isChange && d.scope !== 'account' && isRateChange(f);
-    judged.set(f.id, { label, priority, volatile, headline, large: d.magnitude === 'large' });
+    const volatile = isChange && (d.scope === 'campaign' || d.scope === 'ad group') && isRateChange(f);
+    judged.set(f.id, { label, priority, volatile, headline, large: d.magnitude === 'large', channel });
   }
+  const size = new Map(facts.facts.map((f) => [f.id, Math.abs(f.value ?? 0)]));
   const headlines = [...judged.entries()]
     .filter(([, j]) => j.headline)
-    .map(([id, j], i) => ({ id, rank: (j.large ? 0 : 1) * 1e6 + i }))
-    .sort((a, b) => a.rank - b.rank)
+    .map(([id, j], i) => ({ id, tier: (j.large ? 0 : 2) + (j.channel ? 0 : 1), share: j.channel ? size.get(id)! : 0, i }))
+    // Among channel share changes, the biggest move first (code compares the values; no model does).
+    .sort((a, b) => a.tier - b.tier || b.share - a.share || a.i - b.i)
     .slice(0, MAX_RULES_HEADLINES);
   for (const h of headlines) judged.get(h.id)!.priority = 1;
   return facts.facts.map((f) => {

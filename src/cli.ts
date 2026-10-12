@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 // noro CLI.
-//   noro this <file>      export (.csv, .tsv, .xlsx) → a report; report (.md, .txt) → audit and rewrite
-//   noro facts <file>     ingest + compute only: the facts table. No model, no key
+//   noro this <file> [file…]   export (.csv, .tsv, .xlsx) → a report; report (.md, .txt) → audit and rewrite.
+//                              Several exports → one combined cross-channel report
+//   noro facts <file> [file…]  ingest + compute only: the facts table. No model, no key
 //   noro init [--global]  setup wizard: writes .env (or ~/.config/noro/.env)
 //   noro init --workspace [dir] [--update]  a Claude Code folder with an inbox (src/init/workspace.ts)
 //   noro doctor           free setup checks; --live makes one tiny paid call per model, after asking
@@ -43,16 +44,17 @@ process.emitWarning = ((warning: string | Error, ...rest: unknown[]) => {
 const FORMAT_NAMES = ['slack', 'email', 'one-page', 'slide-notes'];
 
 const USAGE = `Usage:
-  noro this <file> [--format ${FORMAT_NAMES.join('|')}] [--yes] [--json]
+  noro this <file> [file…] [--format ${FORMAT_NAMES.join('|')}] [--yes] [--json]
                    [--model <provider>:<id>] [--decisions <file|json>] [--accept-warnings]
-  noro facts <file> [--json]
+  noro facts <file> [file…] [--json]
   noro init [--global]
   noro init --workspace [dir] [--update]
   noro doctor [--live] [--yes] [--json]
   noro mcp
 
   this     write a report from an ad-platform export (.csv, .tsv, .xlsx),
-           or audit and rewrite a written report (.md, .txt)
+           or audit and rewrite a written report (.md, .txt).
+           Several exports (e.g. google.csv meta.csv) make one cross-channel report
   facts    print the facts table (ingest and compute only; no model, no key)
   init     set up keys and models; writes .env here (--global: ~/.config/noro/.env)
            --workspace [dir]: create a Claude Code folder with an inbox (default ./noro-reports);
@@ -66,7 +68,8 @@ const USAGE = `Usage:
   --model            writing model for this run only, e.g. openrouter:anthropic/claude-opus-5.5
   --decisions        keep/cut/reword choices: a JSON array or a file holding one,
                      e.g. '[{"flagId":"F1","action":"cut"}]'. Flags left out are kept
-  --accept-warnings  go on even when the export looks wrong (e.g. cost in micros)
+  --accept-warnings  go on even when the export looks wrong (e.g. cost in micros,
+                     or combined exports whose dates differ)
 
 Settings come from the environment, ./.env, then ~/.config/noro/.env. Run \`noro init\` to set up.
 Docs: https://github.com/noro-to/noro/tree/main/docs/install`;
@@ -77,6 +80,8 @@ const COMMANDS: Command[] = ['this', 'facts', 'init', 'doctor', 'mcp'];
 interface Args {
   command?: Command;
   file?: string;
+  /** Every <file> given to this / facts; file is the first. */
+  files: string[];
   yes: boolean;
   json: boolean;
   format?: string;
@@ -115,7 +120,7 @@ const FLAG_NAMES: Record<string, string> = {
 };
 
 function parseArgs(argv: string[]): Args | string {
-  const a: Args = { yes: false, json: false, acceptWarnings: false, global: false, workspace: false, update: false, live: false, help: false, version: false };
+  const a: Args = { files: [], yes: false, json: false, acceptWarnings: false, global: false, workspace: false, update: false, live: false, help: false, version: false };
   const used = new Set<string>();
   const rest: string[] = [];
   const value = (i: number, name: string): string | undefined => {
@@ -160,8 +165,8 @@ function parseArgs(argv: string[]): Args | string {
   for (const f of used) if (!ALLOWED[a.command].has(f)) return `${FLAG_NAMES[f]} doesn't apply to "noro ${a.command}".`;
   if (a.command === 'this' || a.command === 'facts') {
     if (!rest[1]) return 'Missing <file>.';
-    if (rest.length > 2) return `Unexpected argument "${rest[2]}".`;
-    a.file = rest[1];
+    a.files = rest.slice(1);
+    a.file = a.files[0];
   } else if (a.command === 'init' && a.workspace) {
     if (a.global) return '--global doesn\'t apply with --workspace (the workspace setup saves keys in ~/.config/noro/.env).';
     if (rest.length > 2) return `Unexpected argument "${rest[2]}".`;
@@ -225,7 +230,7 @@ async function mockClients(): Promise<{ chat: ChatClient; jev: JevClient } | und
 }
 
 async function cmdThis(parsed: Args): Promise<number> {
-  const file = parsed.file!;
+  const files = parsed.files;
   let decisions: Decision[] | undefined;
   const pre = await import('./preflight.js');
   if (parsed.decisions !== undefined) {
@@ -244,8 +249,9 @@ async function cmdThis(parsed: Args): Promise<number> {
     process.stderr.write(`noro: ${(err as Error).message}\n`);
     return 1;
   }
-  if (!existsSync(file)) {
-    process.stderr.write(`noro: can't find ${file}\n`);
+  const missing = files.filter((f) => !existsSync(f));
+  if (missing.length) {
+    process.stderr.write(missing.map((f) => `noro: can't find ${f}\n`).join(''));
     return 1;
   }
 
@@ -295,7 +301,7 @@ async function cmdThis(parsed: Args): Promise<number> {
   if (FORMAT_NAMES.join() !== Object.keys(FORMATS).join()) throw new Error('cli FORMAT_NAMES out of sync with FORMATS');
   try {
     const input: RunInput = {
-      file,
+      files,
       config,
       clients,
       format: parsed.format,
@@ -322,6 +328,10 @@ async function cmdThis(parsed: Args): Promise<number> {
       const n = (count: number, one: string, many = `${one}s`) => `${count} ${count === 1 ? one : many}`;
       process.stdout.write(`Checked: ${n(s.checked, 'number')} traced${words}. Panel: ${n(s.panel.notes, 'note')}, ${s.panel.applied} applied.\n`);
       process.stdout.write(`Classify: ${report.summary.classifier ?? classifier.describe}.\n`);
+      if ((report.sources?.length ?? 0) > 1) {
+        const { sourceLine } = await import('./facts.js');
+        process.stdout.write(`Sources: ${sourceLine(report.sources!)}.\n`);
+      }
       if (report.flags.length) process.stdout.write(`Flags: ${report.flags.length} (${kept} kept, ${report.flags.length - kept} cut or reworded).\n`);
     }
     return 0;
@@ -337,12 +347,13 @@ async function cmdThis(parsed: Args): Promise<number> {
 
 async function cmdFacts(parsed: Args): Promise<number> {
   const { factsFor, formatFacts } = await import('./facts.js');
-  if (!existsSync(parsed.file!)) {
-    process.stderr.write(`noro: can't find ${parsed.file}\n`);
+  const missing = parsed.files.filter((f) => !existsSync(f));
+  if (missing.length) {
+    process.stderr.write(missing.map((f) => `noro: can't find ${f}\n`).join(''));
     return 1;
   }
   try {
-    const r = await factsFor(parsed.file!, { confirmMapping: process.stdin.isTTY ? interactiveMapping : undefined });
+    const r = await factsFor(parsed.files.length === 1 ? parsed.files[0] : parsed.files, { confirmMapping: process.stdin.isTTY ? interactiveMapping : undefined });
     for (const w of r.warnings) process.stderr.write(`noro: warning: ${w}\n`);
     process.stdout.write(parsed.json ? `${JSON.stringify(r, null, 2)}\n` : `${formatFacts(r)}\n`);
     return 0;
