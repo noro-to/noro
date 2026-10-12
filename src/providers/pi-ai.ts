@@ -135,7 +135,8 @@ export function createPiAiClient(provider: string, modelId: string, deps: PiAiDe
         model,
         { systemPrompt: req.system, messages: [{ role: 'user', content: user, timestamp: Date.now() }] },
         {
-          maxTokens: Math.min(MAX_TOKENS, model.maxTokens || MAX_TOKENS),
+          // req.maxTokens caps the answer; pi-ai adds any thinking budget on top of it.
+          maxTokens: Math.min(req.maxTokens ?? MAX_TOKENS, model.maxTokens || MAX_TOKENS),
           reasoning,
           // pi-ai sends a top-level effort of "high" on Claude models whose thinking can't be turned
           // off, whatever the reasoning option says. Keep it at the level asked for.
@@ -153,8 +154,10 @@ export function createPiAiClient(provider: string, modelId: string, deps: PiAiDe
         if (looksLikeUsageLimit(why)) throw new UsageLimitError(provider, why);
         throw new ModelError(`${what}: ${why.slice(0, 400)}`);
       }
-      if (msg.stopReason === 'length') throw new ModelError(`${what}: the answer was cut off at ${MAX_TOKENS} tokens`);
       const text = textOf(msg);
+      // A caller that set maxTokens asked for a short answer, so reaching the cap is fine.
+      if (msg.stopReason === 'length' && req.maxTokens !== undefined) return text;
+      if (msg.stopReason === 'length') throw new ModelError(`${what}: the answer was cut off at ${MAX_TOKENS} tokens`);
       if (!text.trim()) throw new ModelError(`${what}: the answer had no text`);
       return text;
     },

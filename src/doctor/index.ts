@@ -390,7 +390,7 @@ async function live(opts: DoctorOptions, config: Config, refs: ModelRef[], env: 
     opts.progress?.(`live: ${ref.provider}:${ref.id}`);
     try {
       const chat = opts.clients?.chat ?? createChatClientFor(ref, config);
-      const out = await chat.complete({ model: nativeModelId(ref), system: 'Reply with the single word OK.', user: 'OK', maxTokens: 16 } as Parameters<ChatClient['complete']>[0]);
+      const out = await chat.complete({ model: nativeModelId(ref), system: 'Reply with the single word OK.', user: 'OK', maxTokens: 16 });
       lines.push({ status: 'ok', text: `${ref.provider}:${ref.id} answered (${out.trim().slice(0, 20) || 'empty reply'})` });
     } catch (err) {
       lines.push({ status: 'fail', text: `${ref.provider}:${ref.id}: ${(err as Error).message.slice(0, 300)}` });

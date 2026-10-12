@@ -60,6 +60,8 @@ export function createOpenAIChatClient(o: OpenAIChatOptions): ChatClient {
         ],
       };
       if (req.json && o.jsonMode === 'response_format') body.response_format = { type: 'json_object' };
+      // Only when asked (noro doctor --live): normal calls keep the v0.1 body.
+      if (req.maxTokens !== undefined) body.max_tokens = req.maxTokens;
       Object.assign(body, o.extraBody);
       const headers: Record<string, string> = { 'Content-Type': 'application/json', ...o.headers };
       if (key) headers.Authorization = `Bearer ${key}`;

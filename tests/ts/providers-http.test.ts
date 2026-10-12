@@ -57,6 +57,16 @@ describe('noro fetch client', () => {
     });
   });
 
+  it('openrouter: maxTokens becomes max_tokens; unset, the body has none', async () => {
+    const calls: Call[] = [];
+    const cfg = { ...loadConfig({}), apiKey: 'sk-or-test' };
+    const chat = createChatClientFor('openrouter:anthropic/claude-opus-5.5', cfg, { fetch: jsonFetch(calls, chatReply('OK')) });
+    expect(await chat.complete({ ...REQ, maxTokens: 16 })).toBe('OK');
+    expect(await chat.complete(REQ)).toBe('OK');
+    expect(calls[0].body.max_tokens).toBe(16);
+    expect(calls[1].body).not.toHaveProperty('max_tokens');
+  });
+
   it('openrouter: the v0.1 createChatClient still sends req.model', async () => {
     const calls: Call[] = [];
     vi.stubGlobal('fetch', jsonFetch(calls, chatReply('ok')));
@@ -179,6 +189,17 @@ describe('pi-ai writers', () => {
     expect(c.body.output_config).toEqual({ effort: 'low' });
   });
 
+  it('anthropic: req.maxTokens caps max_tokens (noro doctor --live)', async () => {
+    const calls: Call[] = [];
+    const chat = createChatClientFor('anthropic:claude-opus-5-5', loadConfig({}), {
+      env: { ANTHROPIC_API_KEY: 'sk-ant-test-123456' },
+      fetch: jsonFetch(calls, () => anthropicStream('OK')),
+      maxRetries: 0,
+    });
+    expect(await chat.complete({ ...REQ, maxTokens: 16 })).toBe('OK');
+    expect(calls[0].body.max_tokens).toBe(16);
+  });
+
   it('anthropic: an API error is a ModelError with the key redacted', async () => {
     const key = 'sk-ant-secret-abcdef';
     const chat = createChatClientFor('anthropic:claude-opus-5-5', loadConfig({}), {
@@ -283,6 +304,13 @@ describe('pi-ai writers through the faux provider', () => {
     await expect(chat.complete(REQ)).rejects.toThrow('usage limit reached; rerun later');
     const cut = faux('google-vertex', 'gemini-3.1-pro-preview', fauxAssistantMessage('half a', { stopReason: 'length' }));
     await expect(createChatClientFor('vertex:gemini-3.1-pro-preview', loadConfig({}), { models: cut.models, env: {} }).complete(REQ)).rejects.toThrow(/cut off/);
+  });
+
+  it('bedrock: req.maxTokens is the cap, and an answer that reaches it is returned', async () => {
+    const { models, seen } = faux('amazon-bedrock', 'global.anthropic.claude-opus-5-5', fauxAssistantMessage('OK, the', { stopReason: 'length' }));
+    const chat = createChatClientFor('bedrock:anthropic/claude-opus-5.5', loadConfig({}), { models, env: { AWS_PROFILE: 'reports', AWS_REGION: 'us-east-1' } });
+    expect(await chat.complete({ ...REQ, maxTokens: 16 })).toBe('OK, the');
+    expect(seen[0].maxTokens).toBe(16);
   });
 
   it('azure: a model id newer than the catalog still runs', async () => {

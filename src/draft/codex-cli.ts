@@ -101,6 +101,7 @@ export function codexExecArgs(model: string, workDir: string, systemFile: string
   ];
 }
 
+/** req.maxTokens is ignored: `codex exec` has no output-token flag, and the plan, not a key, pays. */
 export function createCodexCliClient(cfg: Config, model?: string): ChatClient {
   const env = codexChildEnv();
   let checked: Promise<void> | undefined;

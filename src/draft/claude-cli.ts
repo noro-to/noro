@@ -83,7 +83,10 @@ export async function checkClaudeAuth(cfg: Pick<Config, 'claudeBin'>, env = chil
   }
 }
 
-/** `model` (a Claude Code id) wins over req.model when given. */
+/**
+ * `model` (a Claude Code id) wins over req.model when given. req.maxTokens is
+ * ignored: `claude -p` has no output-token flag, and the plan, not a key, pays.
+ */
 export function createClaudeCliClient(cfg: Config, model?: string): ChatClient {
   const env = childEnv();
   let checked: Promise<void> | undefined;

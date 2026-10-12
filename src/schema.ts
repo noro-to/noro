@@ -186,6 +186,13 @@ export interface ChatRequest {
   user: string;
   /** Ask for JSON output. */
   json?: boolean;
+  /**
+   * Cap the answer at this many output tokens (noro doctor --live sends 16).
+   * Unset: the client's own cap. API clients honor it; a capped answer that
+   * stops at the cap is returned as is, not treated as an error. The claude-cli
+   * and codex-cli clients ignore it: neither CLI has an output-token flag.
+   */
+  maxTokens?: number;
 }
 
 export interface ChatClient {

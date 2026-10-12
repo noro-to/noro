@@ -12,6 +12,7 @@ import { describe, expect, it } from 'vitest';
 import { formatDoctor, runDoctor } from '../../src/doctor/index.js';
 import { createMockChat, createMockJev } from '../../src/harness/mock.js';
 import type { MockLog } from '../../src/harness/mock.js';
+import type { ChatClient, ChatRequest } from '../../src/schema.js';
 
 const ROOT = resolve(import.meta.dirname, '../..');
 const FAKE_CLAUDE = join(ROOT, 'tests/ts/fixtures/fake-claude.mjs');
@@ -135,6 +136,15 @@ describe('noro doctor --live', () => {
     expect(log.chat).toHaveLength(1);
     expect(log.jev).toHaveLength(1);
     expect(statusOf(r, 'live')).toEqual(['ok', 'ok']);
+  });
+
+  it('--yes: the writing call is capped at 16 output tokens', async () => {
+    const log: MockLog = { chat: [], jev: [] };
+    const reqs: ChatRequest[] = [];
+    const chat: ChatClient = { complete: async (req) => (reqs.push(req), 'OK') };
+    await runDoctor({ env: env(), cwd: tmp(), fetch: okFetch(), live: true, yes: true, clients: { chat, jev: createMockJev(log) } });
+    expect(reqs).toHaveLength(1);
+    expect(reqs[0].maxTokens).toBe(16);
   });
 });
 
