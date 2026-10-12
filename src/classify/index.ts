@@ -245,7 +245,7 @@ export function resolveClassifier(config: Config, deps: ClassifierDeps = {}): Re
     const model = deps.writerModel ?? config.draftModel;
     return {
       mode,
-      describe: `writer (${model})`,
+      describe: `writer (${deps.chat?.describe ?? model})`,
       async run(facts) {
         if (!deps.chat) throw new ClassifyConfigError('NORO_CLASSIFY=writer needs the writing model client, and none was given');
         return classifyWithWriter(facts, deps.chat, { model });
@@ -262,7 +262,7 @@ export function resolveClassifier(config: Config, deps: ClassifierDeps = {}): Re
   const client = deps.jev ?? createSystemOneClient({ baseUrl: base, apiKey: key });
   return {
     mode,
-    describe: `jev (${model ?? 'no model set'} on ${host})`,
+    describe: deps.jev?.describe ?? `jev (${model ?? 'no model set'} on ${host})`,
     ...(missingKey ? { missingKey } : {}),
     async run(facts) {
       if (!model) {

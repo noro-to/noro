@@ -96,7 +96,7 @@ describe('noro mcp (in process)', () => {
     expect(s.summary.checked).toBe(s.traces.length);
     expect(s.flags.length).toBeGreaterThan(0);
     expect(s.decisions.every((d: { action: string }) => d.action === 'keep')).toBe(true);
-    expect(s.classifier).toMatch(/^jev/);
+    expect(s.classifier).toBe('canned test classifier (NORO_MOCK_MODELS=1)');
     expect(logs).toContain('noro: deliver');
     const progress = c.notifications.filter((n) => n.method === 'notifications/progress');
     expect(progress.map((n) => n.params.message)).toEqual(['ingest', 'compute', 'classify', 'draft', 'check', 'panel', 'deliver']);

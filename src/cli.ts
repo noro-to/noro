@@ -255,6 +255,14 @@ async function cmdThis(parsed: Args): Promise<number> {
     process.stderr.write(`noro: ${(err as Error).message}\n`);
     return 1;
   }
+  // A subscription CLI writer must be logged in before classify spends anything.
+  if (!clients) {
+    const logins = await pre.checkWriterLogins(config, process.env);
+    if (logins.length) {
+      process.stderr.write(`${logins.map((p) => `noro: ${p}`).join('\n')}\n`);
+      return 1;
+    }
+  }
 
   // Say which writing model runs, so a --model value that resolved to a default is never silent.
   const writerDescribe = clients?.chat

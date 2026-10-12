@@ -1,11 +1,10 @@
 // Preflight: Node and Python checks that run before any paid model call.
 //
 // Node 22.19+ (the package's engines field). Python 3.9+ for the rules engine,
-// standard library only. Python is looked up in this order, first 3.9+ wins:
-//   1. NORO_PYTHON, split on spaces (so `NORO_PYTHON=py -3` works)
-//   2. python3
-//   3. python
-//   4. py -3 (Windows only)
+// standard library only. NORO_PYTHON (split on spaces, so `NORO_PYTHON=py -3`
+// works) is the only candidate when it is set: a broken NORO_PYTHON fails with
+// a clear error instead of quietly running some other Python. Unset, the
+// lookup order is python3, python, then py -3 (Windows only), first 3.9+ wins.
 // Each candidate is probed with a one-line script; "not found" (ENOENT, or the
 // Windows 9009 of the Microsoft Store stub) moves on to the next.
 
@@ -71,7 +70,7 @@ const PROBE = 'import sys;v=sys.version_info;print("%d.%d.%d" % (v[0], v[1], v[2
 export function pythonCandidates(env: NodeJS.ProcessEnv = process.env, platform: NodeJS.Platform = process.platform): string[][] {
   const out: string[][] = [];
   const custom = env.NORO_PYTHON?.trim();
-  if (custom) out.push(custom.split(/\s+/));
+  if (custom) return [custom.split(/\s+/)];
   out.push(['python3'], ['python']);
   if (platform === 'win32') out.push(['py', '-3']);
   return out;
@@ -98,6 +97,17 @@ export function findPython(env: NodeJS.ProcessEnv = process.env, platform: NodeJ
   return { tried };
 }
 
+/** Why no Python was found, as one actionable message (a broken NORO_PYTHON is named as such). */
+export function pythonProblem(r: PythonLookup, env: NodeJS.ProcessEnv = process.env): string {
+  const custom = env.NORO_PYTHON?.trim();
+  if (custom) {
+    const why = r.tried[0]?.result ?? 'failed';
+    return `NORO_PYTHON="${custom}" doesn't run Python 3.9+ (${why}). Point NORO_PYTHON at a Python 3.9+ command, or unset it to use python3.`;
+  }
+  const tried = r.tried.map((t) => `${t.cmd.join(' ')}: ${t.result}`).join('; ');
+  return `${PYTHON_HELP}${tried ? `\n  tried: ${tried}` : ''}`;
+}
+
 /**
  * Check Node and Python. Returns the Python command as one string for Config.python
  * (the command and its arguments joined by spaces). Throws PreflightError.
@@ -105,10 +115,7 @@ export function findPython(env: NodeJS.ProcessEnv = process.env, platform: NodeJ
 export function preflight(env: NodeJS.ProcessEnv = process.env, opts: { nodeVersion?: string; platform?: NodeJS.Platform; run?: Runner } = {}): { python: string; pythonVersion: string } {
   checkNode(opts.nodeVersion);
   const r = findPython(env, opts.platform, opts.run);
-  if (!r.found) {
-    const tried = r.tried.map((t) => `${t.cmd.join(' ')}: ${t.result}`).join('; ');
-    throw new PreflightError(`${PYTHON_HELP}${tried ? `\n  tried: ${tried}` : ''}`);
-  }
+  if (!r.found) throw new PreflightError(pythonProblem(r, env));
   return { python: r.found.cmd.join(' '), pythonVersion: r.found.version };
 }
 
@@ -136,6 +143,25 @@ export function missingForRun(config: Config, classifier: Pick<ResolvedClassifie
   }
   if (classifier.missingKey && !problems.some((p) => p.startsWith(`${classifier.missingKey} `))) {
     problems.push(`${classifier.missingKey} is not set. Classify uses jev on ${classifier.missingKey === 'OPENROUTER_API_KEY' ? 'OpenRouter' : 'TypeSafe'}; set the key, or NORO_CLASSIFY=rules.`);
+  }
+  return problems;
+}
+
+/**
+ * Subscription CLI writers (claude-cli, codex-cli): check the login before any paid call, so a
+ * logged-out Claude Code fails here instead of after classify has already been paid for.
+ * Resolves with one actionable message per problem; empty when ready.
+ */
+export async function checkWriterLogins(config: Config, env: NodeJS.ProcessEnv = process.env): Promise<string[]> {
+  const providers = new Set([config.draftModel, config.panelModel].map((m) => parseModelRef(m).provider));
+  const problems: string[] = [];
+  if (providers.has('claude-cli')) {
+    const { checkClaudeAuth, childEnv } = await import('./draft/claude-cli.js');
+    await checkClaudeAuth({ claudeBin: config.claudeBin }, childEnv(env)).catch((err: Error) => problems.push(err.message));
+  }
+  if (providers.has('codex-cli')) {
+    const { checkCodexAuth, codexChildEnv } = await import('./draft/codex-cli.js');
+    await checkCodexAuth({ codexBin: config.codexBin }, codexChildEnv(env)).catch((err: Error) => problems.push(err.message));
   }
   return problems;
 }

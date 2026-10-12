@@ -45,7 +45,7 @@ describe('per-step chat clients', () => {
     const config = { ...loadConfig({}), apiKey: undefined };
     let named = '';
     const report = await runNoro({ file: FIXTURE, cwd: ROOT, config, stateDir: tmp(), clients: { chat: createMockChat(), jev: createMockJev() }, onClassifier: (d) => (named = d) });
-    expect(named).toMatch(/^jev/);
+    expect(named).toBe('canned test classifier (NORO_MOCK_MODELS=1)'); // what actually ran, not the configured jev
     expect(report.summary.classifier).toBe(named);
     expect(report).not.toHaveProperty('_deliverInput');
   });

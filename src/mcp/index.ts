@@ -18,7 +18,7 @@ import * as z from 'zod/v4';
 import type { Config } from '../config.js';
 import { factsFor } from '../facts.js';
 import { homeDir, loadEnvFiles } from '../env.js';
-import { classifierFor, decideFrom, missingForRun, preflight, SETUP_HINT } from '../preflight.js';
+import { checkWriterLogins, classifierFor, decideFrom, missingForRun, preflight, SETUP_HINT } from '../preflight.js';
 import type { ChatClient, Decision, Flag, JevClient } from '../schema.js';
 
 const FORMATS = ['one-page', 'slack', 'email', 'slide-notes'] as const;
@@ -137,6 +137,10 @@ export function createNoroMcpServer(deps: McpDeps = {}): McpServer {
           if (problems.length) return text(`${problems.join('\n')}\n${SETUP_HINT}`, true);
         }
         config = { ...config, python: deps.python ?? preflight(process.env).python };
+        if (!clients?.chat) {
+          const logins = await checkWriterLogins(config, process.env);
+          if (logins.length) return text(logins.join('\n'), true);
+        }
         const { runNoro } = await import('../harness/index.js');
         type RunInput = Parameters<typeof runNoro>[0];
         const input: RunInput = {

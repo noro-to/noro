@@ -33,12 +33,11 @@ node --version
 py -3 --version
 ```
 
-On Windows, `python3` is often missing, or it is the Microsoft Store stub that opens the Store. noro looks for Python in this order and uses the first that is 3.9 or newer:
+On Windows, `python3` is often missing, or it is the Microsoft Store stub that opens the Store. When `NORO_PYTHON` is set (split on spaces, so `NORO_PYTHON=py -3` works), noro uses it and nothing else: if it doesn't run Python 3.9+, noro stops with an error naming it, and `noro doctor` shows the same. Otherwise noro looks in this order and uses the first that is 3.9 or newer:
 
-1. `NORO_PYTHON`, split on spaces, so `NORO_PYTHON=py -3` works
-2. `python3`
-3. `python`
-4. `py -3` (Windows only)
+1. `python3`
+2. `python`
+3. `py -3` (Windows only)
 
 ### WSL
 

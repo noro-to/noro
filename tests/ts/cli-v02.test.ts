@@ -87,8 +87,8 @@ describe('preflight', () => {
     expect(nodeOk('20.11.0')).toBe(false);
   });
 
-  it('Python lookup order: NORO_PYTHON (split on spaces), python3, python, py -3 on Windows', () => {
-    expect(pythonCandidates({ NORO_PYTHON: 'py -3' }, 'win32')).toEqual([['py', '-3'], ['python3'], ['python'], ['py', '-3']]);
+  it('Python lookup order: NORO_PYTHON alone when set (split on spaces); else python3, python, py -3 on Windows', () => {
+    expect(pythonCandidates({ NORO_PYTHON: 'py -3' }, 'win32')).toEqual([['py', '-3']]);
     expect(pythonCandidates({}, 'linux')).toEqual([['python3'], ['python']]);
     const calls: string[] = [];
     const run = (cmd: string, args: string[]) => {
@@ -228,7 +228,7 @@ describe('noro this (v0.2 flags)', () => {
   });
 
   it('no Python 3.9+: exit 1 with install advice, before any model call', () => {
-    const r = cli(['this', FIXTURE, '--yes'], { NORO_MOCK_MODELS: '1', NORO_PYTHON: 'definitely-not-python', PATH: '/nonexistent' });
+    const r = cli(['this', FIXTURE, '--yes'], { NORO_MOCK_MODELS: '1', PATH: '/nonexistent' });
     expect(r.status).toBe(1);
     expect(r.stderr).toMatch(/needs Python 3\.9\+/);
     expect(r.stderr).not.toMatch(/noro: ingest/);

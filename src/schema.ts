@@ -201,10 +201,14 @@ export interface ChatRequest {
 }
 
 export interface ChatClient {
+  /** What actually answers, when it isn't the configured model (the canned test model). */
+  describe?: string;
   complete(req: ChatRequest): Promise<string>;
 }
 
 export interface JevClient {
+  /** What actually answers, when it isn't the configured endpoint (the canned test model). Shown as the classifier. */
+  describe?: string;
   /** One call to the decisions endpoint. Shape of state/questions/answers follows the jev guide. */
   decide(req: { model: string; state: Record<string, unknown>; questions: unknown[] }): Promise<unknown>;
 }

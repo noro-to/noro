@@ -76,6 +76,7 @@ function shorten(template: string): string {
 export function createMockChat(opts: MockOptions = {}): ChatClient {
   let draftAttempt = 0;
   return {
+    describe: 'canned test writer (NORO_MOCK_MODELS=1)',
     async complete(req) {
       opts.log?.chat.push(req);
       if (req.system.startsWith('You are the reviewer in the persona below.')) {
@@ -105,6 +106,7 @@ export function createMockChat(opts: MockOptions = {}): ChatClient {
 
 export function createMockJev(log?: MockLog): JevClient {
   return {
+    describe: 'canned test classifier (NORO_MOCK_MODELS=1)',
     async decide(req) {
       log?.jev.push(req);
       const facts = ((req.state as any).facts ?? {}) as Record<string, any>;

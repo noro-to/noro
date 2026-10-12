@@ -201,3 +201,43 @@ describe('D8a/b: secrets and run state are private from the first byte', () => {
     }
   });
 });
+
+describe('D8c/d/e: preflight says what will run, and fails before any paid call', () => {
+  const cli = (args: string[], env: Record<string, string> = {}) =>
+    spawnSync(process.execPath, [...CLI, ...args], { cwd: ROOT, env: cleanEnv(env), encoding: 'utf8', input: '', timeout: 60_000 });
+
+  it('a broken NORO_PYTHON fails with a clear error instead of falling back to python3; doctor shows it', () => {
+    const r = cli(['this', FIXTURE, '--yes'], { NORO_MOCK_MODELS: '1', NORO_PYTHON: 'definitely-not-python' });
+    expect(r.status).toBe(1);
+    expect(r.stderr).toMatch(/NORO_PYTHON="definitely-not-python" doesn't run Python 3\.9\+ \(not found\)\. Point NORO_PYTHON at a Python 3\.9\+ command, or unset it/);
+    expect(r.stderr).not.toMatch(/noro: ingest/);
+    const d = cli(['doctor'], { NORO_PYTHON: 'definitely-not-python', NORO_CLASSIFY: 'rules', NORO_MODEL: 'ollama:qwen3.8:27b', NORO_BASE_URL: 'http://127.0.0.1:9' });
+    expect(d.stdout).toMatch(/FAIL {2}NORO_PYTHON="definitely-not-python" doesn't run Python 3\.9\+/);
+  });
+
+  it('with NORO_MOCK_MODELS=1 the classify line and the footer name the canned classifier that ran', () => {
+    const r = cli(['this', FIXTURE, '--yes'], { NORO_MOCK_MODELS: '1' });
+    expect(r.status, r.stderr).toBe(0);
+    expect(r.stderr).toContain('noro: classify with canned test classifier (NORO_MOCK_MODELS=1)');
+    expect(r.stdout).toContain('Classify: canned test classifier (NORO_MOCK_MODELS=1).');
+    expect(r.stdout).not.toMatch(/Classify: jev/);
+    const j = cli(['this', FIXTURE, '--yes', '--json'], { NORO_MOCK_MODELS: '1' });
+    expect(JSON.parse(j.stdout).classifier).toBe('canned test classifier (NORO_MOCK_MODELS=1)');
+  });
+
+  it.skipIf(process.platform === 'win32')('a logged-out claude-cli writer fails in preflight, before ingest and the paid classify call', () => {
+    const log = join(tmp(), 'calls.jsonl');
+    const r = cli(['this', FIXTURE, '--yes'], {
+      NORO_MODEL: 'claude-cli:claude-opus-5-5',
+      NORO_CLAUDE_BIN: join(ROOT, 'tests/ts/fixtures/fake-claude.mjs'),
+      FAKE_CLAUDE_AUTH: 'none',
+      FAKE_CLAUDE_LOG: log,
+      OPENROUTER_API_KEY: 'sk-or-v1-not-a-real-key-but-not-a-placeholder', // jev on OpenRouter would be a paid call
+    });
+    expect(r.status).toBe(1);
+    expect(r.stderr).toMatch(/Claude Code is not logged in/);
+    expect(r.stderr).not.toMatch(/noro: (ingest|classify)/);
+    const calls = readFileSync(log, 'utf8').trim().split('\n').map((l) => JSON.parse(l).args[0]);
+    expect(calls).toEqual(['auth']);
+  });
+});

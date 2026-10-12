@@ -22,7 +22,7 @@ import { checkClaudeAuth, childEnv } from '../draft/claude-cli.js';
 import { checkCodexAuth, codexChildEnv } from '../draft/codex-cli.js';
 import type { EnvLoad } from '../env.js';
 import { fingerprint } from '../env.js';
-import { findPython, MIN_NODE, nodeOk, PYTHON_HELP } from '../preflight.js';
+import { findPython, MIN_NODE, nodeOk, pythonProblem } from '../preflight.js';
 import { createChatClientFor, missingCredentials, nativeModelId, parseModelRef, PROVIDERS } from '../providers/index.js';
 import type { ModelRef, ProviderInfo } from '../providers/index.js';
 import type { ChatClient, FactsTable, JevClient } from '../schema.js';
@@ -364,7 +364,9 @@ export async function runDoctor(opts: DoctorOptions = {}): Promise<DoctorResult>
   const engine: DoctorLine[] = [];
   engine.push(nodeOk() ? { status: 'ok', text: `node ${process.versions.node}` } : { status: 'fail', text: `node ${process.versions.node} is older than ${MIN_NODE.join('.')}` });
   const py = findPython(env);
-  engine.push(py.found ? { status: 'ok', text: `${py.found.cmd.join(' ')} ${py.found.version}` } : { status: 'fail', text: PYTHON_HELP });
+  engine.push(
+    py.found ? { status: 'ok', text: `${py.found.cmd.join(' ')} ${py.found.version}${env.NORO_PYTHON?.trim() ? ' (NORO_PYTHON)' : ''}` } : { status: 'fail', text: pythonProblem(py, env) },
+  );
   sections.push({ name: 'engine', head: '', lines: engine });
 
   // state
