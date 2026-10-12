@@ -6,7 +6,7 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-SCRIPTS = ROOT / "skills" / "noro" / "scripts"
+SCRIPTS = ROOT / "engine"
 NORO = SCRIPTS / "noro.py"
 FIXTURES = Path(__file__).resolve().parent / "fixtures"
 RULES = FIXTURES / "rules.json"

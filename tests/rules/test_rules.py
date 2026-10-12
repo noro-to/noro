@@ -3,7 +3,7 @@ import glob, os, sys, unittest
 import yaml
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-sys.path.insert(0, os.path.join(ROOT, "skills", "noro", "scripts"))
+sys.path.insert(0, os.path.join(ROOT, "engine"))
 from noro import scan  # noqa: E402
 
 
@@ -31,7 +31,7 @@ class TestRuleExamples(unittest.TestCase):
 
     def test_day_of_week_gold_has_no_errors(self):
         import json
-        with open(os.path.join(ROOT, "skills", "noro", "scripts", "rules.json"), encoding="utf-8") as f:
+        with open(os.path.join(ROOT, "engine", "rules.json"), encoding="utf-8") as f:
             rules = json.load(f)["rules"]
         with open(os.path.join(ROOT, "bench", "corpus", "11-day-of-week-dense", "gold.md"), encoding="utf-8") as f:
             gold = f.read()

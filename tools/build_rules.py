@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build skills/noro/scripts/rules.json from rules/**/*.yaml.
+"""Build engine/rules.json from rules/**/*.yaml.
 
 Usage:
   python3 tools/build_rules.py            # validate and write rules.json
@@ -21,7 +21,7 @@ except ImportError:  # pragma: no cover
 
 ROOT = Path(__file__).resolve().parent.parent
 RULES_DIR = ROOT / "rules"
-OUT = ROOT / "skills" / "noro" / "scripts" / "rules.json"
+OUT = ROOT / "engine" / "rules.json"
 VERSION = "0.1.0"
 
 PREFIX = {"tells": "T", "numbers": "N", "shape": "S", "specificity": "P",
