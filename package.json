@@ -36,6 +36,7 @@
     "engine/rules.json",
     "prompts/panel",
     "skills",
+    "examples/workspace",
     ".claude-plugin",
     ".env.example",
     "CHANGELOG.md",

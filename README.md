@@ -11,6 +11,8 @@ Paid-media reports where every number is traced: noro turns a raw ad-platform ex
 > ```
 >
 > Needs Node 22.19+ and Python 3.9+. `noro init` picks a model and writes `.env`. Other ways to install: [docs/install/](docs/install/README.md).
+>
+> Prefer drag and drop? `noro init --workspace` makes a folder to open in Claude Code: drop exports into `inbox/` and type "noro the inbox". See [workspace.md](docs/install/workspace.md).
 
 noro is an open-source framework for reports a client or exec can act on. It also audits and rewrites reports someone already wrote. It runs on your machine with the model you choose: an API key, a cloud account, a local model, or your own Claude or ChatGPT plan.
 
@@ -54,7 +56,7 @@ docker run --rm -it -v "$PWD:/work" -w /work --env-file .env ghcr.io/noro-to/nor
 
 [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/noro-to/noro)
 
-The full install guide is in [docs/install/](docs/install/README.md): the [CLI](docs/install/cli.md) on macOS, Linux and Windows, [model providers](docs/install/providers.md), [local models](docs/install/local.md), [subscription CLIs](docs/install/subscriptions.md), [AI tools](docs/install/agents.md), [Docker](docs/install/docker.md), [scheduled reports](docs/install/scheduled.md) and [classify](docs/install/classify.md).
+The full install guide is in [docs/install/](docs/install/README.md): the [CLI](docs/install/cli.md) on macOS, Linux and Windows, [model providers](docs/install/providers.md), [local models](docs/install/local.md), [subscription CLIs](docs/install/subscriptions.md), [AI tools](docs/install/agents.md), [a Claude Code workspace](docs/install/workspace.md), [Docker](docs/install/docker.md), [scheduled reports](docs/install/scheduled.md) and [classify](docs/install/classify.md).
 
 ## Pick your model
 
@@ -103,6 +105,8 @@ claude mcp add --transport stdio --scope user noro -- npx -y @noro-to/noro mcp  
 ```
 
 The skill runs `noro this <file> --json --yes`, shows you the report, asks about each flag and passes your choices back with `--decisions`. `noro mcp` exposes the tools `noro_this` and `noro_facts`. Config for Cursor, VS Code, Codex, Windsurf and Zed is in [agents.md](docs/install/agents.md).
+
+For a folder of exports, `noro init --workspace` creates `noro-reports/` with an `inbox/`, the skill and a `CLAUDE.md`. Open it in Claude Code and type "noro the inbox": one report per file, saved to `reports/`, with each file moved to `inbox/done/` when its report is final. See [workspace.md](docs/install/workspace.md).
 
 ## Run it
 
@@ -170,7 +174,7 @@ Weekly and monthly reports already work from an export file: see [scheduled.md](
 | [`prompts/`](prompts/README.md) | Reviewer personas (`panel/`) and the writing guides (`guides/`) | Contributors, maintainers |
 | [`skills/`](skills/README.md), `.claude-plugin/` | The agent skill and the Claude Code and Codex plugin | Maintainers |
 | [`docs/`](docs/README.md) | Install guides, the schema and the engine contract | Maintainers |
-| [`examples/`](examples/README.md) | The weekly GitHub Actions template and the README images | Maintainers; users copy from it |
+| [`examples/`](examples/README.md) | The weekly GitHub Actions template, the Claude Code workspace template and the README images | Maintainers; users copy from it |
 | [`fixtures/`](fixtures/README.md) | Synthetic exports and their generator | Contributors |
 | [`bench/`](bench/README.md) | Synthetic reports with gold rewrites | Contributors |
 | [`tests/`](tests/README.md) | vitest (`tests/ts`) and the Python suites (`tests/engine`, `tests/rules`) | Contributors, maintainers |

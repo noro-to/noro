@@ -1,0 +1,7 @@
+# noro workspace. `noro init --workspace` saves this file as .gitignore.
+# Exports, reports, run state and keys stay on this machine.
+inbox/
+reports/
+.noro/
+.env
+.env.bak

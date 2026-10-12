@@ -96,6 +96,16 @@ noro this weekly-update.md --format email
 
 Formats: `slack`, `email`, `one-page` (the default) and `slide-notes`. `noro facts <file>` prints just the facts table, with no model and no key.
 
+## Prefer drag and drop?
+
+If you use Claude Code, make a workspace instead of typing paths:
+
+```bash
+noro init --workspace      # creates ./noro-reports (on Windows, run it from your user folder)
+```
+
+Open `noro-reports` in Claude Code (the desktop app or `claude` in a terminal), drop your exports into `inbox/` and type **noro the inbox**. Claude runs one report per file, saves each to `reports/`, asks about the flags and moves finished files to `inbox/done/`. Details: [install/workspace.md](install/workspace.md).
+
 ## If a run stops partway
 
 Run the same command again from the same folder. noro keeps a checkpoint after every step in `.noro/` and carries on from the last one.

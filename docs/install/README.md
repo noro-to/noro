@@ -10,6 +10,7 @@ noro uses two models. A writing model drafts and revises the report. A decision 
 | --- | --- | --- |
 | Run it in a terminal | `npm i -g @noro-to/noro`, then `noro this <file>` | [cli.md](cli.md) |
 | Ask for it inside Claude Code, Codex, Hermes Agent, Cursor, VS Code, Windsurf, Zed or Gemini CLI | The Claude plugin, the Codex plugin, the Hermes skill, `npx skills add noro-to/noro`, or the `noro mcp` server | [agents.md](agents.md) |
+| Drop files into a folder and type "noro the inbox" in Claude Code | `noro init --workspace` | [workspace.md](workspace.md) |
 | Run it with no Node or Python on the machine | `ghcr.io/noro-to/noro` | [docker.md](docker.md) |
 | Get a report every week or month | GitHub Actions, Hermes cron, cron, systemd or launchd | [scheduled.md](scheduled.md) |
 
@@ -58,6 +59,7 @@ noro's prompts are tuned on Claude Opus 5.5. Other models work on a best-effort 
 - `NORO_MODEL` with every provider listed above, plus `codex-cli`
 - Classify through any System One endpoint, or with rules
 - `--decisions` for agents that pass keep, cut and reword choices back
+- `noro init --workspace`: a Claude Code folder with an inbox, the skill and a `CLAUDE.md`
 - The Claude plugin, the Codex plugin and the skill in `skills/noro/`
 - The Docker image and the scheduled-run templates
 - Keys in `~/.config/noro/.env` for runs started from any folder

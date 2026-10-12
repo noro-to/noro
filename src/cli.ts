@@ -3,6 +3,7 @@
 //   noro this <file>      export (.csv, .tsv, .xlsx) → a report; report (.md, .txt) → audit and rewrite
 //   noro facts <file>     ingest + compute only: the facts table. No model, no key
 //   noro init [--global]  setup wizard: writes .env (or ~/.config/noro/.env)
+//   noro init --workspace [dir] [--update]  a Claude Code folder with an inbox (src/init/workspace.ts)
 //   noro doctor           free setup checks; --live makes one tiny paid call per model, after asking
 //   noro mcp              stdio MCP server with the tools noro_this and noro_facts
 //
@@ -46,6 +47,7 @@ const USAGE = `Usage:
                    [--model <provider>:<id>] [--decisions <file|json>] [--accept-warnings]
   noro facts <file> [--json]
   noro init [--global]
+  noro init --workspace [dir] [--update]
   noro doctor [--live] [--yes] [--json]
   noro mcp
 
@@ -53,6 +55,8 @@ const USAGE = `Usage:
            or audit and rewrite a written report (.md, .txt)
   facts    print the facts table (ingest and compute only; no model, no key)
   init     set up keys and models; writes .env here (--global: ~/.config/noro/.env)
+           --workspace [dir]: create a Claude Code folder with an inbox (default ./noro-reports);
+           --update refreshes its CLAUDE.md and skill from this version
   doctor   check the setup for free (--live: one tiny paid call per model, after asking)
   mcp      start the stdio MCP server (tools noro_this, noro_facts)
 
@@ -80,6 +84,9 @@ interface Args {
   decisions?: string;
   acceptWarnings: boolean;
   global: boolean;
+  workspace: boolean;
+  update: boolean;
+  dir?: string;
   live: boolean;
   help: boolean;
   version: boolean;
@@ -89,7 +96,7 @@ interface Args {
 const ALLOWED: Record<Command, Set<string>> = {
   this: new Set(['yes', 'json', 'format', 'model', 'decisions', 'acceptWarnings']),
   facts: new Set(['json']),
-  init: new Set(['global']),
+  init: new Set(['global', 'workspace', 'update']),
   doctor: new Set(['live', 'yes', 'json']),
   mcp: new Set([]),
 };
@@ -102,11 +109,13 @@ const FLAG_NAMES: Record<string, string> = {
   decisions: '--decisions',
   acceptWarnings: '--accept-warnings',
   global: '--global',
+  workspace: '--workspace',
+  update: '--update',
   live: '--live',
 };
 
 function parseArgs(argv: string[]): Args | string {
-  const a: Args = { yes: false, json: false, acceptWarnings: false, global: false, live: false, help: false, version: false };
+  const a: Args = { yes: false, json: false, acceptWarnings: false, global: false, workspace: false, update: false, live: false, help: false, version: false };
   const used = new Set<string>();
   const rest: string[] = [];
   const value = (i: number, name: string): string | undefined => {
@@ -122,6 +131,8 @@ function parseArgs(argv: string[]): Args | string {
     else if (x === '--version' || x === '-v') a.version = true;
     else if (x === '--accept-warnings') (a.acceptWarnings = true), used.add('acceptWarnings');
     else if (x === '--global') (a.global = true), used.add('global');
+    else if (x === '--workspace') (a.workspace = true), used.add('workspace');
+    else if (x === '--update') (a.update = true), used.add('update');
     else if (x === '--live') (a.live = true), used.add('live');
     else if (eq) {
       const name = eq[1] as 'format' | 'model' | 'decisions';
@@ -151,7 +162,12 @@ function parseArgs(argv: string[]): Args | string {
     if (!rest[1]) return 'Missing <file>.';
     if (rest.length > 2) return `Unexpected argument "${rest[2]}".`;
     a.file = rest[1];
-  } else if (rest.length > 1) return `Unexpected argument "${rest[1]}".`;
+  } else if (a.command === 'init' && a.workspace) {
+    if (a.global) return '--global doesn\'t apply with --workspace (the workspace setup saves keys in ~/.config/noro/.env).';
+    if (rest.length > 2) return `Unexpected argument "${rest[2]}".`;
+    a.dir = rest[1];
+  } else if (a.command === 'init' && a.update) return '--update goes with --workspace: noro init --workspace [dir] --update.';
+  else if (rest.length > 1) return `Unexpected argument "${rest[1]}".`;
   return a;
 }
 
@@ -371,6 +387,11 @@ async function main(argv: string[]): Promise<number> {
   }
   const baseEnv = { ...process.env };
   const home = homeDir();
+  if (parsed.command === 'init' && parsed.workspace) {
+    const { terminalPrompter } = await import('./init/index.js');
+    const { runWorkspace } = await import('./init/workspace.js');
+    return (await runWorkspace({ home, baseEnv, dir: parsed.dir, update: parsed.update, interactive: process.stdin.isTTY === true, prompter: terminalPrompter() })).exitCode;
+  }
   if (parsed.command === 'init') {
     const { runInit, terminalPrompter } = await import('./init/index.js');
     return (await runInit({ home, baseEnv, global: parsed.global, prompter: terminalPrompter() })).exitCode;
