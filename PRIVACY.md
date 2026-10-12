@@ -36,4 +36,4 @@ When an AI agent runs noro (plugin, skill or `noro mcp`), the agent receives the
 
 ## Reporting
 
-Don't post exports, reports, client names or keys in public issues. Security problems: see [SECURITY.md](SECURITY.md). Privacy questions: [CONTACT EMAIL].
+Don't post exports, reports, client names or keys in public issues. Security problems: see [SECURITY.md](SECURITY.md). Privacy questions: [CONTACT EMAIL] (a placeholder: there is no privacy address yet). Until then, open a private security advisory on GitHub: [Security tab](https://github.com/noro-to/noro/security) → **Report a vulnerability**. It is visible only to you and the maintainers.

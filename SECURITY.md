@@ -7,7 +7,7 @@ Please report security problems privately, not in a public issue, pull request o
 1. Go to the [Security tab](https://github.com/noro-to/noro/security) of this repository.
 2. Click **Report a vulnerability** and fill in the form. This opens a private advisory that only you and the maintainers can see.
 
-If you can't use GitHub, email [SECURITY CONTACT EMAIL].
+If you can't use GitHub, email [SECURITY CONTACT EMAIL] (a placeholder: there is no security address yet, so for now the private advisory above is the only channel).
 
 Include what you can:
 

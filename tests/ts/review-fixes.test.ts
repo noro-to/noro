@@ -110,3 +110,13 @@ describe('D4: placeholder keys count as unset', () => {
     expect(lines.filter((l) => /^\s*[A-Z_]*(?:_API_KEY|_TOKEN)\s*=/.test(l))).toEqual([]);
   });
 });
+
+describe('D6: contact placeholders in shipped files say they are placeholders', () => {
+  it('PRIVACY.md and SECURITY.md mark [... EMAIL] as a placeholder and point to a private GitHub advisory', () => {
+    for (const f of ['PRIVACY.md', 'SECURITY.md']) {
+      const text = readFileSync(join(ROOT, f), 'utf8');
+      for (const m of text.matchAll(/\[[A-Z ]*EMAIL\]/g)) expect(text.slice(m.index! + m[0].length, m.index! + m[0].length + 16), f).toBe(' (a placeholder:');
+    }
+    expect(readFileSync(join(ROOT, 'PRIVACY.md'), 'utf8')).toMatch(/Until then, open a private security advisory on GitHub/);
+  });
+});
