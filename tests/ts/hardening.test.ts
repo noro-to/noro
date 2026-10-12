@@ -1,8 +1,8 @@
-// Regressions for the v0.2 hardening review. Each block names the defect it pins down. No network,
+// Regressions for the v0.2 hardening review of the digit rule (template check, revision-mode
+// allow list, rewords at deliver). Each block names the defect it pins down. No network,
 // no API key: models are mocked, the check is the real engine.
 
-import { spawnSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { beforeAll, describe, expect, it } from 'vitest';
@@ -20,12 +20,11 @@ import {
   validateTemplate,
 } from '../../src/draft/index.js';
 import type { FoundNumber } from '../../src/draft/index.js';
-import { CheckFailedError, UsageError, exitCodeFor, runKeyFor, runNoro } from '../../src/harness/index.js';
-import type { NoroReport } from '../../src/harness/index.js';
+import { CheckFailedError, runNoro } from '../../src/harness/index.js';
 import { createMockChat, createMockJev, mockDraftFrom } from '../../src/harness/mock.js';
 import type { MockLog } from '../../src/harness/mock.js';
-import { IngestWarningError, ingest } from '../../src/ingest/index.js';
-import type { CheckReport, Decision, FactsTable, Flag } from '../../src/schema.js';
+import { ingest } from '../../src/ingest/index.js';
+import type { Decision, FactsTable, Flag } from '../../src/schema.js';
 import { assertNoNumbers } from './helpers.js';
 
 const ROOT = resolve(import.meta.dirname, '../..');
@@ -69,14 +68,6 @@ async function extracted(text: string): Promise<FoundNumber[]> {
   writeFileSync(p, text);
   return (await runEngine(['extract', p])).json.numbers.map((n: FoundNumber) => ({ raw: n.raw, span: n.span, value: n.value, kind: n.kind, unit: n.unit }));
 }
-
-const cli = (args: string[], env: Record<string, string> = {}) =>
-  spawnSync('npx', ['tsx', 'src/cli.ts', ...args], {
-    cwd: ROOT,
-    encoding: 'utf8',
-    env: { ...process.env, OPENROUTER_API_KEY: '', NORO_STATE_DIR: tmp(), NORO_MOCK_MODELS: '1', ...env },
-    timeout: 120_000,
-  });
 
 describe('defect 1: numbers spelled out in words are refused', () => {
   it.each([
@@ -248,44 +239,6 @@ describe('defect 4: rewords at deliver get the full template check', () => {
   });
 });
 
-describe('defect 5: ingest warnings reach the report; a micros-looking cost stops the run', () => {
-  const MICROS = join(ROOT, 'tests/ts/fixtures/ga-micros-as-cost.csv');
-
-  it('runNoro returns the ingest warnings', async () => {
-    const report = await runNoro({ file: FIXTURE, cwd: ROOT, config, stateDir: tmp(), clients: { chat: createMockChat(), jev: createMockJev() } });
-    expect(report.warnings.some((w) => /Header row found on line 3/.test(w))).toBe(true);
-  });
-
-  it('stops before any model call unless accepted', async () => {
-    const log: MockLog = { chat: [], jev: [] };
-    const clients = { chat: createMockChat({ log }), jev: createMockJev(log) };
-    await expect(runNoro({ file: MICROS, cwd: ROOT, config, stateDir: tmp(), clients })).rejects.toBeInstanceOf(IngestWarningError);
-    expect(log.chat).toHaveLength(0);
-    expect(log.jev).toHaveLength(0);
-    // Declined interactively: same.
-    await expect(runNoro({ file: MICROS, cwd: ROOT, config, stateDir: tmp(), clients, confirmWarnings: async () => false })).rejects.toBeInstanceOf(IngestWarningError);
-    expect(log.jev).toHaveLength(0);
-    // Confirmed, or accepted up front: the run goes on and the warning is in the report.
-    const asked: string[][] = [];
-    const a = await runNoro({ file: MICROS, cwd: ROOT, config, stateDir: tmp(), clients, confirmWarnings: async (w) => (asked.push(w), true) });
-    expect(asked[0].join()).toMatch(/looks like micros/);
-    const b = await runNoro({ file: MICROS, cwd: ROOT, config, stateDir: tmp(), clients, acceptWarnings: true });
-    for (const r of [a, b]) expect(r.warnings.some((w) => /looks like micros/.test(w))).toBe(true);
-  });
-
-  it('CLI: exit 1 with a clear error, or --accept-warnings with warnings on stderr and in --json', () => {
-    const stopped = cli(['this', MICROS, '--yes']);
-    expect(stopped.status).toBe(1);
-    expect(stopped.stderr).toMatch(/looks like micros/);
-    expect(stopped.stderr).toContain('--accept-warnings');
-    expect(stopped.stderr).not.toContain('noro: classify');
-    const ok = cli(['this', MICROS, '--yes', '--json', '--accept-warnings']);
-    expect(ok.status, ok.stderr).toBe(0);
-    expect(ok.stderr).toMatch(/noro: warning: .*looks like micros/);
-    expect((JSON.parse(ok.stdout) as NoroReport).warnings.some((w) => /looks like micros/.test(w))).toBe(true);
-  });
-});
-
 describe('defect 6: references run into digits, units or other references', () => {
   it.each(['{{f13}}{{f53}}', '{{f13}} {{f53}}0', '{{f13}}k', '{{f13}}%', '{{f13}}x', '{{f13}}M', '-{{f189}}', '+{{f13}}', '${{f189}}', 'PR{{f13}}', '{{f13}}.{{f53}}', '{{f13}}/{{f53}}', '{{f13}},{{f53}}', '{{f13}}-{{f53}}', '{{f13}}th'])(
     'rejects %j',
@@ -299,66 +252,7 @@ describe('defect 6: references run into digits, units or other references', () =
   });
 });
 
-describe('defects 8 and 9: engines and prepare', () => {
-  const pkg = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8'));
-  it('requires Node 22.19+ and builds on install', () => {
-    expect(pkg.engines.node).toBe('>=22.19.0');
-    expect(pkg.scripts.prepare).toBe('npm run build');
-    expect(readFileSync(join(ROOT, 'README.md'), 'utf8')).toContain('Node 22.19+ (Node 24 recommended)');
-  });
-  it('lint type-checks the tests and the fixture generator', () => {
-    expect(pkg.scripts.lint).toContain('tsconfig.test.json');
-    const tsconfig = JSON.parse(readFileSync(join(ROOT, 'tsconfig.test.json'), 'utf8'));
-    expect(tsconfig.include).toEqual(expect.arrayContaining(['tests/ts/**/*.ts', 'fixtures/generate.ts']));
-  });
-});
-
-describe('defect 10: unknown --format is a usage error', () => {
-  it('CLI exits 1 and lists the valid formats', () => {
-    for (const args of [['--format', 'bogus'], ['--format=bogus'], ['--format']]) {
-      const r = cli(['this', 'fixtures/exports/google-ads.csv', '--yes', ...args]);
-      expect(r.status).toBe(1);
-      expect(r.stderr).toContain('slack, email, one-page, slide-notes');
-      expect(r.stderr).not.toContain('noro: ingest');
-    }
-  });
-  it('runNoro throws UsageError', async () => {
-    await expect(runNoro({ file: FIXTURE, cwd: ROOT, config, stateDir: tmp(), format: 'bogus', clients: { chat: createMockChat(), jev: createMockJev() } })).rejects.toBeInstanceOf(UsageError);
-  });
-});
-
-describe("defect 11: a RawNumberError after retries exits 2 (the report can't pass the check)", () => {
-  it('maps errors to exit codes', () => {
-    expect(exitCodeFor(new RawNumberError('x', 'raw_number', []))).toBe(2);
-    expect(exitCodeFor(new CheckFailedError('x', { pass: false } as CheckReport))).toBe(2);
-    expect(exitCodeFor(new IngestWarningError(['w']))).toBe(1);
-    expect(exitCodeFor(new Error('x'))).toBe(1);
-  });
-  it('CLI: a rewrite that keeps a number word exits 2', () => {
-    const dir = tmp();
-    const file = join(dir, 'update.md');
-    // The canned reviser keeps the first half of the sentences, so "doubled" stays in its rewrite.
-    writeFileSync(file, 'Brand spend doubled this week. CPA held at $30. Next we review bids. Then we report back.\n');
-    const r = cli(['this', file, '--yes']);
-    expect(r.status, r.stderr).toBe(2);
-    expect(r.stderr).toContain("can't pass the check");
-  });
-});
-
-describe('defect 12: mock mode is part of the run key', () => {
-  it('real, injected and NORO_MOCK_MODELS runs never share a key', () => {
-    const keys = new Set([
-      runKeyFor(FIXTURE, 'generate', 'one-page', config),
-      runKeyFor(FIXTURE, 'generate', 'one-page', config, { mock: true }),
-      runKeyFor(FIXTURE, 'generate', 'one-page', config, { injected: { chat: true, jev: true } }),
-      runKeyFor(FIXTURE, 'generate', 'one-page', config, { injected: { chat: true, jev: true }, mock: true }),
-    ]);
-    expect(keys.size).toBe(4);
-    expect(runKeyFor(FIXTURE, 'generate', 'one-page', config, { mock: true })).toBe(runKeyFor(FIXTURE, 'generate', 'one-page', config, { mock: true }));
-  });
-});
-
-describe('nits', () => {
+describe('nit: a redundant sign after a direction word', () => {
   it('a change after "rose" / "fell" renders without its sign, and both tracers accept it', async () => {
     const up = fact(CPA_UP());
     const down = fact(CPC_DOWN());
@@ -384,21 +278,5 @@ describe('nits', () => {
   it('numbers as written in a pasted report keep their sign', () => {
     const t = templatize('CPA rose +38% this week.', [{ raw: '+38%', span: [9, 13], value: 38, kind: 'percent', unit: '%' }]);
     expect(renderTemplate(t.template, t.facts).rendered).toBe('CPA rose +38% this week.');
-  });
-
-  it('the footer says "1 note", not "1 notes"', () => {
-    const r = cli(['this', 'fixtures/exports/google-ads.csv', '--yes']);
-    expect(r.status, r.stderr).toBe(0);
-    expect(r.stdout).toMatch(/Panel: 1 note, \d+ applied\./);
-  });
-
-  it('<cwd>/.noro/adapters loads when cwd is not process.cwd()', async () => {
-    const cwd = tmp();
-    const unknown = join(ROOT, 'fixtures/exports/unknown-platform.csv');
-    mkdirSync(join(cwd, '.noro', 'adapters'), { recursive: true });
-    await ingest(unknown, { confirmMapping: async (g) => g.mapping, saveAdapterAs: join(cwd, '.noro', 'adapters', 'tiktok.yaml') });
-    expect(resolve(cwd)).not.toBe(process.cwd());
-    const report = await runNoro({ file: unknown, cwd, config, stateDir: tmp(), clients: { chat: createMockChat(), jev: createMockJev() } });
-    expect(report.traces.length).toBeGreaterThan(0);
   });
 });

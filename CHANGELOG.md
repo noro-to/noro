@@ -2,6 +2,21 @@
 
 All notable changes to noro are listed here. Versions follow [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Fixed
+
+- The digit rule now refuses numbers written in words ("forty-one dollars", "double", "twice the", "two-fold", "by a third", "cut in half", "one in five", "a dozen", "only three", "two thirds", "first", "second"), any Unicode numeral (superscripts, vulgar fractions, roman numerals, circled digits), invisible characters that split a word, and references run into digits, units, signs or other references (`{{f1}}{{f2}}`, `{{f1}}k`, `-{{f1}}`). Ordinary phrases ("no one", "one of the", "third-party", "double-check", "this quarter") still pass.
+- Revision mode allows only strict identifiers (letter-led codes such as Q4, H2, FY26, PR-07; years; dates; period labels). Every other digit run in a pasted report becomes a fact, so no model sees it.
+- Rewords at deliver go through the same check as model output.
+- Ingest warnings reach the report (`warnings` in `--json`, stderr otherwise). A plain cost column that looks like micros stops the run before any model call unless you pass `--accept-warnings` or confirm.
+- An unknown `--format` is a usage error (exit 1). A report whose writer keeps breaking the digit rule exits 2. Mock runs never resume under real models. `<cwd>/.noro/adapters` loads when `cwd` is not the process directory. The footer says "1 note".
+- A change cited right after "rose" or "fell" renders without its redundant sign ("rose 38%").
+
+### Changed
+
+- Node 22.19 or newer is required (Node 24 recommended). `npm ci` builds through a `prepare` script. `npm run lint` also type-checks the tests and `fixtures/generate.ts`.
+
 ## [0.2.0] - 2026-10-12: framework restructure
 
 noro is now an open-source, self-hosted TypeScript framework that runs on your own OpenRouter key. It generates paid-media reports from raw ad-platform exports, and it still audits and rewrites existing reports. The last Claude skill build is the snapshot commit [`8ac1033`](https://github.com/noro-to/noro/commit/8ac1033ac0deabf6daa04fc663ddc52c8cf8995c) ("Snapshot: Claude skill v0.1.0 before framework restructure").
