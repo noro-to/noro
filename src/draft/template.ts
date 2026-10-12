@@ -48,6 +48,13 @@
 //      campaign", "only one", "one in five"), and "first" / "second" as
 //      ordering words ("first week", "First, …") are refused too: they
 //      assert a rank or a position. "Why:" / "Next:" labels are fine.
+//      Revision mode only: a number-word phrase that appears verbatim in the
+//      pasted original ("the two", "six months", "nine campaigns") may be
+//      repeated, because the original said it and no code computed it. The
+//      caller passes those phrases in `opts.allow` (templatize does). A phrase
+//      must match whole ("two" doesn't allow "two times" or "twenty-two"), and
+//      a bare scale word ("million") is never allowed. Generate mode passes no
+//      such list, so every number word stays refused.
 // Everything the model wrote is held to this, including reviser output and a
 // user's rewords at deliver.
 //
@@ -113,23 +120,72 @@ const HARMLESS: RegExp[] = [
   /\bdouble[\s-]+(?:check(?:s|ed|ing)?|click(?:s|ed|ing)?|count(?:s|ed|ing)?|down)\b/giu,
 ];
 
-/** Number words in text (already masked), or undefined. */
-export function findNumberWords(text: string): string | undefined {
+const NUMBER_WORD_PATTERNS: RegExp[] = [
+  new RegExp(`\\b(?:${CARDINAL})(?:fold)?\\b(?:[\\s-]+(?:${CARDINAL}|${ORDINAL}|percent|per cent|percentage points?|times|x|fold)\\b)*`, 'iu'),
+  new RegExp(`\\b(?:${ORDINAL})\\b`, 'iu'),
+  new RegExp(`\\b(?:${MULTIPLIER})\\b`, 'iu'),
+  /-fold\b|\b(?:many|several|multi)fold\b/iu,
+  /\ba\s+quarter\s+of\b|\bby\s+a\s+quarter\b|\bquarter(?:ed|ing)\b/iu,
+];
+
+/** The earliest number-word match in already-prepared text (wordForm, harmless phrases blanked). */
+function firstNumberWord(t: string): { at: number; end: number; text: string } | undefined {
+  let best: { at: number; end: number; text: string } | undefined;
+  for (const re of NUMBER_WORD_PATTERNS) {
+    const m = re.exec(t);
+    if (m && (!best || m.index < best.at)) best = { at: m.index, end: m.index + m[0].length, text: m[0].trim() };
+  }
+  return best;
+}
+
+function prepareWords(text: string): string {
   let t = wordForm(text);
   for (const re of HARMLESS) t = t.replace(re, (m) => ' '.repeat(m.length));
-  const patterns: RegExp[] = [
-    new RegExp(`\\b(?:${CARDINAL})(?:fold)?\\b(?:[\\s-]+(?:${CARDINAL}|${ORDINAL}|percent|per cent|percentage points?|times|x|fold)\\b)*`, 'iu'),
-    new RegExp(`\\b(?:${ORDINAL})\\b`, 'iu'),
-    new RegExp(`\\b(?:${MULTIPLIER})\\b`, 'iu'),
-    /-fold\b|\b(?:many|several|multi)fold\b/iu,
-    /\ba\s+quarter\s+of\b|\bby\s+a\s+quarter\b|\bquarter(?:ed|ing)\b/iu,
-  ];
-  let best: { at: number; text: string } | undefined;
-  for (const re of patterns) {
-    const m = re.exec(t);
-    if (m && (!best || m.index < best.at)) best = { at: m.index, text: m[0].trim() };
+  return t;
+}
+
+/** Number words in text (already masked), or undefined. */
+export function findNumberWords(text: string): string | undefined {
+  return firstNumberWord(prepareWords(text))?.text;
+}
+
+/** Every number-word phrase in text, in order, as written ("two", "six", "forty-one", "doubled"). */
+export function numberWordsIn(text: string): string[] {
+  let t = prepareWords(text);
+  const out: string[] = [];
+  for (let m = firstNumberWord(t); m; m = firstNumberWord(t)) {
+    out.push(m.text);
+    t = t.slice(0, m.at) + ' '.repeat(m.end - m.at) + t.slice(m.end);
   }
-  return best?.text;
+  return out;
+}
+
+/** How number-word phrases are compared: lowercase, hyphens and whitespace as one space. */
+const wordKey = (phrase: string) => phrase.toLowerCase().replace(/[\s-]+/gu, ' ').trim();
+
+/** A bare scale word ("million", "thousands") usually belongs to a number next to it, so it is never allowed on its own. */
+const BARE_SCALE = /^(?:hundreds?|thousands?|millions?|billions?|trillions?)$/u;
+
+/**
+ * Revision mode: the number-word phrases of the pasted original that a rewrite may repeat. Each
+ * `allow` entry with no numeral that is exactly one number-word phrase counts, except a bare scale
+ * word. Generate mode passes no `allow`, so every number word stays refused there.
+ */
+export function allowedNumberWords(allow: string[] = []): Set<string> {
+  const out = new Set<string>();
+  for (const x of allow) {
+    if (!x || NUMERAL.test(x)) continue;
+    const found = numberWordsIn(x);
+    if (found.length !== 1 || wordKey(found[0]) !== wordKey(x)) continue;
+    const key = wordKey(x);
+    if (!BARE_SCALE.test(key)) out.add(key);
+  }
+  return out;
+}
+
+/** The first number-word phrase in text that isn't in `allowed` (compared whole: "two" doesn't allow "two times"). */
+function firstUnallowedNumberWord(text: string, allowed: Set<string>): string | undefined {
+  return numberWordsIn(text).find((w) => !allowed.has(wordKey(w)));
 }
 
 const MONTH = '(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|June?|July?|Aug(?:ust)?|Sept?(?:ember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)';
@@ -313,7 +369,8 @@ export function validateTemplate(template: string, facts: FactsTable | undefined
   }
   // Campaign and ad group names are names even when they hold a number word ("Half Price Sale").
   const names = [...new Set((facts?.facts ?? []).flatMap((f) => [f.scope.campaign, f.scope.adGroup]).filter((n): n is string => !!n && LETTER.test(n)))];
-  const words = findNumberWords(maskIdentifiers(masked, names.sort((a, b) => b.length - a.length)));
+  // Revision mode: number words the pasted original already used verbatim aren't computed numbers.
+  const words = firstUnallowedNumberWord(maskIdentifiers(masked, names.sort((a, b) => b.length - a.length)), allowedNumberWords(opts.allow));
   if (words) {
     throw new RawNumberError(
       `Number written in words in the template: "${words}". Write no numbers in words (no "one", "first", "half", "double", "twice", "a dozen", "one in five"); cite the fact that holds the number, like {{f12}}.`,

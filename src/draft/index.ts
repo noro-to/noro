@@ -8,7 +8,7 @@
 import type { Classification, ChatClient, Draft, Fact, FactKind, FactsTable, PanelNote } from '../schema.js';
 import { parseJsonObject, stripFence } from './chat.js';
 import { DEFAULT_FORMAT, FORMATS, buildDraftPrompt, buildRetryNote, buildRevisePrompt, noteKey } from './prompts.js';
-import { DATE_LABEL, NUMERAL, RawNumberError, isIdentifierShape, renderTemplate, scrubNumbers } from './template.js';
+import { DATE_LABEL, NUMERAL, RawNumberError, isIdentifierShape, numberWordsIn, renderTemplate, scrubNumbers } from './template.js';
 import type { TemplateOptions } from './template.js';
 
 export { createChatClient, parseJsonObject, stripFence } from './chat.js';
@@ -18,9 +18,11 @@ export {
   NUMERAL,
   RawNumberError,
   allowedIdentifiers,
+  allowedNumberWords,
   findNumberWords,
   isIdentifierShape,
   maskIdentifiers,
+  numberWordsIn,
   renderFragment,
   renderTemplate,
   scrubNumbers,
@@ -154,7 +156,11 @@ export async function reviseDetailed(input: {
 export interface Templatized {
   template: string;
   facts: FactsTable;
-  /** Digit-bearing tokens left in the template: strict identifiers and dates only. */
+  /**
+   * What the rewrite may repeat from the original: digit-bearing tokens left in the template
+   * (strict identifiers and dates only), plus the number-word phrases the original used verbatim
+   * ("two", "six", "nine"), which no code computed.
+   */
   allow: string[];
 }
 
@@ -256,7 +262,7 @@ export function coverNumbers(text: string, numbers: FoundNumber[]): { numbers: F
  * Replace each found number with {{fN}} and build a facts table whose displays are the raws as
  * written. Labels carry the templated sentence around the number, so they hold no numbers.
  * Digits the extractor ignored are covered too (coverNumbers): only strict identifiers and dates
- * are left in the template, and they are the `allow` list.
+ * are left in the template, and they are the `allow` list, with the original's number words.
  */
 export function templatize(text: string, found: FoundNumber[]): Templatized {
   const { numbers: sorted, allow } = coverNumbers(text, found);
@@ -272,6 +278,8 @@ export function templatize(text: string, found: FoundNumber[]): Templatized {
     at = n.span[1];
   });
   template += text.slice(at);
+  // Number words read off the template, so a word that belonged to a templated number isn't kept.
+  for (const w of numberWordsIn(template)) if (!allow.includes(w)) allow.push(w);
 
   const facts: Fact[] = sorted.map((n, i) => {
     const { start, end } = refAt[i];

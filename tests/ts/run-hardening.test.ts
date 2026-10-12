@@ -91,8 +91,9 @@ describe("defect 11: a RawNumberError after retries exits 2 (the report can't pa
   it('CLI: a rewrite that keeps a number word exits 2', () => {
     const dir = tmp();
     const file = join(dir, 'update.md');
-    // The canned reviser keeps the first half of the sentences, so "doubled" stays in its rewrite.
-    writeFileSync(file, 'Brand spend doubled this week. CPA held at $30. Next we review bids. Then we report back.\n');
+    // The canned reviser keeps the first half of the sentences, so "a million" stays in its rewrite.
+    // (A number word from the original is allowed in a rewrite; a bare scale word never is.)
+    writeFileSync(file, 'Reach hit a million people this week. CPA held at $30. Next we review bids. Then we report back.\n');
     const r = cli(['this', file, '--yes']);
     expect(r.status, r.stderr).toBe(2);
     expect(r.stderr).toContain("can't pass the check");
