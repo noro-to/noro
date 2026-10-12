@@ -12,13 +12,13 @@ export function createChatClient(cfg: Config): ChatClient {
     async complete(req) {
       if (!cfg.apiKey) throw new MissingApiKeyError();
       const base = cfg.baseUrl.replace(/\/+$/, '');
+      // No temperature: Claude Opus 5.5 rejects sampling parameters.
       const body: Record<string, unknown> = {
         model: req.model,
         messages: [
           { role: 'system', content: req.system },
           { role: 'user', content: req.user },
         ],
-        temperature: 0.2,
       };
       if (req.json) body.response_format = { type: 'json_object' };
       const res = await _postJson(`${base}/v1/chat/completions`, cfg.apiKey, body, `chat (${req.model})`);
