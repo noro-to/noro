@@ -2,6 +2,8 @@
 
 The most useful things you can send are a platform adapter, a rule for slop that got past noro, or a reviewer persona.
 
+Setup, tests and the architecture are in [DEVELOP.md](DEVELOP.md). Each top-level folder has a short `README.md` saying what it holds.
+
 All examples must be synthetic or anonymized. Change client and brand names and every number. No real employer or client data.
 
 ## Add a platform adapter

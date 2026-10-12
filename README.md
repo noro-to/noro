@@ -1,13 +1,33 @@
 # noro
 
-**Paid-media reports where every number is traced.**
+Paid-media reports where every number is traced: noro turns a raw ad-platform export into a short report, with your choice of model writing the words.
 
-noro is an open-source framework that turns a raw ad-platform export into a short report a client or exec can act on. It also audits and rewrites reports someone already wrote. It runs on your machine with the model you choose: an API key, a cloud account, a local model, or your own Claude or ChatGPT plan.
+> **Quick start**
+>
+> ```bash
+> npm i -g @noro-to/noro
+> noro init
+> noro this export.csv
+> ```
+>
+> Needs Node 22.19+ and Python 3.9+. `noro init` picks a model and writes `.env`. Other ways to install: [docs/install/](docs/install/README.md).
+
+noro is an open-source framework for reports a client or exec can act on. It also audits and rewrites reports someone already wrote. It runs on your machine with the model you choose: an API key, a cloud account, a local model, or your own Claude or ChatGPT plan.
 
 | Before | After |
 | --- | --- |
 | ![Day-of-week report before noro: an intro, a two-period dumbbell chart with a side column, a long paragraph and two empty placeholder sections](examples/day-of-week/before.png) | ![The same report after noro: a one-line headline, one bar chart with Sunday highlighted, a why line and a next step](examples/day-of-week/after.png) |
 | About 95 words plus a two-period chart | About 45 words and one chart |
+
+## Works with
+
+- **AI tools**: Claude Code, Codex, Cursor, VS Code, Windsurf, Zed, Hermes Agent and Gemini CLI, through the plugin, the skill or the `noro mcp` server
+- **Writing models**: OpenRouter, Anthropic, OpenAI, Google Gemini, Amazon Bedrock, Google Vertex AI, Azure OpenAI, Mistral, DeepSeek, Groq and any OpenAI-compatible server
+- **Local models**: Ollama and LM Studio
+- **Your own plan**: Claude Code (`claude-cli`) and the Codex CLI (`codex-cli`), for personal use
+- **Classify**: jev on OpenRouter or TypeSafe, a local decision model, or built-in rules
+- **Exports**: Google Ads, Meta and Amazon DSP, and any other CSV or XLSX through a column-guessing step you confirm
+- **Runs on**: macOS, Linux and Windows, Docker (`ghcr.io/noro-to/noro`), GitHub Codespaces and GitHub Actions
 
 ## The rule: the model never does arithmetic
 
@@ -140,25 +160,23 @@ Coming soon:
 
 Weekly and monthly reports already work from an export file: see [scheduled.md](docs/install/scheduled.md) and the GitHub Actions template in [examples/noro-weekly.yml](examples/noro-weekly.yml).
 
-## Repository
+## Repository map
 
-- `src/`: the TypeScript pipeline (`ingest`, `adapters`, `compute`, `classify`, `draft`, `check`, `panel`, `deliver`, `harness`, `cli.ts`)
-- `engine/`: the Python rules engine (`noro.py`, `rules.json`), called by the check step. Contract in [docs/engine.md](docs/engine.md)
-- `rules/`: one YAML file per rule. `prompts/panel/` and `prompts/guides/`: the panel and the writing guides
-- `skills/noro/` and `.claude-plugin/`: the agent skill and the Claude Code and Codex plugin
-- `fixtures/`, `bench/corpus/`, `examples/`: synthetic data only
-- `tests/`: Python (`tests/engine`, `tests/rules`) and vitest (`tests/ts`)
+| Folder | What's in it | Who edits it |
+| --- | --- | --- |
+| [`src/`](src/README.md) | The TypeScript pipeline and the `noro` command | Contributors, maintainers |
+| [`engine/`](engine/README.md) | The Python rules engine (`noro.py`) and the built `rules.json` | Maintainers |
+| [`rules/`](rules/README.md) | One YAML file per rule | Contributors |
+| [`prompts/`](prompts/README.md) | Reviewer personas (`panel/`) and the writing guides (`guides/`) | Contributors, maintainers |
+| [`skills/`](skills/README.md), `.claude-plugin/` | The agent skill and the Claude Code and Codex plugin | Maintainers |
+| [`docs/`](docs/README.md) | Install guides, the schema and the engine contract | Maintainers |
+| [`examples/`](examples/README.md) | The weekly GitHub Actions template and the README images | Maintainers; users copy from it |
+| [`fixtures/`](fixtures/README.md) | Synthetic exports and their generator | Contributors |
+| [`bench/`](bench/README.md) | Synthetic reports with gold rewrites | Contributors |
+| [`tests/`](tests/README.md) | vitest (`tests/ts`) and the Python suites (`tests/engine`, `tests/rules`) | Contributors, maintainers |
+| [`scripts/`](scripts/README.md) | `build_rules.py` and other maintainer scripts | Maintainers |
 
-From a checkout:
-
-```bash
-git clone https://github.com/noro-to/noro && cd noro
-npm ci                                           # also builds dist/
-npm link                                         # puts noro on your PATH
-npm test                                         # TypeScript, models mocked, no key needed
-python -m unittest discover -s tests/engine -v   # engine
-python -m unittest discover -s tests/rules -v    # rules
-```
+To build, test or release from a checkout, see [DEVELOP.md](DEVELOP.md).
 
 ## Contributing
 
