@@ -51,6 +51,26 @@ export interface IngestOptions {
   saveAdapterAs?: string;
 }
 
+/** Longest header name an error message shows, and how many it lists. */
+const HEADER_SHOWN = 40;
+const HEADERS_LISTED = 10;
+
+/**
+ * A header name as an error may show it: one line, at most 40 characters. Errors go to the
+ * terminal and, through MCP, to an agent's model, and a file noro can't read may have a data
+ * row where the header should be, so errors show header names only, shortened.
+ */
+export function shortHeader(h: string): string {
+  const one = String(h).replace(/\s+/g, ' ').trim();
+  return one.length > HEADER_SHOWN ? `${one.slice(0, HEADER_SHOWN - 1)}…` : one;
+}
+
+/** Up to 10 shortened header names, then how many more. */
+export function headerList(hs: string[]): string {
+  const shown = hs.slice(0, HEADERS_LISTED).map(shortHeader);
+  return shown.join(', ') + (hs.length > HEADERS_LISTED ? `, and ${hs.length - HEADERS_LISTED} more` : '');
+}
+
 /** No adapter recognised the export. `guess` holds the proposed mapping. */
 export class UnknownExportError extends Error {
   constructor(
@@ -60,12 +80,13 @@ export class UnknownExportError extends Error {
   ) {
     const lines = Object.entries(guess.mapping)
       .filter(([k]) => k !== 'extra')
-      .map(([field, header]) => `  ${field} ← "${header}" (confidence ${guess.confidence[field as SchemaField] ?? '?'})`);
+      .slice(0, HEADERS_LISTED)
+      .map(([field, header]) => `  ${field} ← "${shortHeader(String(header))}" (confidence ${guess.confidence[field as SchemaField] ?? '?'})`);
     const missing = missingFields(guess.mapping);
     super(
       `Unknown export ${file}: ${reason}.\nGuessed mapping:\n${lines.join('\n') || '  (nothing)'}` +
         (missing.length ? `\nNot found: ${missing.join(', ')}` : '') +
-        (guess.unmapped.length ? `\nUnmapped headers: ${guess.unmapped.join(', ')}` : '') +
+        (guess.unmapped.length ? `\nUnmapped headers: ${headerList(guess.unmapped)}` : '') +
         '\nConfirm the mapping interactively, or add an adapter (see CONTRIBUTING.md, "Add a platform adapter").',
     );
     this.name = 'UnknownExportError';
@@ -185,13 +206,21 @@ export function readCsv(file: string): string[][] {
   else text = buf.toString('utf8');
   text = text.replace(/^﻿/, '');
 
-  const records = parseCsv(text, {
-    delimiter: sniffDelimiter(text),
-    relax_column_count: true,
-    relax_quotes: true,
-    skip_empty_lines: true,
-    trim: true,
-  });
+  let records: string[][];
+  try {
+    records = parseCsv(text, {
+      delimiter: sniffDelimiter(text),
+      relax_column_count: true,
+      relax_quotes: true,
+      skip_empty_lines: true,
+      trim: true,
+    });
+  } catch (err) {
+    // csv-parse messages can quote the file ("value is ..."): say where, never what.
+    const e = err as Error & { code?: string; lines?: number };
+    const line = e.lines ?? Number(e.message.match(/\bline (\d+)/)?.[1]);
+    throw new Error(`${file}: can't read it as CSV (${e.code ?? 'parse error'}${line ? ` at line ${line}` : ''}).`);
+  }
   return records.map((r) => r.map((c) => String(c ?? '').trim()));
 }
 
@@ -275,7 +304,7 @@ function checkConfirmed(mapping: ColumnMapping, headers: string[]): void {
   if (missing.length) throw new MappingError(`The confirmed mapping is missing required fields: ${missing.join(', ')}.`);
   const named = [...Object.entries(mapping).filter(([k]) => k !== 'extra'), ...Object.entries(mapping.extra ?? {})] as [string, string][];
   for (const [field, header] of named) {
-    if (!headers.includes(header)) throw new MappingError(`The confirmed mapping sends ${field} to "${header}", which is not a header in this file.`);
+    if (!headers.includes(header)) throw new MappingError(`The confirmed mapping sends ${field} to "${shortHeader(header)}", which is not a header in this file.`);
   }
 }
 
@@ -385,7 +414,7 @@ function mapRows(
   }
   for (const [h, n] of zeroed) warnings.push(`Read ${n} blank or placeholder value${n === 1 ? '' : 's'} in "${h}" as 0.`);
   for (const [h, x] of invalid) {
-    warnings.push(`${x.count} value${x.count === 1 ? '' : 's'} in "${h}" ${x.count === 1 ? 'is' : 'are'} not a number and ${x.count === 1 ? 'was' : 'were'} read as 0 (first: "${x.example}" on line ${x.line}).`);
+    warnings.push(`${x.count} value${x.count === 1 ? '' : 's'} in "${h}" ${x.count === 1 ? 'is' : 'are'} not a number and ${x.count === 1 ? 'was' : 'were'} read as 0 (first: "${shortHeader(x.example)}" on line ${x.line}).`);
   }
   if (unparsedDates) warnings.push(`${unparsedDates} value${unparsedDates === 1 ? '' : 's'} in "${mapping.date}" ${unparsedDates === 1 ? 'is' : 'are'} not a date; kept as the row's period label.`);
   if (!mapping.conversionValue) warnings.push('No conversion value column in this export; conversionValue is 0 on every row.');

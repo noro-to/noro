@@ -241,3 +241,58 @@ describe('D8c/d/e: preflight says what will run, and fails before any paid call'
     expect(calls).toEqual(['auth']);
   });
 });
+
+describe('D8f: errors about an unreadable export show short header names only, never data', () => {
+  const long = 'Secret Revenue Figure For Acme Corp Q3 Internal Only Do Not Share';
+  const headers = ['Client Name', long, ...'cdefghijklm'.split('')];
+  const file = () => {
+    const f = join(tmp(), 'odd.csv');
+    writeFileSync(f, `${headers.join(',')}\nAcme Corp TOPSECRET,123456,${'x,'.repeat(10)}x\nGlobex SECRET2,654321,${'y,'.repeat(10)}y\n`);
+    return f;
+  };
+  const check = (message: string) => {
+    expect(message).toMatch(/Unknown export/);
+    expect(message).not.toMatch(/TOPSECRET|SECRET2|123456|654321/);
+    expect(message).not.toContain(long);
+    expect(message).toContain(`${long.slice(0, 39)}…`);
+    const unmapped = message.match(/Unmapped headers: (.*)/)![1];
+    expect(unmapped).toMatch(/, and 3 more$/);
+    expect(unmapped.replace(/, and 3 more$/, '').split(', ')).toHaveLength(10);
+    for (const h of unmapped.split(', ')) expect(h.length).toBeLessThanOrEqual(40);
+  };
+
+  it('noro facts (CLI)', () => {
+    const r = spawnSync(process.execPath, [...CLI, 'facts', file()], { cwd: ROOT, env: cleanEnv(), encoding: 'utf8', input: '', timeout: 60_000 });
+    expect(r.status).toBe(1);
+    check(r.stderr);
+  });
+
+  it('noro_facts (MCP)', async () => {
+    const { createNoroMcpServer } = await import('../../src/mcp/index.js');
+    const { InMemoryTransport } = await import('@modelcontextprotocol/server');
+    const server = createNoroMcpServer({ cwd: tmp() });
+    const [client, side] = InMemoryTransport.createLinkedPair();
+    const replies = new Map<number, any>();
+    client.onmessage = (m: any) => m.id !== undefined && replies.set(m.id, m);
+    await server.connect(side);
+    await client.start();
+    const send = async (id: number, method: string, params: unknown) => {
+      await client.send({ jsonrpc: '2.0', id, method, params } as never);
+      for (let i = 0; i < 200 && !replies.has(id); i++) await new Promise((r) => setTimeout(r, 10));
+      return replies.get(id);
+    };
+    await send(1, 'initialize', { protocolVersion: '2025-11-25', capabilities: {}, clientInfo: { name: 't', version: '1' } });
+    const r = await send(2, 'tools/call', { name: 'noro_facts', arguments: { path: file() } });
+    await server.close();
+    expect(r.result.isError).toBe(true);
+    check(r.result.content[0].text);
+  });
+
+  it('a CSV parse error says where, not what', async () => {
+    const { factsFor } = await import('../../src/facts.js');
+    const f = join(tmp(), 'bad.csv');
+    writeFileSync(f, 'Campaign,Cost,Clicks\nAcme,10,5\n"unterminated TOPSECRET,1,2\n');
+    await expect(factsFor(f)).rejects.toThrow(/can't read it as CSV \(CSV_QUOTE_NOT_CLOSED at line \d+\)\.$/);
+    await expect(factsFor(f)).rejects.not.toThrow(/TOPSECRET/);
+  });
+});
