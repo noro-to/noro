@@ -1,3 +1,6 @@
+// Provider errors shared by every chat client: rate and plan limits become
+// UsageLimitError so the CLI can say "rerun later" and resume from the checkpoint.
+
 import { ModelError } from '../classify/index.js';
 
 export const USAGE_LIMIT_MESSAGE = 'usage limit reached; rerun later';
