@@ -376,12 +376,27 @@ async function main(argv: string[]): Promise<number> {
   }
 }
 
+// Never process.exit() right after a write: on a pipe, stdout drains
+// asynchronously once the pipe buffer (64 KiB) is full, and exit() would cut
+// the output short. Set the exit code and let the event loop drain. Once
+// stdout and stderr have flushed, an unref'd timer ends a process that some
+// library handle would otherwise keep alive; it never fires while a write is
+// still pending.
+function finish(code: number): void {
+  process.exitCode = code;
+  process.stdout.write('', () => {
+    process.stderr.write('', () => {
+      setTimeout(() => process.exit(code), 1000).unref();
+    });
+  });
+}
+
 main(process.argv.slice(2)).then(
   (code) => {
-    if (code >= 0) process.exit(code);
+    if (code >= 0) finish(code);
   },
   (err) => {
     process.stderr.write(`noro: ${(err as Error)?.stack ?? String(err)}\n`);
-    process.exit(1);
+    finish(1);
   },
 );

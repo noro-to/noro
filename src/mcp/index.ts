@@ -185,7 +185,15 @@ export async function runMcpServer(transport?: Transport): Promise<void> {
   if (!t) {
     const { StdioServerTransport } = await import('@modelcontextprotocol/server/stdio');
     t = new StdioServerTransport();
-    process.stdin.on('end', () => process.exit(0));
+    // Stdin closed: close the server and let pending stdout writes drain
+    // (process.exit() here could cut a reply short). The unref'd timer only
+    // ends a process that a library handle keeps alive.
+    process.stdin.on('end', () => {
+      process.exitCode = 0;
+      server.close().catch(() => {}).finally(() => {
+        process.stdout.write('', () => setTimeout(() => process.exit(0), 1000).unref());
+      });
+    });
   }
   await server.connect(t);
   process.stderr.write(`noro: MCP server ready on stdio (noro ${version()})\n`);
