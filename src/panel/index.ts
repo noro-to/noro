@@ -39,6 +39,28 @@ export function loadPersonas(dirs: string[]): Persona[] {
 
 const SEVERITIES = new Set(['must', 'should', 'consider']);
 
+const ONES = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen', 'eighteen', 'nineteen'];
+const TENS = ['', '', 'twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'eighty', 'ninety'];
+
+function intToWords(n: number): string {
+  if (n < 20) return ONES[n];
+  if (n < 100) return TENS[Math.floor(n / 10)] + (n % 10 ? `-${ONES[n % 10]}` : '');
+  if (n < 1000) return `${ONES[Math.floor(n / 100)]} hundred${n % 100 ? ` ${intToWords(n % 100)}` : ''}`;
+  return `${intToWords(Math.floor(n / 1000))} thousand${n % 1000 ? ` ${intToWords(n % 1000)}` : ''}`;
+}
+
+/**
+ * Persona files are written for people ("10 seconds", numbered checks). Spell their numbers out so
+ * no prompt carries a digit of its own: list markers become dashes, integers become words, and
+ * anything else digit-shaped becomes "N".
+ */
+export function personaWithoutDigits(text: string): string {
+  return text
+    .replace(/^(\s*)\d+[.)]\s+/gm, '$1- ')
+    .replace(/(?<![\d.,])\d{1,6}(?![\d.,]\d)/g, (m) => intToWords(Number(m)))
+    .replace(/\p{Nd}+/gu, 'N');
+}
+
 export interface PanelInput {
   text: string;
   facts?: FactsTable;
@@ -58,7 +80,7 @@ export async function panel(input: PanelInput): Promise<PanelNote[]> {
   const opts = { allow: input.allow };
   const results = await Promise.all(
     personas.map(async (p) => {
-      const prompt = buildPanelPrompt({ persona: p.id, personaText: p.text, template: input.text, facts: input.facts, labels: input.labels, allow: input.allow });
+      const prompt = buildPanelPrompt({ persona: p.id, personaText: personaWithoutDigits(p.text), template: input.text, facts: input.facts, labels: input.labels, allow: input.allow });
       const answer = await input.chat.complete({ model: input.model, system: prompt.system, user: prompt.user, json: true });
       let obj: any;
       try {

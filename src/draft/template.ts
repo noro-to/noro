@@ -265,9 +265,16 @@ export function scrubNumbers(text: string, facts?: FactsTable, opts: TemplateOpt
   const identifiers = facts ? allowedIdentifiers(facts, opts.allow) : allowedIdentifiers({ currency: '', periods: { current: '' }, facts: [] }, opts.allow);
   // Protect refs and identifiers with placeholders, scrub, then restore.
   const kept: string[] = [];
+  // Placeholder keys are letters, so the scrub below can't touch them.
   const keep = (x: string) => {
     kept.push(x);
-    return `\u0000${kept.length - 1}\u0000`;
+    let n = kept.length - 1;
+    let key = '';
+    do {
+      key = String.fromCharCode(65 + (n % 26)) + key;
+      n = Math.floor(n / 26) - 1;
+    } while (n >= 0);
+    return `\u0000${key}\u0000`;
   };
   let out = text.replace(REF, (m) => keep(m));
   let rebuilt = '';
@@ -278,7 +285,11 @@ export function scrubNumbers(text: string, facts?: FactsTable, opts: TemplateOpt
   }
   out = rebuilt + out.slice(i);
   out = out.replace(/[$€£¥+\-]?\p{Nd}[\p{Nd},.]*(?:\s?(?:%|pp\b|x\b|k\b|K\b|M\b|bn\b))?/gu, (m) => (m.endsWith('.') ? 'N.' : 'N'));
-  return out.replace(/\u0000(\d+)\u0000/g, (_m, i: string) => kept[Number(i)]);
+  return out.replace(/\u0000([A-Z]+)\u0000/g, (_m, key: string) => {
+    let n = 0;
+    for (const ch of key) n = n * 26 + (ch.charCodeAt(0) - 64);
+    return kept[n - 1];
+  });
 }
 
 /** One number found in final text and the fact it traces to. */

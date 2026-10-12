@@ -97,12 +97,27 @@ export function draftFacts(facts: FactsTable, labels: Classification[]): Fact[] 
     const l = c?.label === 'signal' ? 0 : c?.label === 'luck_risk' ? 1 : 2;
     return p * 3 + l;
   };
-  return facts.facts
+  const ranked = facts.facts
     .filter((f) => f.value !== null)
     .map((f, i) => ({ f, i }))
     .sort((a, b) => order(a.f) - order(b.f) || a.i - b.i)
-    .slice(0, PRIORITY_CAP)
     .map((x) => x.f);
+  const picked = ranked.slice(0, PRIORITY_CAP);
+  // A change is easier to say with the levels it compares ("rose {{f12}} to {{f7}}"): add the inputs of
+  // every picked priority-one or priority-two fact, even past the cap.
+  const have = new Set(picked.map((f) => f.id));
+  const byId = new Map(facts.facts.map((f) => [f.id, f]));
+  for (const f of [...picked]) {
+    if ((cls.get(f.id)?.priority ?? 3) > 2) continue;
+    for (const inp of f.inputs) {
+      const g = byId.get(inp);
+      if (g && g.value !== null && !have.has(g.id)) {
+        have.add(g.id);
+        picked.push(g);
+      }
+    }
+  }
+  return picked;
 }
 
 function context(facts: FactsTable, allow: string[] = []): string {
