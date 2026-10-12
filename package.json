@@ -1,22 +1,62 @@
 {
-  "name": "noro",
+  "name": "@noro-to/noro",
   "version": "0.2.0",
-  "description": "Open-source framework that turns raw ad-platform exports into short paid-media reports where every number is traced. Bring your own OpenRouter key.",
+  "description": "Open-source framework that turns raw ad-platform exports into short paid-media reports where every number is traced. Code computes the numbers; your choice of model writes the words.",
+  "keywords": [
+    "paid-media",
+    "ppc",
+    "reporting",
+    "google-ads",
+    "meta-ads",
+    "amazon-dsp",
+    "llm",
+    "cli",
+    "mcp",
+    "claude",
+    "openrouter"
+  ],
+  "homepage": "https://noro.to",
+  "bugs": {
+    "url": "https://github.com/noro-to/noro/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/noro-to/noro.git"
+  },
   "license": "MIT",
+  "author": "noro contributors (https://noro.to)",
   "type": "module",
-  "repository": "github:noro-to/noro",
   "bin": {
     "noro": "dist/cli.js"
   },
+  "files": [
+    "dist",
+    "!dist/**/*.map",
+    "engine/noro.py",
+    "engine/rules.json",
+    "personas",
+    "skills",
+    ".claude-plugin",
+    ".env.example",
+    "CHANGELOG.md",
+    "SECURITY.md",
+    "legal/PRIVACY.md"
+  ],
   "engines": {
     "node": ">=22.19.0"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json && node -e \"const fs=require('fs');fs.mkdirSync('dist/adapters',{recursive:true});for(const f of fs.readdirSync('src/adapters'))if(/\\.ya?ml$/i.test(f))fs.copyFileSync('src/adapters/'+f,'dist/adapters/'+f);fs.chmodSync('dist/cli.js',0o755)\"",
+    "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\"",
     "prepare": "npm run build",
+    "prepack": "npm run clean && npm run build",
     "test": "vitest run",
     "lint": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.test.json --noEmit",
     "noro": "tsx src/cli.ts"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
   },
   "dependencies": {
     "@earendil-works/chord": "1.1.0",
