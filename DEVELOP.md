@@ -24,11 +24,11 @@ pip install pyyaml
 | `npm test` | The vitest suite in `tests/ts`. Models are mocked; no key needed |
 | `python3 -m unittest discover -s tests/engine -v` | The engine suite |
 | `python3 -m unittest discover -s tests/rules -v` | Every rule's flag and pass examples |
-| `python3 scripts/build_rules.py` | Validates `rules/` and writes `engine/rules.json` (`--check` only validates) |
+| `python3 scripts/build_rules.py` | Validates `rules/` and writes `engine/rules.json`. `--check` writes nothing: it validates, then exits 1 if `engine/rules.json` differs from what `rules/` would build |
 | `npm pack --dry-run` | Lists what the npm package will ship |
 | `docker build -t noro .` | Builds the image |
 
-CI (`.github/workflows/ci.yml`) runs all of these on every push, and fails when `engine/rules.json` doesn't match `rules/`.
+CI (`.github/workflows/ci.yml`) runs all of these on every push, and fails when `engine/rules.json` doesn't match `rules/`: it runs `build_rules.py` and then `git diff --exit-code engine/rules.json`.
 
 ## Fixtures
 

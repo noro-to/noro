@@ -105,9 +105,10 @@ Run the same command again from the same folder. noro keeps a checkpoint after e
 Run `noro doctor` first. It checks Node, Python, your keys (shown only as a short fingerprint), your writing model and your classifier, all for free.
 
 - **A missing key:** check `.env` is in the folder you run `noro` from, or put the key in `~/.config/noro/.env`.
-- **"needs Python 3.9+":** install Python 3, or point `NORO_PYTHON` at it (on Windows, `NORO_PYTHON=py -3`).
+- **"noro needs Python 3.9+":** install Python 3, or point `NORO_PYTHON` at it (on Windows, `NORO_PYTHON=py -3`).
+- **"NORO_PYTHON=... doesn't run Python 3.9+":** fix the command in `NORO_PYTHON`, or unset it so noro looks for `python3`.
 - **"Claude Code is not logged in" or "not a Claude subscription":** run `claude`, log in with your Claude account, and check `claude auth status` shows `claude.ai`.
 - **Exit code 2:** the report couldn't pass the number check after one automatic fix. Rerun it, or open an issue with a synthetic copy of the export.
-- **"No adapter recognised this export":** run in a terminal so noro can ask you to confirm its guessed columns.
+- **"Unknown export ...: no adapter matches its header row":** run in a terminal so noro can ask you to confirm its guessed columns. The message lists what it guessed and up to ten of the file's header names.
 
 Still stuck? Open an issue at [github.com/noro-to/noro/issues](https://github.com/noro-to/noro/issues). Use synthetic data only. Don't paste real client data.

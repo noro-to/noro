@@ -305,3 +305,40 @@ describe('D8g: the plugin MCP entry needs the npm package, and the docs say so',
     expect(agents).toMatch(/registers the noro MCP server as `npx -y @noro-to\/noro mcp`[\s\S]{0,200}needs `@noro-to\/noro` on npm/);
   });
 });
+
+describe('D9: docs match what noro prints', () => {
+  it('docs/install/cli.md shows the doctor output noro really prints (versions aside)', async () => {
+    const cwd = tmp();
+    const home = tmp();
+    writeFileSync(join(cwd, '.env'), `NORO_MODEL=claude-cli:claude-opus-5-5\nNORO_CLAUDE_BIN=${join(ROOT, 'tests/ts/fixtures/fake-claude.mjs')}\n`);
+    mkdirSync(join(home, '.config', 'noro'), { recursive: true });
+    writeFileSync(userEnvPath(home), 'OPENROUTER_API_KEY=sk-or-v1-abcdef1234567890abcd1a2b\n');
+    const env: NodeJS.ProcessEnv = { PATH: process.env.PATH };
+    const envLoad = loadEnvFiles(cwd, home, env);
+    const fetch = (async () => new Response('{}', { status: 200 })) as unknown as typeof globalThis.fetch;
+    const real = formatDoctor(await runDoctor({ env, cwd, envLoad, fetch }));
+    const doc = readFileSync(join(ROOT, 'docs/install/cli.md'), 'utf8').match(/```bash\nnoro doctor\n```\n\n```text\n([\s\S]*?)```/)![1].trim();
+    const norm = (t: string) =>
+      t
+        .replace(/\S*fake-claude\.mjs/g, 'claude')
+        .replace(/found \(.*\)$/gm, 'found (V)')
+        .replace(/node \d+\.\d+\.\d+/g, 'node V')
+        .replace(/python3 \d+\.\d+\.\d+/g, 'python3 V');
+    expect(norm(doc)).toBe(norm(real));
+  });
+
+  it('getting-started quotes the real unknown-export and Python errors; DEVELOP.md says what --check does', async () => {
+    const gs = readFileSync(join(ROOT, 'docs/getting-started.md'), 'utf8');
+    expect(gs).toContain('"Unknown export ...: no adapter matches its header row"');
+    expect(gs).not.toContain('No adapter recognised this export');
+    const { UnknownExportError } = await import('../../src/ingest/index.js');
+    expect(new UnknownExportError('x.csv', { mapping: {}, confidence: {}, unmapped: [] } as never).message).toMatch(/^Unknown export x\.csv: no adapter matches its header row\./);
+    const { PYTHON_HELP } = await import('../../src/preflight.js');
+    expect(PYTHON_HELP.startsWith('noro needs Python 3.9+')).toBe(true);
+    expect(gs).toContain('"noro needs Python 3.9+"');
+    const dev = readFileSync(join(ROOT, 'DEVELOP.md'), 'utf8');
+    expect(dev).toMatch(/`--check` writes nothing: it validates, then exits 1 if `engine\/rules\.json` differs/);
+    const r = spawnSync('python3', [join(ROOT, 'scripts/build_rules.py'), '--check'], { cwd: ROOT, encoding: 'utf8' });
+    if (!/PyYAML is required/.test(r.stderr)) expect(r.stdout).toMatch(/is up to date/);
+  });
+});

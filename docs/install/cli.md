@@ -123,16 +123,19 @@ noro doctor
 ```
 
 ```text
-config    .env (3 keys), ~/.config/noro/.env (1 key)
+config    .env (2 keys), ~/.config/noro/.env (1 key)
 writer    claude-cli  claude-opus-5-5   [personal use only]
-          ok  claude found on PATH
+          ok  claude found (2.1.4 (Claude Code))
           ok  logged in with a Claude subscription
-classify  jev via OpenRouter  typesafe/jev-1.13
-          ok  OPENROUTER_API_KEY set (sk-or-...0000), key valid
-engine    ok  python3 3.12
+classify  jev (typesafe/jev-1.13 on openrouter.ai)
+          ok  OPENROUTER_API_KEY set (sk-or...1a2b), key valid
+engine    ok  node 24.11.0
+          ok  python3 3.12.4
 state     .noro: no runs in progress
 live      skipped. Run `noro doctor --live` for a paid test call.
 ```
+
+A check that fails starts with `FAIL`, one that couldn't be verified with `??`, a warning (such as a placeholder key that noro ignores) with `warn`.
 
 Every check is free. Key checks use each provider's free key or model-list endpoint, and keys show only as a short fingerprint. Bedrock, Vertex and Azure credentials show as "found (not verified)", because verifying them takes a paid call. For Ollama, doctor warns when the context length is below 16384.
 
