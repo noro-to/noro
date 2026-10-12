@@ -41,18 +41,19 @@ import type { PhaseHandler, TaskId } from '@earendil-works/pi-durable';
 import { openNodeSqliteStorage } from '@earendil-works/pi-durable/storage/sqlite/node';
 import { builtinAdaptersDir } from '../adapters/loader.js';
 import { check, runEngine } from '../check/index.js';
-import { classify, createJevClient } from '../classify/index.js';
+import { resolveClassifier } from '../classify/index.js';
+import type { ResolvedClassifier } from '../classify/index.js';
 import { computeFacts } from '../compute/index.js';
-import { loadConfig } from '../config.js';
+import { DEFAULT_CLASSIFY_MODEL, loadConfig } from '../config.js';
 import type { Config } from '../config.js';
-import { createClaudeCliClient } from '../draft/claude-cli.js';
-import { createChatClient, draft, reviseDetailed, scrubNumbers, templateQuote, templatize } from '../draft/index.js';
+import { draft, reviseDetailed, scrubNumbers, templateQuote, templatize } from '../draft/index.js';
 import type { FoundNumber, ReviseResult } from '../draft/index.js';
 import { DEFAULT_FORMAT, FORMATS } from '../draft/prompts.js';
 import { buildFlags, deliver } from '../deliver/index.js';
 import { IngestWarningError, blockingWarnings, ingest } from '../ingest/index.js';
 import type { IngestOptions } from '../ingest/index.js';
 import { panel } from '../panel/index.js';
+import { createChatClientFor, nativeModelId, parseModelRef } from '../providers/index.js';
 import type {
   ChatClient,
   CheckReport,
@@ -97,8 +98,12 @@ export interface RunSummary {
   checked: number;
   words: { original?: number; final: number };
   panel: { notes: number; applied: number };
-  /** True when this run continued a checkpointed run. */
+  /** True when this run continued a checkpointed run (or reused one to apply --decisions). */
   resumed: boolean;
+  /** The classifier that labels the facts, e.g. "jev (typesafe/jev-1.13 on openrouter.ai)" or "rules". */
+  classifier?: string;
+  /** The writing models, as `<provider>:<model-id>`. */
+  models?: { draft: string; panel: string };
 }
 
 export interface NoroReport extends Report {
@@ -131,6 +136,14 @@ export interface RunNoroInput {
   acceptWarnings?: boolean;
   /** Asked when such a warning stops the run; return true to go on anyway. */
   confirmWarnings?: (warnings: string[]) => Promise<boolean>;
+  /**
+   * Keep / cut / reword choices, applied without asking (omitted flags are kept; a reword that adds
+   * an untraced number is refused). When a finished run of the same input and settings exists, only
+   * deliver reruns from its checkpoint: no model call. Wins over `decide`.
+   */
+  decisions?: Decision[];
+  /** Called once, before any step, with the classifier noro picked (for the CLI's "classify:" line). */
+  onClassifier?: (describe: string) => void;
 }
 
 const REVISION_EXTS = new Set(['.md', '.txt', '.markdown']);
@@ -174,15 +187,78 @@ export function runDbPath(stateDir: string, runKey: string): string {
 export interface ModelSource {
   injected?: { chat: boolean; jev: boolean };
   mock?: boolean;
+  /** The resolved classifier: its mode, and the System One host for jev. Default: jev on openrouter.ai. */
+  classifier?: { mode: string; host?: string };
 }
 
+const OPENROUTER_HOST = 'openrouter.ai';
+const LEGACY_WRITERS = new Set(['openrouter', 'claude-cli']);
+
+/** The v0.1 spelling of a model on a v0.1 writer: an OpenRouter-style id (claude-cli's old default was anthropic/claude-opus-5.5). */
+function legacyModel(provider: string, id: string): string {
+  return provider === 'claude-cli' && id === 'claude-opus-5-5' ? 'anthropic/claude-opus-5.5' : id;
+}
+
+/**
+ * The run's identity: input bytes, mode, format, models, classifier, and where the models come from.
+ * A setup v0.1 could express (openrouter or claude-cli for both writing steps, jev on OpenRouter) hashes
+ * exactly as v0.1 did, so in-flight runs keep resuming after the upgrade. Anything else adds fields.
+ */
 export function runKeyFor(file: string, mode: string, format: string, cfg: Config, source: ModelSource = {}): string {
   const h = createHash('sha256');
   const origin = { injected: source.injected ?? { chat: false, jev: false }, mock: source.mock ?? false };
-  h.update(JSON.stringify({ v: 2, mode, format, writer: cfg.writer, models: [cfg.draftModel, cfg.panelModel, cfg.classifyModel], origin }));
+  const d = parseModelRef(cfg.draftModel);
+  const p = parseModelRef(cfg.panelModel);
+  const classifyModel = cfg.classifyModel ?? DEFAULT_CLASSIFY_MODEL;
+  const cls = source.classifier ?? { mode: 'jev', host: OPENROUTER_HOST };
+  const key: Record<string, unknown> =
+    d.provider === p.provider && LEGACY_WRITERS.has(d.provider)
+      ? { v: 2, mode, format, writer: d.provider, models: [legacyModel(d.provider, d.id), legacyModel(p.provider, p.id), classifyModel], origin }
+      : { v: 3, mode, format, models: [cfg.draftModel, cfg.panelModel, classifyModel], origin };
+  if (cls.mode !== 'jev' || (cls.host ?? OPENROUTER_HOST) !== OPENROUTER_HOST) key.classifier = cls.host ? `${cls.mode}@${cls.host}` : cls.mode;
+  const endpoints = [d, p].filter((r) => ['openai-compatible', 'ollama', 'lmstudio'].includes(r.provider));
+  if (endpoints.length && cfg.noroBaseUrl) {
+    try {
+      key.endpoint = new URL(cfg.noroBaseUrl).host; // host only, never a key
+    } catch {
+      key.endpoint = cfg.noroBaseUrl;
+    }
+  }
+  h.update(JSON.stringify(key));
   h.update(readFileSync(file));
   return h.digest('hex').slice(0, 32);
 }
+
+/** The jev host a classifier describe names ("jev (m on host)"), for the run key. */
+function classifierSource(c: ResolvedClassifier): { mode: string; host?: string } {
+  if (c.mode !== 'jev') return { mode: c.mode };
+  const host = c.describe.match(/ on ([^)\s]+)\)?\s*$/)?.[1];
+  return { mode: 'jev', host: host ?? OPENROUTER_HOST };
+}
+
+/** Turn a decisions list into a `decide` function, after checking it names real flags. */
+function decideFrom(decisions: Decision[]): (f: Flag) => Promise<Decision> {
+  const byId = new Map<string, Decision>();
+  for (const d of decisions) {
+    if (!d || typeof d.flagId !== 'string') throw new UsageError('Each decision needs a flagId, e.g. {"flagId":"F1","action":"keep"}.');
+    const action = (d as { action?: unknown }).action;
+    if (action !== 'keep' && action !== 'cut' && action !== 'reword') throw new UsageError(`Decision for ${d.flagId}: action must be keep, cut or reword.`);
+    if (d.action === 'reword' && (typeof d.text !== 'string' || !d.text.trim())) throw new UsageError(`Decision for ${d.flagId}: a reword needs text.`);
+    byId.set(d.flagId, d);
+  }
+  return async (f) => byId.get(f.id) ?? { flagId: f.id, action: 'keep' };
+}
+
+function checkDecisionIds(decisions: Decision[], flags: Flag[]): void {
+  const known = new Set(flags.map((f) => f.id));
+  const unknown = decisions.map((d) => d.flagId).filter((id) => !known.has(id));
+  if (unknown.length) {
+    throw new UsageError(`The decisions name flags this run doesn't have: ${unknown.join(', ')}. Flags: ${flags.map((f) => f.id).join(', ') || 'none'}.`);
+  }
+}
+
+/** Pre-deliver data kept in the finished run's outcome, so --decisions can rerun deliver alone. */
+const DELIVER_INPUT = '_deliverInput';
 
 const SEVERITY: Record<string, PanelNote['severity']> = { error: 'must', warning: 'should', advisory: 'consider' };
 
@@ -235,14 +311,22 @@ export async function runNoro(input: RunNoroInput): Promise<NoroReport> {
   const mode: 'generate' | 'revise' = REVISION_EXTS.has(extname(file).toLowerCase()) ? 'revise' : 'generate';
   const format = input.format ?? DEFAULT_FORMAT;
   if (!FORMATS[format]) throw new UsageError(`Unknown format "${format}". Use one of: ${Object.keys(FORMATS).join(', ')}.`);
-  const chat = input.clients?.chat ?? (config.writer === 'claude-cli' ? createClaudeCliClient(config) : createChatClient(config));
-  const jev = input.clients?.jev ?? createJevClient(config);
-  const decide = input.decide ?? (async (f: Flag): Promise<Decision> => ({ flagId: f.id, action: 'keep' }));
+  // One client per writing step (draft + revise share one). Creating them never needs a credential.
+  const draftChat = input.clients?.chat ?? createChatClientFor(config.draftModel, config);
+  const panelChat = input.clients?.chat ?? (config.panelModel === config.draftModel ? draftChat : createChatClientFor(config.panelModel, config));
+  const draftModel = nativeModelId(config.draftModel);
+  const panelModel = nativeModelId(config.panelModel);
+  const classifier = resolveClassifier(config, { jev: input.clients?.jev, chat: draftChat, writerModel: draftModel });
+  input.onClassifier?.(classifier.describe);
+  const decisions = input.decisions;
+  const decide = decisions ? decideFrom(decisions) : (input.decide ?? (async (f: Flag): Promise<Decision> => ({ flagId: f.id, action: 'keep' })));
   const stateDir = resolve(cwd, input.stateDir ?? config.stateDir);
   const runKey = runKeyFor(file, mode, format, config, {
     injected: { chat: input.clients?.chat !== undefined, jev: input.clients?.jev !== undefined },
     mock: process.env.NORO_MOCK_MODELS === '1',
+    classifier: input.clients?.jev ? undefined : classifierSource(classifier),
   });
+  const runInfo = { classifier: classifier.describe, models: { draft: config.draftModel, panel: config.panelModel } };
   const personaDirs = [join(cwd, '.noro', 'personas')];
 
   // ------------------------------------------------------------- the steps
@@ -264,10 +348,10 @@ export async function runNoro(input: RunNoroInput): Promise<NoroReport> {
       return { facts: computeFacts(d.dataset!), warnings: d.dataset!.warnings }; // the dataset is dropped from here on
     },
     async classify(d) {
-      return { ...d, labels: await classify(d.facts!, jev, { model: config.classifyModel }) };
+      return { ...d, labels: await classifier.run(d.facts!) };
     },
     async draft(d) {
-      return { ...d, draft: await draft({ facts: d.facts!, labels: d.labels!, chat, model: config.draftModel, format }) };
+      return { ...d, draft: await draft({ facts: d.facts!, labels: d.labels!, chat: draftChat, model: draftModel, format }) };
     },
     async check(d) {
       if (mode === 'revise') {
@@ -283,7 +367,7 @@ export async function runNoro(input: RunNoroInput): Promise<NoroReport> {
       let current = d.draft!;
       let c = await check({ text: current.rendered, mode: 'generate', facts: d.facts!, watchouts: true, python: config.python });
       if (!c.pass) {
-        const r = await reviseDetailed({ template: current.template, notes: checkNotes(c, current, d.facts!), facts: d.facts!, chat, model: config.draftModel, labels: d.labels });
+        const r = await reviseDetailed({ template: current.template, notes: checkNotes(c, current, d.facts!), facts: d.facts!, chat: draftChat, model: draftModel, labels: d.labels });
         current = r.draft;
         c = await check({ text: current.rendered, mode: 'generate', facts: d.facts!, watchouts: true, python: config.python });
         if (!c.pass) throw new CheckFailedError(describeFailure(c), lean(c));
@@ -293,15 +377,15 @@ export async function runNoro(input: RunNoroInput): Promise<NoroReport> {
     async panel(d) {
       const facts = d.facts!;
       const allow = d.allow ?? [];
-      const notes = await panel({ text: d.draft!.template, facts, chat, model: config.panelModel, labels: d.labels, allow, extraPersonaDirs: personaDirs });
+      const notes = await panel({ text: d.draft!.template, facts, chat: panelChat, model: panelModel, labels: d.labels, allow, extraPersonaDirs: personaDirs });
       if (mode === 'revise') {
         const fromCheck = checkNotes(d.check!, d.draft!, facts, allow);
         const all = [...fromCheck, ...notes];
-        let r: ReviseResult = await reviseDetailed({ template: d.draft!.template, notes: all, facts, chat, model: config.draftModel, allow, task: 'rewrite' });
+        let r: ReviseResult = await reviseDetailed({ template: d.draft!.template, notes: all, facts, chat: draftChat, model: draftModel, allow, task: 'rewrite' });
         let c = await check({ text: r.draft.rendered, mode: 'revise', original: d.original!, watchouts: true, python: config.python });
         if (!c.pass) {
           const fix = checkNotes(c, r.draft, facts, allow, d.original);
-          const again = await reviseDetailed({ template: r.draft.template, notes: fix, facts, chat, model: config.draftModel, allow, task: 'rewrite' });
+          const again = await reviseDetailed({ template: r.draft.template, notes: fix, facts, chat: draftChat, model: draftModel, allow, task: 'rewrite' });
           r = { ...again, applied: r.applied, rejected: r.rejected };
           c = await check({ text: r.draft.rendered, mode: 'revise', original: d.original!, watchouts: true, python: config.python });
           if (!c.pass) throw new CheckFailedError(describeFailure(c), lean(c));
@@ -311,7 +395,7 @@ export async function runNoro(input: RunNoroInput): Promise<NoroReport> {
       }
       if (notes.length === 0) return { ...d, notes: [], panel: { notes: 0, applied: 0 } };
       try {
-        const r = await reviseDetailed({ template: d.draft!.template, notes, facts, chat, model: config.panelModel, labels: d.labels, task: 'apply' });
+        const r = await reviseDetailed({ template: d.draft!.template, notes, facts, chat: panelChat, model: panelModel, labels: d.labels, task: 'apply' });
         const c = await check({ text: r.draft.rendered, mode: 'generate', facts, watchouts: true, python: config.python });
         if (c.pass) {
           const applied = new Set(r.applied);
@@ -325,6 +409,7 @@ export async function runNoro(input: RunNoroInput): Promise<NoroReport> {
     },
     async deliver(d) {
       const flags = buildFlags(d.check!, d.notes ?? [], d.labels, { facts: d.facts, draft: d.draft, allow: d.allow });
+      if (decisions) checkDecisionIds(decisions, flags);
       const report = await deliver({ text: d.draft!.rendered, facts: d.facts, flags, decide, allow: d.allow, prefer: d.draft!.factIds });
       // The final text, after the user's cuts and rewords, must still trace.
       const final =
@@ -340,10 +425,11 @@ export async function runNoro(input: RunNoroInput): Promise<NoroReport> {
           words: { ...(d.original ? { original: words(d.original) } : {}), final: words(report.text) },
           panel: d.panel ?? { notes: 0, applied: 0 },
           resumed: false,
+          ...runInfo,
         },
         warnings: d.warnings ?? [],
       };
-      return { ...d, result } as RunData & { result: NoroReport };
+      return { ...d, result: { ...result, [DELIVER_INPUT]: d } } as RunData & { result: NoroReport };
     },
   };
 
@@ -418,6 +504,27 @@ export async function runNoro(input: RunNoroInput): Promise<NoroReport> {
       } while (cursor !== undefined);
       return undefined;
     }, ctx);
+    if (live === undefined && decisions) {
+      // Apply the choices to the last finished run of this input: deliver only, from its checkpoint.
+      const done = await harness.commit(async (tx) => {
+        let cursor: unknown;
+        do {
+          const page = await tx.scanTasks({ kind: TASK_KIND, order: 'descending' }, 50, cursor as never);
+          for (const t of page.items) {
+            const i = t.input as TaskInput;
+            const o = t.state.status === 'terminal' ? (t.state.outcome as { status: string; result?: Record<string, unknown> }) : undefined;
+            if (i?.runKey === runKey && o?.status === 'completed' && o.result?.[DELIVER_INPUT]) return o.result[DELIVER_INPUT] as RunData;
+          }
+          cursor = page.next;
+        } while (cursor !== undefined);
+        return undefined;
+      }, ctx);
+      if (done) {
+        input.onStep?.('deliver');
+        const out = (await steps.deliver(done)) as RunData & { result: NoroReport };
+        return publicReport(out.result, true);
+      }
+    }
     const resumed = live !== undefined;
     const id = (live ??
       (await root.commit((tx) => tx.createTask(Pipeline, { runKey, mode, file, format }, { ownership: { kind: 'conversation' } }), ctx))) as TaskId<NoroReport>;
@@ -430,13 +537,19 @@ export async function runNoro(input: RunNoroInput): Promise<NoroReport> {
       throw new StopAfterError(input.stopAfter!);
     }
     const outcome = first.state.outcome;
-    if (outcome.status === 'completed') return { ...outcome.result, summary: { ...outcome.result.summary, resumed } };
+    if (outcome.status === 'completed') return publicReport(outcome.result, resumed);
     if (failure) throw failure;
     const msg = outcome.status === 'failed' || outcome.status === 'faulted' ? outcome.error.message : `run ${outcome.status}`;
     throw new Error(`noro run failed: ${msg}`);
   } finally {
     await close();
   }
+}
+
+/** The report as callers see it: without the deliver checkpoint it carries in storage. */
+function publicReport(r: NoroReport, resumed: boolean): NoroReport {
+  const { [DELIVER_INPUT]: _drop, ...rest } = r as NoroReport & { [DELIVER_INPUT]?: unknown };
+  return { ...rest, summary: { ...rest.summary, resumed } } as NoroReport;
 }
 
 /**

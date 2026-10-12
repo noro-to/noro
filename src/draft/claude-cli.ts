@@ -11,6 +11,10 @@ import { spawn } from 'node:child_process';
 import type { Config } from '../config.js';
 import type { ChatClient } from '../schema.js';
 import { ModelError } from '../classify/index.js';
+import { UsageLimitError, looksLikeUsageLimit } from '../providers/errors.js';
+import { claudeModelId } from '../providers/registry.js';
+
+export { claudeModelId } from '../providers/registry.js';
 
 /**
  * Environment variables that would make `claude` bill something other than the
@@ -34,11 +38,6 @@ const SUBSCRIPTION_METHODS = new Set(['claude.ai', 'oauth_token']);
 
 export class ClaudeCliError extends ModelError {}
 
-/** "anthropic/claude-opus-5.5" (OpenRouter style) → "claude-opus-5-5" (Claude Code style). */
-export function claudeModelId(model: string): string {
-  return model.replace(/^anthropic\//, '').replace(/\./g, '-');
-}
-
 export function childEnv(env: NodeJS.ProcessEnv = process.env): NodeJS.ProcessEnv {
   const out = { ...env };
   for (const k of STRIPPED_ENV) delete out[k];
@@ -55,7 +54,7 @@ function run(bin: string, args: string[], stdin: string, env: NodeJS.ProcessEnv)
     child.on('error', (err: NodeJS.ErrnoException) =>
       reject(
         err.code === 'ENOENT'
-          ? new ClaudeCliError(`NORO_WRITER=claude-cli needs Claude Code installed and logged in, but "${bin}" wasn't found. Install it from https://claude.com/claude-code, run \`claude\` once to log in, or set NORO_CLAUDE_BIN.`)
+          ? new ClaudeCliError(`NORO_MODEL=claude-cli needs Claude Code installed and logged in, but "${bin}" wasn't found. Install it from https://claude.com/claude-code, run \`claude\` once to log in, or set NORO_CLAUDE_BIN.`)
           : err,
       ),
     );
@@ -79,21 +78,23 @@ export async function checkClaudeAuth(cfg: Pick<Config, 'claudeBin'>, env = chil
   if (!SUBSCRIPTION_METHODS.has(status.authMethod ?? '') || (status.apiProvider && status.apiProvider !== 'firstParty')) {
     throw new ClaudeCliError(
       `Claude Code is signed in with "${status.authMethod}" (${status.apiProvider ?? 'unknown provider'}), not a Claude subscription. ` +
-        'Log in with your Claude account (`claude auth login`), or use NORO_WRITER=openrouter.',
+        'Log in with your Claude account (`claude auth login`), or use an API provider (NORO_MODEL=openrouter:anthropic/claude-opus-5.5).',
     );
   }
 }
 
-export function createClaudeCliClient(cfg: Config): ChatClient {
+/** `model` (a Claude Code id) wins over req.model when given. */
+export function createClaudeCliClient(cfg: Config, model?: string): ChatClient {
   const env = childEnv();
   let checked: Promise<void> | undefined;
   return {
     async complete(req) {
       checked ??= checkClaudeAuth(cfg, env);
       await checked;
+      const id = claudeModelId((model ?? req.model).replace(/^claude-cli:/, ''));
       const args = [
         '-p',
-        '--model', claudeModelId(req.model),
+        '--model', id,
         '--output-format', 'json',
         '--system-prompt', req.system,
         '--tools', '',
@@ -106,11 +107,12 @@ export function createClaudeCliClient(cfg: Config): ChatClient {
       try {
         out = JSON.parse(r.stdout);
       } catch {
-        throw new ClaudeCliError(`claude -p (${req.model}) exited ${r.code} without JSON output: ${(r.stderr || r.stdout).trim().slice(0, 300)}`);
+        throw new ClaudeCliError(`claude -p (${id}) exited ${r.code} without JSON output: ${(r.stderr || r.stdout).trim().slice(0, 300)}`);
       }
       if (r.code !== 0 || out?.is_error || typeof out?.result !== 'string') {
         const why = typeof out?.result === 'string' ? out.result : out?.subtype ?? r.stderr.trim();
-        throw new ClaudeCliError(`claude -p (${req.model}) failed: ${String(why).slice(0, 300)}`);
+        if (looksLikeUsageLimit(String(why))) throw new UsageLimitError('claude-cli', String(why).slice(0, 300));
+        throw new ClaudeCliError(`claude -p (${id}) failed: ${String(why).slice(0, 300)}`);
       }
       return out.result;
     },

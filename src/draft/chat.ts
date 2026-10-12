@@ -1,33 +1,15 @@
-// OpenRouter chat completions: POST {baseUrl}/v1/chat/completions with the
-// key as a Bearer token. Every writing step (draft, panel, revise) goes
-// through this client with the model from config (default
-// anthropic/claude-opus-5.5).
+// Chat helpers. createChatClient is the v0.1 OpenRouter client (POST
+// {baseUrl}/v1/chat/completions with OPENROUTER_API_KEY); the harness picks a
+// client per step with createChatClientFor (src/providers).
 
-import { MissingApiKeyError, ModelError, _postJson } from '../classify/index.js';
+import { ModelError } from '../classify/index.js';
 import type { Config } from '../config.js';
+import { createOpenRouterClient } from '../providers/index.js';
 import type { ChatClient } from '../schema.js';
 
+/** The OpenRouter client, sending req.model as is. Other providers: createChatClientFor in src/providers. */
 export function createChatClient(cfg: Config): ChatClient {
-  return {
-    async complete(req) {
-      if (!cfg.apiKey) throw new MissingApiKeyError();
-      const base = cfg.baseUrl.replace(/\/+$/, '');
-      // No temperature: Claude Opus 5.5 rejects sampling parameters.
-      const body: Record<string, unknown> = {
-        model: req.model,
-        messages: [
-          { role: 'system', content: req.system },
-          { role: 'user', content: req.user },
-        ],
-      };
-      if (req.json) body.response_format = { type: 'json_object' };
-      const res = await _postJson(`${base}/v1/chat/completions`, cfg.apiKey, body, `chat (${req.model})`);
-      const content = res?.choices?.[0]?.message?.content;
-      if (typeof content === 'string') return content;
-      if (Array.isArray(content)) return content.map((c: any) => (typeof c?.text === 'string' ? c.text : '')).join('');
-      throw new ModelError(`chat (${req.model}): response has no message content`);
-    },
-  };
+  return createOpenRouterClient(cfg);
 }
 
 /** Strip a Markdown code fence a model may wrap its answer in. */
