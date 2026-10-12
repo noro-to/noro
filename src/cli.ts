@@ -137,7 +137,8 @@ async function main(argv: string[]): Promise<number> {
     clients = { chat: m.createMockChat({ hangDraft: process.env.NORO_MOCK_HANG === 'draft' }), jev: m.createMockJev() };
   } else if (!config.apiKey) {
     process.stderr.write(
-      'noro: OPENROUTER_API_KEY is not set.\n' +
+      'noro: OPENROUTER_API_KEY is not set. The classify step (jev) always uses OpenRouter' +
+        (config.writer === 'claude-cli' ? '; your writing steps use Claude Code.\n' : ', and so do the writing steps unless NORO_WRITER=claude-cli.\n') +
         '  Get a key at https://openrouter.ai/settings/keys, then either\n' +
         '    cp .env.example .env   and put the key in .env, or\n' +
         '    export OPENROUTER_API_KEY=sk-or-...\n',

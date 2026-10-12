@@ -12,6 +12,7 @@ import { RawNumberError, renderTemplate, scrubNumbers } from './template.js';
 import type { TemplateOptions } from './template.js';
 
 export { createChatClient, parseJsonObject, stripFence } from './chat.js';
+export { createClaudeCliClient, checkClaudeAuth, ClaudeCliError } from './claude-cli.js';
 export {
   RawNumberError,
   allowedIdentifiers,

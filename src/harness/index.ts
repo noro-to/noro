@@ -38,6 +38,7 @@ import { classify, createJevClient } from '../classify/index.js';
 import { computeFacts } from '../compute/index.js';
 import { loadConfig } from '../config.js';
 import type { Config } from '../config.js';
+import { createClaudeCliClient } from '../draft/claude-cli.js';
 import { createChatClient, draft, reviseDetailed, scrubNumbers, templateQuote, templatize } from '../draft/index.js';
 import type { FoundNumber, ReviseResult } from '../draft/index.js';
 import { DEFAULT_FORMAT } from '../draft/prompts.js';
@@ -148,7 +149,7 @@ export function runDbPath(stateDir: string, runKey: string): string {
 
 export function runKeyFor(file: string, mode: string, format: string, cfg: Config): string {
   const h = createHash('sha256');
-  h.update(JSON.stringify({ v: 1, mode, format, models: [cfg.draftModel, cfg.panelModel, cfg.classifyModel] }));
+  h.update(JSON.stringify({ v: 1, mode, format, writer: cfg.writer, models: [cfg.draftModel, cfg.panelModel, cfg.classifyModel] }));
   h.update(readFileSync(file));
   return h.digest('hex').slice(0, 32);
 }
@@ -203,7 +204,7 @@ export async function runNoro(input: RunNoroInput): Promise<NoroReport> {
   const file = resolve(cwd, input.file);
   const mode: 'generate' | 'revise' = REVISION_EXTS.has(extname(file).toLowerCase()) ? 'revise' : 'generate';
   const format = input.format ?? DEFAULT_FORMAT;
-  const chat = input.clients?.chat ?? createChatClient(config);
+  const chat = input.clients?.chat ?? (config.writer === 'claude-cli' ? createClaudeCliClient(config) : createChatClient(config));
   const jev = input.clients?.jev ?? createJevClient(config);
   const decide = input.decide ?? (async (f: Flag): Promise<Decision> => ({ flagId: f.id, action: 'keep' }));
   const stateDir = resolve(cwd, input.stateDir ?? config.stateDir);
