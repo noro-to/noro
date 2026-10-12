@@ -13,7 +13,7 @@ Live connections to Google Ads, Meta and Amazon DSP are coming. Until then, a sc
 
 ## GitHub Actions
 
-Copy this into `.github/workflows/noro-weekly.yml` in your own repo. Add `OPENROUTER_API_KEY` under Settings, Secrets and variables, Actions.
+Copy this, or [examples/noro-weekly.yml](../../examples/noro-weekly.yml) from this repo, into `.github/workflows/noro-weekly.yml` in your own repo. Add `OPENROUTER_API_KEY` under Settings, Secrets and variables, Actions.
 
 ```yaml
 name: noro weekly

@@ -5,7 +5,7 @@ If you already pay for a Claude or ChatGPT plan, noro can run the writing steps 
 | Provider | Tool | Plan | `NORO_MODEL` |
 | --- | --- | --- | --- |
 | `claude-cli` | Claude Code (`claude`) | Claude Pro or Max | `claude-cli:claude-opus-5-5` |
-| `codex-cli` | OpenAI Codex CLI (`codex`) | ChatGPT Plus, Pro or Business | `codex-cli:gpt-6.1-sol` |
+| `codex-cli` | OpenAI Codex CLI (`codex`) | ChatGPT Plus, Pro or Business | `codex-cli:default` |
 
 Classify still needs its own setup: a jev key, a local decision model or rules. See [classify.md](classify.md).
 
@@ -53,11 +53,11 @@ New in v0.2.
 3. Set it in `.env`:
 
 ```bash
-NORO_MODEL=codex-cli:gpt-6.1-sol
+NORO_MODEL=codex-cli:default
 OPENROUTER_API_KEY=sk-or-v1-0000000000000000   # for classify with jev
 ```
 
-Use any model your plan offers in Codex. Set `NORO_CODEX_BIN` if `codex` isn't on your PATH.
+`codex-cli:default` uses the model Codex picks for your plan. To pick one yourself, write `codex-cli:<model-id>` with any model your plan offers. Set `NORO_CODEX_BIN` if `codex` isn't on your PATH.
 
 For each writing call, noro runs `codex exec` in a read-only sandbox, in an empty temporary folder, with the shell tool and web search off, your Codex config and rules ignored, and no session files saved. It removes these variables from that call: `OPENAI_API_KEY`, `CODEX_API_KEY`, `CODEX_ACCESS_TOKEN`, `OPENAI_BASE_URL`, `OPENAI_ORG_ID`, `OPENAI_PROJECT_ID` and `AZURE_OPENAI_API_KEY`. If `codex login status` shows an API-key login, noro stops.
 
