@@ -1,0 +1,27 @@
+id: P-variety-of-factors
+slug: variety-of-factors
+name: '"A variety of factors"'
+category: specificity
+severity: warning
+engine: regex
+applies_to: text
+patterns:
+  - '\b(?:a\s+(?:variety|number|combination|range|mix|host|myriad)\s+of|multiple|several|various|many|numerous|external|other|different)\s+(?:factors|reasons|variables|elements|drivers|dynamics|headwinds|influences)\b'
+  - '\bmarket\s+(?:conditions|dynamics|volatility|headwinds|fluctuations)\b'
+  - '\b(?:macro(?:economic)?|external)\s+(?:conditions|headwinds|trends|environment)\b'
+  - '\bseasonal(?:ity|\s+(?:trends|factors|fluctuations|effects))\b'
+unless: '\d'
+message: "Unnamed cause: '{match}'"
+why: "'A variety of factors' is a cause with nothing in it. It reads as 'we didn't look', and a buyer can't act on it."
+fix: "Name the cause with its number, broken into CPM, CTR and CVR or a budget shift: 'CPM rose 18%; CTR and CVR held.' If you didn't check, say what you didn't check."
+examples:
+  flag:
+    - "CPA rose due to a variety of factors."
+    - "Results were affected by market conditions."
+    - "Several factors contributed to the decline."
+    - "Seasonality played a role."
+  pass:
+    - "CPA rose because CPM rose 18% while CTR and CVR held."
+    - "Last November CPA was also 22% above October, so the rise matches past seasonality."
+    - "Two things changed on Oct 3: the budget and the landing page."
+source: "earlier draft banlist.md (hedges: 'a variety of factors') and rule D1 (decompose before you explain)"

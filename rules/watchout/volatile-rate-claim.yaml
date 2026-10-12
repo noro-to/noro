@@ -1,0 +1,21 @@
+id: W-volatile-rate-claim
+slug: volatile-rate-claim
+name: Volatile rate called a win or loss
+category: watchout
+severity: advisory
+engine: regex
+applies_to: text
+patterns:
+- \b(?:conversion\s+rate|CVR|CTR|click[- ]through\s+rate|CPL|cost\s+per\s+lead)\b[^.\n]{0,30}\b(?:jumped|spiked|surged|soared|crashed|plunged|improved|doubled|halved)\b
+unless: \b(?:directional|early|CI\b|confidence|interval|±|n\s?=\s?\d{2,}|\d{2,}\s+(?:conversions|clicks|leads))
+message: 'Volatile rate called a win or loss: ''{match}'''
+why: Rates like conversion rate and CTR bounce week to week. A one-week jump often reverses.
+fix: Show the base it rests on (clicks, conversions) or call it directional.
+examples:
+  flag:
+  - Conversion rate jumped 25% this week.
+  - CTR soared to 5.2%.
+  pass:
+  - Conversion rate rose to 3.2% on 1,200 clicks.
+  - CTR improved to 5.2%, an early signal.
+source: 'Watchout rules for ad reports: flag when a claim could be luck, not signal (2026-10-12).'

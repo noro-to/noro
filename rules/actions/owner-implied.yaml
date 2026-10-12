@@ -1,0 +1,22 @@
+id: A-owner-implied
+slug: owner-implied
+name: Owner is clear
+category: actions
+severity: advisory
+engine: judge
+applies_to: text
+rubric:
+  question: Is it clear who does each action?
+  anchors:
+    0: No sense of who acts
+    1: Could belong to several roles
+    2: Role or person is clear, or obvious from context
+message: Is it clear who does each action?
+why: An action nobody owns doesn't happen. Matters most in agency reports that go to a client team.
+fix: 'Name the role or person if the original does. If it doesn''t, flag it for the writer. noro never invents what the original lacks: if it''s missing, flag it for the writer.'
+examples:
+  flag:
+  - Optimize bids, increase budget and review creative.
+  pass:
+  - Our team raises brand bids 15%; your team confirms the Sunday call coverage.
+source: 'Action rules for ad reports: recommendations clear, tied to data, executable (locked 2026-10-12).'

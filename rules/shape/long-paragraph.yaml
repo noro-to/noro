@@ -1,0 +1,23 @@
+id: S-long-paragraph
+slug: long-paragraph
+name: Long paragraph
+category: shape
+severity: advisory
+engine: count
+applies_to: text
+count:
+  pattern: (?m)^(?:[^\n]*?[.!?](?:[ \t]+|$)){6,}
+  max: 0
+  per: report
+message: 'Paragraph of 6+ sentences: ''{match}'''
+why: A wall of sentences can't be scanned. Each paragraph should carry one idea.
+fix: Split it so each paragraph holds one idea in three sentences or fewer.
+examples:
+  flag:
+  - Spend rose. CPA rose. Conversions fell. CTR held. CPM rose. Frequency rose. We will act.
+  pass:
+  - 'Spend rose 12%. CPA rose 39%.
+
+
+    Two ad sets drove the rise.'
+source: Shape rules for ad reports, locked 2026-10-12; noro-research.md (round 1 and 2).

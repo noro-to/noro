@@ -1,0 +1,22 @@
+id: V-no-truncated-baseline
+slug: no-truncated-baseline
+name: No hidden baseline
+category: visual
+severity: warning
+engine: judge
+applies_to: visual
+message: Is the baseline or zero line visible where the reader needs it to judge size?
+why: Without the baseline, the eye compares bar tops instead of bar lengths.
+fix: Show the zero line or the baseline period. Remove crops that hide it.
+rubric:
+  question: Is the baseline or zero line visible where the reader needs it to judge size?
+  anchors:
+    0: The baseline is cropped out so size can't be judged
+    1: Baseline present but hard to see
+    2: Baseline visible, or the chart doesn't depend on one
+examples:
+  flag:
+  - Bar chart cropped so all bars start mid-frame
+  pass:
+  - Bars with the zero line drawn
+source: 'Design principle: honesty first. Locked chart rules, 2026-10-12.'

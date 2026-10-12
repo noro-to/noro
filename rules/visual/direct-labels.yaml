@@ -1,0 +1,22 @@
+id: V-direct-labels
+slug: direct-labels
+name: Label directly; legend only for three or more series
+category: visual
+severity: warning
+engine: judge
+applies_to: visual
+message: Are series labeled directly on the chart, with a legend only when there are three or more?
+why: Every trip to the legend costs the reader a second and a mistake.
+fix: Put the series name at the end of its line or on its bar. Drop the legend.
+rubric:
+  question: Are series labeled directly on the chart, with a legend only when there are three or more?
+  anchors:
+    0: A legend for one or two series, or a legend the eye must bounce to
+    1: Direct labels on some series
+    2: Direct labels; a legend only for 3+ series
+examples:
+  flag:
+  - Two-line chart with a legend in the corner
+  pass:
+  - Each line labeled at its right end, no legend
+source: 'Design principle: minimal friction. Locked chart rules, 2026-10-12.'

@@ -1,0 +1,26 @@
+id: T-rhetorical-reveal
+slug: rhetorical-reveal
+name: Rhetorical-question reveal
+category: tells
+severity: error
+engine: regex
+applies_to: text
+patterns:
+  - '(?:^|(?<=\n)|(?<=[.!?:]\s))[ \t]*(?:the\s+|our\s+)?(?:result|results|culprit|reason|answer|takeaway|outcome|kicker|catch|problem|fix|verdict|good\s+news|bad\s+news|upshot|bottom\s+line|short\s+answer|real\s+story|twist)\?'
+  - '\b(?:why|what)\s+(?:does|did|do)\s+(?:this|that|it|these)\s+(?:matter|mean)(?:\s+for\s+(?:you|us|the\s+\w+))?\?'
+  - '\bso\s+what\s+(?:happened|changed|went\s+wrong|drove\s+(?:this|it)|does\s+this\s+mean)\?'
+  - '\bwhat\s+(?:drove|caused|explains|is\s+behind)\s+(?:this|the\s+(?:drop|rise|spike|dip|jump|change|increase|decrease))\?'
+message: "Rhetorical-question reveal: '{match}'"
+why: "'The culprit? Creative fatigue.' is a drumroll. It labels the claim instead of supporting it, and readers now spot it as AI style."
+fix: "Say the answer as a sentence with its evidence: 'CPA rose because Sunday's conversion rate fell to 9.8%.' Keep real questions you need the client to answer."
+examples:
+  flag:
+    - "The culprit? Creative fatigue."
+    - "CPA rose 39%. The reason? Sunday."
+    - "So what changed? Mostly CPM."
+    - "Why does this matter? Because CPA is above target."
+  pass:
+    - "CPA rose 39% because Sunday's conversion rate fell to 9.8%."
+    - "Can you confirm how Sunday calls are handled?"
+    - "The cause is after the click: CVR fell, CPC held."
+source: "11-ai-writing-tells.md (rhetorical question → answer; ban list #3)"

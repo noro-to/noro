@@ -1,0 +1,30 @@
+{
+  "id": "09-pie-nine-slices",
+  "format_in": "report slide with chart (visual + text)",
+  "format_out": "one-page visual",
+  "platform": "google_ads",
+  "audience": "client",
+  "slop_types": [
+    "9-slice pie: angles for nine similar-sized parts can't be compared, so the reader falls back on the legend",
+    "categorical colors past the point anyone can match them to a legend",
+    "exploded slice and drop shadow (decoration)",
+    "a percentage on every slice, with the small ones crowding",
+    "topic title ('Spend Distribution by Campaign')",
+    "puffery caption ('pivotal role', 'full-funnel strategy', 'diversified allocation', 'holistic, balanced approach')"
+  ],
+  "planted_traps": [
+    {"type": "unsupported-claim", "where": "'YouTube – Awareness ... is driving upper-funnel awareness that feeds PMax'", "why": "the slide shows spend only; there is no awareness, reach or assisted-conversion data behind the claim"},
+    {"type": "spend-as-performance", "where": "'largest investment area ... underscoring its pivotal role'", "why": "share of spend says nothing about results; the rewrite must not imply PMax performed well because it spent most"}
+  ],
+  "expected_watchouts": [
+    {"type": "unsupported-claim", "where": "YouTube 'driving upper-funnel awareness that feeds PMax'", "why": "a causal claim with no measurement in the source"}
+  ],
+  "numbers": ["2026", "$64,500", "9", "$20,124", "31.2%", "$9,546", "14.8%", "$7,805", "12.1%", "$6,192", "9.6%", "$5,418", "8.4%", "$5,096", "7.9%", "$4,064", "6.3%", "$3,612", "5.6%", "$2,643", "4.1%"],
+  "derived_in_gold": [],
+  "cut_list": [
+    "the pie (replaced by sorted bars from $0)",
+    "per-slice percentages and dollar amounts except PMax and the runner-up",
+    "the caption (pivotal role, YouTube awareness, holistic allocation)"
+  ],
+  "notes": "Synthetic outdoor-gear retailer. Dollar amounts sum to $64,500 and percentages to 100.0. The gold states the one fact the slide supports (where the money went) and says the source has no results by campaign, so nobody reads spend share as performance. The gold chart starts at $0."
+}

@@ -1,0 +1,21 @@
+id: W-change-credited-without-alternatives
+slug: change-credited-without-alternatives
+name: Our change credited, alternatives ignored
+category: watchout
+severity: advisory
+engine: regex
+applies_to: text
+patterns:
+- \bwe\s+(?:increased|raised|lowered|decreased|changed|launched|paused|added|cut|switched|moved)\b[^.\n]{0,80}\b(?:and|so|which|then)\b[^.\n]{0,40}\b(?:conversions?|ROAS|revenue|CPA|sales|leads)\b[^.\n]{0,20}\b(?:up|down|rose|fell|jumped|dropped|doubled|tripled|halved|grew|increased|decreased|improved|declined|spiked|surged|crashed|soared|plunged|lift|lifted|gain|gained)\b
+- \bwe\s+(?:increased|raised|lowered|changed|launched|paused|added|cut|switched)\b[^.\n]{0,80}\b(?:led\s+to|resulted\s+in|caused|drove|causing)\b
+unless: \b(?:may|might|also|though|although|alongside|season\w*|competitor|other\s+factors|coincid\w*|holdout|test\s+group|control)\b
+message: 'Our change credited, alternatives ignored: ''{match}'''
+why: Our change and the result happened together, but seasonality, competitors or budget may explain it. 'We did X and Y rose' isn't proof.
+fix: Say what else changed in the same window, or call it a correlation until a holdout or test confirms it.
+examples:
+  flag:
+  - We increased bids and conversions rose 30%.
+  - We paused low-ROAS keywords, which led to a 40% ROAS lift.
+  pass:
+  - We increased bids; conversions also rose 30%, though seasonality may explain part of it.
+source: 'Watchout rules for ad reports: flag when a claim could be luck, not signal (2026-10-12).'

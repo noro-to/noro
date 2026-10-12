@@ -1,0 +1,24 @@
+id: V-dual-axes-related
+slug: dual-axes-related
+name: Dual axes only for related metrics
+category: visual
+severity: warning
+engine: judge
+applies_to: visual
+message: If the chart has two y-axes, are the two metrics directly related, with scales that don't invent a crossover?
+why: Dual axes let any two lines look correlated. The crossover point is chosen by whoever set the scales.
+fix: Split into two small charts with a shared x-axis, or index both metrics to 100.
+rubric:
+  question: If the chart has two y-axes, are the two metrics directly related, with scales that don't invent a crossover?
+  anchors:
+    0: Two unrelated metrics share a chart, or the scales are set so lines cross for effect
+    1: Metrics are related but the scales or labels are unclear
+    2: One axis, or two related metrics with clearly labeled, honest scales
+examples:
+  flag:
+  - 'Left axis: sessions. Right axis: brand awareness score. Lines cross in March.'
+  - Spend in bars and CTR as a line on a right axis scaled so they meet
+  pass:
+  - 'Two small charts stacked: spend, then ROAS, same months'
+  - Spend and revenue both indexed to 100 in January
+source: 'Design principle: honesty first. Locked chart rules, 2026-10-12.'

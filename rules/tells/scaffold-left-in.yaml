@@ -1,0 +1,27 @@
+id: T-scaffold-left-in
+slug: scaffold-left-in
+name: Scaffold left in
+category: tells
+severity: error
+engine: regex
+applies_to: both
+patterns:
+  - '(?:^|(?<=\n))[ \t]*\[(?!\s*(?:chart|image|img|figure|fig|table|screenshot|graph|visual|photo|dashboard)\b)[^\]\n]{3,}\][ \t]*(?=\n|$)'
+  - '\[(?:insert|add|tbd|todo|to\s+do|placeholder|fill\s+in|need|client(?:\s+name)?|company(?:\s+name)?|your\s+name|name|date|link|url|xx+|number|metric|source)\b[^\]\n]{0,80}\](?!\()'
+  - '\{\{[^{}\n]{1,60}\}\}'
+  - '(?<![\w$])\$X{1,3}(?:,X{3})*(?:\.X{1,2})?(?!\w)|(?<!\w)X{2,3}(?:\.X)?%'
+  - '\blorem\s+ipsum\b'
+message: "Scaffold left in: '{match}'"
+why: "An empty outline line like '[Hour-of-day performance: …]' shows the report was generated and never read. One placeholder costs the credibility of every number around it."
+fix: "Cut the line. Don't write the section it promised: noro does no new analysis. If the section matters, tell the user it's missing."
+examples:
+  flag:
+    - "[Hour-of-day performance: daypart patterns in spend, conversion and efficiency]"
+    - "CPA came in at $X,XXX against a target of [insert target]."
+    - "Hi {{client_name}}, here is your weekly update."
+    - "[Day × hour hotspots: best and worst specific windows from the heatmap]"
+  pass:
+    - "[chart: bars from $0, cost per conversion by day, May–August 2026; Sunday highlighted at $138]"
+    - "See the [search terms report](https://example.com/terms) for the full list."
+    - "- [x] Negative keywords added on Oct 3"
+source: "bench/corpus/11-day-of-week-dense (owner-flagged real report: two empty placeholder sections); marketingskills [NEED: proof] marker (11-ai-writing-tells.md)"

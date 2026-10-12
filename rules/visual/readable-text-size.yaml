@@ -1,0 +1,22 @@
+id: V-readable-text-size
+slug: readable-text-size
+name: Text readable at display size
+category: visual
+severity: warning
+engine: judge
+applies_to: visual
+message: Is every label readable at the size the chart is actually shown?
+why: A chart exported at dashboard size and pasted into a slide shrinks every label.
+fix: Re-render at the display size, or cut labels until the rest can grow.
+rubric:
+  question: Is every label readable at the size the chart is actually shown?
+  anchors:
+    0: Labels too small to read in the deck or doc
+    1: Some small labels
+    2: All text readable at display size
+examples:
+  flag:
+  - Dashboard screenshot pasted into a slide, 6pt labels
+  pass:
+  - Chart re-rendered for the slide, labels at 12pt
+source: 'Design principle: minimal friction. Locked chart rules, 2026-10-12.'

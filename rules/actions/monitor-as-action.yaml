@@ -1,0 +1,24 @@
+id: A-monitor-as-action
+slug: monitor-as-action
+name: Monitor as the action
+category: actions
+severity: error
+engine: regex
+applies_to: text
+patterns:
+- \b(?:continue|keep|will)\s+(?:to\s+)?monitor(?:ing)?\b
+- \bkeep\s+an\s+eye\s+on\b
+- \bmonitor(?:ing)?\s+(?:closely|performance|results|trends|the\s+situation)\b
+- \bwatch\s+(?:this|it|closely)\b
+unless: ^(?=[\s\S]*?(?:\b(?:by|on|until|before|through|after)\s+(?:(?:mon|tue|wed|thu|fri|sat|sun)[a-z]*\b|(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.?\s+\d{1,2}\b|\d{1,2}/\d{1,2}\b)|\bnext\s+(?:week|month|call)\b))(?=[\s\S]*?(?:[$€£]\s?\d|\d\s?%|\b(?:above|below|over|under)\s+[$€£]?\d))
+message: '''{match}'' isn''t an action'
+why: '''Monitor'' tells the reader nothing will happen. A check needs a date and a number that decides the next step.'
+fix: 'Name the check: ''If CPA is above $50 on Fri, cut PR-03 budget 40%.'' If nothing is due, write ''Nothing to change. Next check: Fri.'''
+examples:
+  flag:
+  - We will continue to monitor performance closely.
+  - Keep an eye on Sunday CPA.
+  pass:
+  - 'Monitor Sunday CPA: if it''s above $120 by Oct 20, cut Sunday bids 20%.'
+  - 'Nothing to change. Next check: Friday.'
+source: Research rounds 1–3; locked 2026-10-12.

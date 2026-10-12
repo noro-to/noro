@@ -1,0 +1,21 @@
+id: W-short-trend
+slug: short-trend
+name: Trend called on too few days
+category: watchout
+severity: advisory
+engine: regex
+applies_to: text
+patterns:
+- \b(?:over|in|across|during)\s+the\s+(?:last|past)\s+(?:[1-6]|two|three|four|five|six)\s+days?\b[^.\n]{0,80}\b(?:trend|trending|consistently|steadily|declin\w*|improv\w*)\b
+- \b(?:trend|trending)\b[^.\n]{0,60}\b(?:last|past)\s+(?:[1-6]|two|three|four|five|six)\s+days\b
+- \b(?:for|over)\s+(?:[1-6]|two|three|four|five|six)\s+(?:consecutive|straight|days\s+in\s+a\s+row)\s*(?:days)?\b
+message: 'Trend on fewer than 7 days: ''{match}'''
+why: Three days is noise, and the most recent days are still collecting conversions.
+fix: Call a trend only on 7 or more complete days, or say the data is too new to judge.
+examples:
+  flag:
+  - Over the last 3 days, CPA has been trending down.
+  - Mobile CPA has increased for 3 consecutive days, indicating a downward trend.
+  pass:
+  - Over the last 28 days, CPA fell 12%.
+source: Research rounds 1–3; locked 2026-10-12.

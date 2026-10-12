@@ -1,0 +1,22 @@
+id: V-parts-sum-to-whole
+slug: parts-sum-to-whole
+name: Percentages sum to 100% or say they're partial
+category: visual
+severity: warning
+engine: judge
+applies_to: visual
+message: Do shares add up to 100%, or does the chart say what's missing?
+why: Missing shares make the shown ones look bigger than they are.
+fix: Add an 'Other' group, or label the chart as partial.
+rubric:
+  question: Do shares add up to 100%, or does the chart say what's missing?
+  anchors:
+    0: Shares don't add to 100% and nothing explains it
+    1: Small gap with no note
+    2: Sums to 100%, or labeled 'top 5 shown, other 18%'
+examples:
+  flag:
+  - Channel share pie adding to 84%
+  pass:
+  - 'Top 5 channels shown, ''Other: 16%'''
+source: 'Design principle: honesty first. Locked chart rules, 2026-10-12.'

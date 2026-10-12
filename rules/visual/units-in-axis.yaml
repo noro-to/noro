@@ -1,0 +1,22 @@
+id: V-units-in-axis
+slug: units-in-axis
+name: Units on the axis, not every point
+category: visual
+severity: warning
+engine: judge
+applies_to: visual
+message: Are units stated once on the axis instead of repeated on every label?
+why: Repeated units are noise the eye has to skip.
+fix: Put the unit in the axis label and drop it from the ticks.
+rubric:
+  question: Are units stated once on the axis instead of repeated on every label?
+  anchors:
+    0: '''$'' or ''%'' repeated on every tick and label'
+    1: Some repetition
+    2: Unit stated once on the axis or title
+examples:
+  flag:
+  - Every tick reads $10K, $20K, $30K and every bar label repeats $
+  pass:
+  - Axis 'Spend (USD, thousands)', ticks 10, 20, 30
+source: 'Design principle: clarity over decoration. Locked chart rules, 2026-10-12.'

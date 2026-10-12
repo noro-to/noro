@@ -1,0 +1,19 @@
+id: W-click-spike-no-conversions
+slug: click-spike-no-conversions
+name: Click spike with no conversions
+category: watchout
+severity: advisory
+engine: regex
+applies_to: text
+patterns:
+- \b(?:clicks?|CTR|sessions|traffic)\b[^.\n]{0,40}\b(?:spiked|surged|jumped|doubled|tripled|soared)\b
+unless: \b(?:conversions?|leads|orders|sales|revenue)\b[^.\n]{0,30}\b(?:rose|up|grew|increased|doubled|followed)\b
+message: 'Click or CTR spike, check for bots: ''{match}'''
+why: Bots made 10 times more clicks than humans in unprotected campaigns (DoubleVerify). A spike with no conversions isn't a win.
+fix: Check conversions, landing-page views and placements for the same window before reporting the spike as good news.
+examples:
+  flag:
+  - CTR spiked to 4.8% on Display this week.
+  pass:
+  - Clicks doubled and conversions rose 90% with them.
+source: Research rounds 1–3; locked 2026-10-12.

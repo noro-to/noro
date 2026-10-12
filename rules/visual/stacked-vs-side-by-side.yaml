@@ -1,0 +1,23 @@
+id: V-stacked-vs-side-by-side
+slug: stacked-vs-side-by-side
+name: Stacked for parts, side by side for comparison
+category: visual
+severity: warning
+engine: judge
+applies_to: visual
+message: Do stacked bars show parts of a whole, and side-by-side bars show comparisons?
+why: Only the bottom segment of a stack shares a baseline. Comparing the other segments is guesswork.
+fix: Compare groups or periods side by side. Stack only when the total and its parts are the point.
+rubric:
+  question: Do stacked bars show parts of a whole, and side-by-side bars show comparisons?
+  anchors:
+    0: Stacked bars used to compare periods or groups
+    1: Mostly right, but the intent is ambiguous
+    2: Chart type matches the point
+examples:
+  flag:
+  - Stacked bars comparing January vs February revenue by channel
+  pass:
+  - Side-by-side bars for this year vs last year
+  - Stacked bar for one month's budget split
+source: 'Design principle: one point per visual. Locked chart rules, 2026-10-12.'

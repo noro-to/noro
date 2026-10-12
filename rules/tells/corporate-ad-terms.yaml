@@ -1,0 +1,22 @@
+id: T-corporate-ad-terms
+slug: corporate-ad-terms
+name: Corporate word with an ad meaning
+category: tells
+severity: advisory
+engine: phrase
+applies_to: text
+phrases: ["landscape", "landscapes", "harness", "harnessing", "unlock", "unlocks", "unlocking", "deep dive", "deep-dive", "journey", "ecosystem"]
+unless: '\blandscape\s+(?:images?|assets?|videos?|formats?|crops?|orientation)\b|\b(?:customer|user|buyer|purchase)\s+journeys?\b|\bjourney[\s-]aware\b'
+message: "Check this word: '{match}'"
+why: "These are AI favorites, but each also has a real ad meaning: landscape image assets in PMax and Demand Gen, the customer journey, the deep dive a client paid for. So noro points them out and leaves the call to you."
+fix: "Keep it when it's the literal term ('3 landscape image assets', 'the Q3 deep dive you asked for'). Otherwise write the fact: 'two competitors raised bids', not 'the competitive landscape shifted'."
+examples:
+  flag:
+    - "The competitive landscape shifted in Q3."
+    - "Broader audiences can unlock new growth."
+    - "We will harness first-party data across the ecosystem."
+  pass:
+    - "Add 3 landscape image assets to the PMax asset group."
+    - "Two competitors entered the auction on Sep 4; our impression share fell from 62% to 48%."
+    - "Most of the customer journey starts on mobile."
+source: "owner note (ad meanings); 11-ai-writing-tells.md (2023-24 vocabulary: landscape)"

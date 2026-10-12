@@ -1,0 +1,30 @@
+id: A-too-many-actions
+slug: too-many-actions
+name: Too many actions
+category: actions
+severity: advisory
+engine: count
+applies_to: text
+count:
+  pattern: (?m)^[ \t]*(?:[-*•]|\d+\.)[ \t]+(?:increase|decrease|raise|lower|add|pause|stop|launch|test|shift|move|cut|expand|scale|review|update|create|consider|optimi[sz]e|refresh|swap|exclude|split)\b
+  max: 3
+  per: report
+message: 'More than 3 recommended actions: ''{match}'''
+why: Changing many things at once means nobody can tell what worked. Practitioners have watched AI 'fix everything' and tank accounts.
+fix: Keep the one to three changes that matter most. Change one variable per campaign at a time.
+examples:
+  flag:
+  - '- Raise budgets.
+
+    - Pause Display.
+
+    - Test new creative.
+
+    - Add negatives.
+
+    - Shift spend to PMax.'
+  pass:
+  - '- Swap creative on PR-03 by Wed.
+
+    - If CPA isn''t under $50 by Fri, move 40% of its budget to retargeting.'
+source: Research rounds 1–3; locked 2026-10-12.

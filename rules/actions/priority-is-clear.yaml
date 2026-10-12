@@ -1,0 +1,22 @@
+id: A-priority-is-clear
+slug: priority-is-clear
+name: Priority is clear
+category: actions
+severity: warning
+engine: judge
+applies_to: text
+rubric:
+  question: Can the reader tell which action comes first, and which are tests?
+  anchors:
+    0: Several actions with equal weight and no order
+    1: Order implied but not stated
+    2: 'Clear order: what to do now, what to test, what to check later with a date'
+message: Can the reader tell which action comes first, and which are tests?
+why: When every action sounds equally urgent, the reader does none or all of them.
+fix: 'Order the actions and say which is now and which is a test. If the original gives no priority, flag it. noro never invents what the original lacks: if it''s missing, flag it for the writer.'
+examples:
+  flag:
+  - Pause weak keywords. Increase Search budget. Test new audiences.
+  pass:
+  - 'Now: pause keywords below 0.9 ROAS. Test next: 15% higher bids on brand for 14 days.'
+source: 'Action rules for ad reports: recommendations clear, tied to data, executable (locked 2026-10-12).'

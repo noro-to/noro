@@ -1,0 +1,28 @@
+id: T-contrast-reveal
+slug: contrast-reveal
+name: Contrast reveal
+category: tells
+severity: error
+engine: regex
+applies_to: text
+patterns:
+  - '\b(?:it|this|that|which)(?:\s+is|\s+was|[''’]s)\s+not\s+(?:just|only|merely|simply)\b'
+  - '\b(?:isn[''’]t|wasn[''’]t|aren[''’]t|weren[''’]t)\s+(?:just|only|merely|simply)\b'
+  - '\bnot\s+only\b[^.!?\n]{1,120}?\bbut\s+also\b'
+  - '\b(?:it|this|that)(?:[''’]s\s+not|\s+is\s+not|\s+isn[''’]t|\s+was\s+not|\s+wasn[''’]t)\s+(?:about\s+)?(?:an?\s+|the\s+)?[\w-]+(?:\s+[\w-]+){0,3}\s*[,;—–]\s*(?:it|this|that)(?:[''’]s|\s+is|\s+was)\b'
+  - '\bnot\s+because\b[^.!?\n]{1,80}?[.;]\s+because\b'
+  - '\bless\s+about\b[^.!?\n]{1,80}?\bmore\s+about\b'
+message: "Contrast reveal: '{match}'"
+why: "'It's not just X, it's Y' knocks down a belief nobody stated. It's the most recognized AI rhythm in client emails, and it hides the one fact the reader needs."
+fix: "State Y with its number. A contrast is fine when it rules out a real alternative the reader might hold: 'saturated, not underfunded: frequency is 4.2'."
+examples:
+  flag:
+    - "It's not just a bidding issue, it's a landing-page issue."
+    - "This isn't about budget; it's about creative."
+    - "PMax is not only driving volume but also improving efficiency."
+    - "It's not a tracking problem, it's a demand problem."
+  pass:
+    - "Neither ad set got worse; allocation changed."
+    - "PR-03 is saturated, not underfunded: frequency is 4.2."
+    - "The problem is after the click, not the ad."
+source: "11-ai-writing-tells.md (contrast reveal, both sources); r/marketing 'it's not just X, it's Y' (07-reddit-marketing.md); earlier draft rule V4"

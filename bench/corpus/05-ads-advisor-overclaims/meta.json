@@ -1,0 +1,41 @@
+{
+  "id": "05-ads-advisor-overclaims",
+  "format_in": "platform AI summary, Google Ads Advisor style (written)",
+  "format_out": "Slack/Teams",
+  "platform": "google_ads",
+  "audience": "internal",
+  "slop_types": [
+    "bold-label insight bullets with decorative glyphs (✦)",
+    "verdict headings ('is paying off', 'top performer', 'Wasted spend detected')",
+    "one-click [Apply] recommendations with an unexplained impact estimate",
+    "optimization score presented as a performance result",
+    "every claim stated with the same confidence regardless of the data behind it"
+  ],
+  "planted_traps": [
+    {"type": "platform-roas-as-cause", "where": "'Your target ROAS change ... drove a 12.3% increase in ROAS ... generating an additional $10,680'", "why": "a before/after on platform-reported ROAS is credited to one change; the change on Oct 2 also falls inside the comparison week and the bid strategy was still recalibrating"},
+    {"type": "trend-from-three-days", "where": "mobile cost per conversion 'increased for 3 consecutive days', Oct 9 to Oct 11", "why": "3 days is noise, and the last 1-2 days are still filling in with lagged conversions"},
+    {"type": "immaterial-waste", "where": "'Tablet devices spent $12.40 with 0 conversions'", "why": "$12.40 against $14,620 of spend is not a finding"},
+    {"type": "pmax-no-caveat", "where": "Performance Max 'outperforming' non-brand Search at 6.10 vs 2.85, and the budget shift", "why": "PMax ROAS includes brand searches and remarketing to past visitors, so it isn't comparable to non-brand Search; channel-level reporting is partial"},
+    {"type": "forecast-no-assumptions", "where": "'Estimated impact: +38 conversions per week'", "why": "no assumptions or method are given"}
+  ],
+  "expected_watchouts": [
+    {"type": "platform-roas-as-cause", "where": "tROAS change credited with the 12.3% ROAS increase and $10,680", "why": "attribution to a single change without a test; platform grading its own homework"},
+    {"type": "trend-from-three-days", "where": "mobile CPA $31.20 to $44.80 over Oct 9-11", "why": "below any minimum-days rule; recent days still settling"},
+    {"type": "bid-adjustment-ignored-by-smart-bidding", "where": "'Set a -15% mobile bid adjustment' on a target ROAS account", "why": "Smart Bidding ignores device bid adjustments other than -100%, so the action would do nothing"},
+    {"type": "immaterial-waste", "where": "tablet $12.40 called wasted spend", "why": "well under any materiality floor"},
+    {"type": "pmax-no-caveat", "where": "PMax 6.10 vs Search 2.85 and the 20% budget shift", "why": "PMax mixes brand and remarketing traffic; compare against total account results or a holdout before moving budget"},
+    {"type": "forecast-no-assumptions", "where": "'+38 conversions per week'", "why": "an estimate with no stated basis"}
+  ],
+  "numbers": ["17.4%", "$71,890", "4.6%", "$14,620", "8.4%", "402", "400%", "450%", "12.3%", "4.38", "4.92", "$10,680", "61%", "245", "6.10", "2.85", "3", "$31.20", "$44.80", "$12.40", "0", "7", "20%", "+38", "-15%", "-100%", "87.4%", "9.1%"],
+  "derived_in_gold": [],
+  "cut_list": [
+    "'strong week' and the verdict headings",
+    "the $10,680 'additional conversion value' credited to the tROAS change",
+    "the mobile trend and the -15% mobile bid suggestion (kept only as '3 days of data')",
+    "the tablet 'wasted spend' finding and -100% suggestion (kept only as '$12.40 of spend')",
+    "the PMax budget shift and its +38 conversions estimate",
+    "optimization score",
+    "the AI disclaimer and feedback widget"
+  ],
+  "notes": "Synthetic DTC skincare brand. The summary imitates the shape of a platform-written AI summary; it is not a copy of any real one. Numbers tie out: ROAS = value / cost (4.92 and 4.38), the 12.3% is 4.92 / 4.38, $10,680 = $71,890 - $61,210 (prior value not shown). The gold labels every figure platform-reported, keeps the tROAS claim attributed to Advisor rather than stated as fact, and shows what the device suggestions rest on instead of repeating them."
+}

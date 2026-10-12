@@ -1,0 +1,27 @@
+id: T-recap-closers
+slug: recap-closers
+name: Recap closer
+category: tells
+severity: error
+engine: regex
+applies_to: text
+patterns:
+  - '(?:^|(?<=\n)|(?<=[.!?]\s))[ \t]*(?:overall|in\s+summary|to\s+summari[sz]e|to\s+sum\s+(?:it\s+)?up|all\s+in\s+all|all\s+told|in\s+short|ultimately|in\s+closing|taken\s+together)\s*,'
+  - '\bin\s+conclusion\b'
+  - '\bat\s+the\s+end\s+of\s+the\s+day\b'
+  - '\b(?:the\s+)?bottom\s+line\s+is\b'
+  - '(?:^|(?<=\n)|(?<=[.!?]\s))[ \t]*(?:all\s+in\s+all|overall)\s*,?\s+an?\s+(?:solid|strong|good|great|positive|productive|successful)\s+(?:week|month|quarter|period)\b'
+message: "Recap closer: '{match}'"
+why: "A one-page report doesn't need a summary of itself. 'Overall,' and 'In conclusion' are template endings that make the reader re-read what they just read."
+fix: "Cut the recap. End on the action, its date and its stop condition, or on 'Nothing to change. Next check: <date>.'"
+examples:
+  flag:
+    - "Overall, it was a solid month for the account."
+    - "In conclusion, the campaigns performed to plan."
+    - "At the end of the day, ROAS is what matters."
+    - "CPA held. All in all, a good week."
+  pass:
+    - "Overall CPA fell 12% to $54."
+    - "CPA held at $54. Next check is Oct 20."
+    - "Ultimately the client decides the Sunday budget."
+source: "11-ai-writing-tells.md ban list #4 (recap closers); Wikipedia formulaic conclusions; earlier draft banlist.md"

@@ -1,0 +1,29 @@
+id: T-hedge-stack
+slug: hedge-stack
+name: Hedge stack
+category: tells
+severity: error
+engine: regex
+applies_to: text
+patterns:
+  - '\b(?:may|might|could)\s+(?:potentially|possibly|perhaps|conceivably)\b'
+  - '\b(?:may|might|could)\s+(?:warrant|suggest|indicate|imply|signal|point\s+to)\b'
+  - '\b(?:seems?|appears?)\s+to\s+(?:suggest|indicate|imply|signal|point\s+to)\b'
+  - '\bit(?:\s+is|[''’]s)\s+(?:possible|conceivable)\s+that\b'
+  - '\bto\s+(?:some|a\s+certain)\s+(?:extent|degree)\b'
+  - '\b(?:may|might|could)\s+(?:have\s+)?been\s+(?:impacted|affected|influenced)\b'
+  - '\b(?:may|might)\s+be\s+worth\s+(?:considering|exploring|investigating|looking\s+into)\b'
+message: "Hedge stack: '{match}'"
+why: "Two hedges in a row tell the reader you don't know and are covering for it. A media buyer reads it as filler; a client reads it as an agency that won't commit."
+fix: "State the claim and what it rests on ('based on 38 conversions; last 2 days still settling'). If it's a hypothesis, say so once and name who confirms it. If you can't back it, cut it."
+examples:
+  flag:
+    - "This could potentially indicate efficiency may have been impacted."
+    - "The CPA rise may suggest creative fatigue on PR-03."
+    - "Results seem to indicate that Sunday is weaker."
+    - "It's possible that the new landing page is to some extent responsible."
+  pass:
+    - "CPA rose 39% to $61, based on 790 conversions."
+    - "Sunday's conversion rate is 9.8% vs 14.1% on other days; our hypothesis is call handling, for the client to confirm."
+    - "CPCs may rise in November, so Brand has a $4.50 max CPC cap."
+source: "noro landing page (generic-draft example); 11-ai-writing-tells.md ban list #1; earlier draft rule E5"

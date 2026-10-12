@@ -1,0 +1,22 @@
+id: S-prose-repeats-chart
+slug: prose-repeats-chart
+name: Prose repeats the chart
+category: shape
+severity: warning
+engine: judge
+applies_to: text
+rubric:
+  question: Does the text next to a chart add meaning, or just narrate what the chart already shows?
+  anchors:
+    0: The text walks through the chart value by value
+    1: Mostly adds meaning, with some narration
+    2: The chart shows the numbers; the text gives the why and the next step
+message: Does the text add to the chart or just repeat it?
+why: Reading the same numbers twice doubles the length and adds nothing. The chart carries the numbers; the words carry the meaning.
+fix: Cut the narration. Keep one line on why it happened and one on what to do.
+examples:
+  flag:
+  - '[chart: CPA by day] Monday was $104, Tuesday $97, Wednesday $95, Thursday $105, Friday $101, Saturday $109 and Sunday $138.'
+  pass:
+  - '[chart: CPA by day] Why: Sunday''s conversion rate fell to 9.8% while CPC held. Next: check Sunday call handling.'
+source: Final rules for clarity in ad reports (2026-10-12).

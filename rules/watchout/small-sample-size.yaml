@@ -1,0 +1,23 @@
+id: W-small-sample-size
+slug: small-sample-size
+name: Change claimed on a tiny sample
+category: watchout
+severity: advisory
+engine: regex
+applies_to: text
+patterns:
+- \b(?:up|down|rose|fell|jumped|dropped|doubled|tripled|halved|grew|increased|decreased|improved|declined|spiked|surged|crashed|soared|plunged|lift|lifted|gain|gained)\b[^.\n]{0,60}?\b(?:n\s?=\s?|from\s+|on\s+|only\s+)?[1-9]\s+(?:conversions?|sales|orders|leads|purchases|clicks|signups|calls)\b
+- \bn\s?=\s?[1-9]\b
+- \b[1-9]\s+(?:conversions?|sales|orders|leads|purchases)\b[^.\n]{0,40}\b(?:up|down|rose|fell|jumped|dropped|doubled|tripled|halved|grew|increased|decreased|improved|declined|spiked|surged|crashed|soared|plunged|lift|lifted|gain|gained)\b
+unless: \b(?:early|preliminary|too\s+(?:few|small|early)|directional|small\s+sample)\b
+message: 'Change claimed on a tiny sample: ''{match}'''
+why: A rate built on fewer than 10 events swings on luck. 'Up 150%' on 4 conversions is noise.
+fix: Report the raw counts ('4 conversions vs 2') or wait for more data. Mark it 'early data' if it must be mentioned.
+examples:
+  flag:
+  - Conversions were up 150% (n=4).
+  - Tablet sales doubled to 6 sales this week.
+  pass:
+  - Conversions were up 15% on 450 conversions.
+  - 'Early data: 8 conversions so far, too few to judge.'
+source: 'Watchout rules for ad reports: flag when a claim could be luck, not signal (2026-10-12).'

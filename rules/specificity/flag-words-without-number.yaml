@@ -1,0 +1,24 @@
+id: P-flag-words-without-number
+slug: flag-words-without-number
+name: Flag word with no number
+category: specificity
+severity: warning
+engine: regex
+applies_to: text
+patterns:
+  - '\b(?:likely|unlikely|probably|healthy|unhealthy|efficient(?:ly)?|inefficient(?:ly)?|strong(?:ly|er)?|weak(?:er)?|saturated|solid|stable)\b'
+unless: '\d'
+message: "'{match}' with no number in the sentence"
+why: "'Healthy', 'efficient' and 'likely' are judgments. Without the number behind them, the reader has to trust you, and a skeptical client won't."
+fix: "Put the number in the same sentence: 'Brand is efficient at $22 per conversion', 'likely saturated: frequency is 4.2'."
+examples:
+  flag:
+    - "Search looks healthy this week."
+    - "Meta is likely saturated in the core audience."
+    - "Brand remains efficient and strong."
+    - "The problem is probably creative."
+  pass:
+    - "Search CPA is $48 against a $55 target."
+    - "Meta frequency is 4.2 in the core audience, so it is likely saturated."
+    - "Brand is efficient at $22 per conversion."
+source: "earlier draft rule V3 (flag words need a number); r/PPC 'state how much data it stands on as a number' (02-key-quotes.md)"

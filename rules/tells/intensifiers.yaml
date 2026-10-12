@@ -1,0 +1,19 @@
+id: T-intensifiers
+slug: intensifiers
+name: Intensifiers
+category: tells
+severity: warning
+engine: count
+applies_to: text
+count: {pattern: '\b(?:truly|really|very|extremely|incredibly|remarkably|exceptionally|absolutely|tremendously|massively|hugely|super)\b', max: 1, per: report}
+message: "More than one intensifier in the report: '{match}'"
+why: "'Really high' and 'very weak' ask the reader to take your word for it. One is speech; several stacked read as padding."
+fix: "Swap the intensifier for the number: '$138 per conversion', not 'very expensive'."
+examples:
+  flag:
+    - "CPA was really high and Sunday was very weak."
+    - "This is a truly important change and extremely urgent."
+  pass:
+    - "CPA was $61, against a $50 target."
+    - "Sunday was very weak: $138 per conversion."
+source: "11-ai-writing-tells.md (cap list: intensifiers)"

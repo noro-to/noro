@@ -1,0 +1,36 @@
+{
+  "id": "10-topic-chart-titles",
+  "format_in": "QBR slide with four charts (visual)",
+  "format_out": "one-page visual",
+  "platform": "google_ads",
+  "audience": "client",
+  "slop_types": [
+    "chart titles are topics, not points ('Performance overview', 'Spend by month', 'Leads by campaign type', 'CPL trend')",
+    "four charts where one carries the news",
+    "impressions and clicks on one axis, so clicks are invisible",
+    "CPL line on a truncated axis with no title telling the reader it rose",
+    "takeaways that contradict the charts ('Spend scaled efficiently' while CPL rose)",
+    "generic takeaways ('Continued optimization across all campaign types')"
+  ],
+  "planted_traps": [
+    {"type": "claim-contradicts-data", "where": "'Spend scaled efficiently to $22,600 in September'", "why": "September cost per lead rose to $148.68 from $130.82; the rewrite must not repeat 'efficiently'"},
+    {"type": "news-buried", "where": "the CPL trend chart, bottom-left", "why": "the one change that matters sits in the least prominent chart under a topic title"},
+    {"type": "number-not-on-slide", "where": "monthly lead counts", "why": "the slide shows leads by campaign type and CPL by month but not leads by month; any monthly lead count in a rewrite must be derived (spend / CPL) and confirmed"}
+  ],
+  "expected_watchouts": [
+    {"type": "claim-contradicts-data", "where": "'Spend scaled efficiently'", "why": "cost per lead rose in the same month spend rose"}
+  ],
+  "numbers": ["2026", "0", "400,000", "288,400", "301,200", "344,900", "4,120", "4,260", "4,980", "$18,400", "$19,100", "$22,600", "302", "98", "39", "$128", "$130.50", "$130.82", "$148.68", "439"],
+  "derived_in_gold": [
+    {"value": "152", "formula": "22600 / 148.68", "inputs": ["$22,600", "$148.68"], "label": "September leads (spend / cost per lead)"},
+    {"value": "146", "formula": "19100 / 130.82", "inputs": ["$19,100", "$130.82"], "label": "August leads (spend / cost per lead)"}
+  ],
+  "cut_list": [
+    "Performance overview chart (impressions and clicks)",
+    "Leads by campaign type chart (302 / 98 / 39)",
+    "July spend",
+    "quarter total of 439 leads",
+    "all four takeaways, including 'scaled efficiently'"
+  ],
+  "notes": "Synthetic B2B SaaS (construction scheduling software). Monthly leads behind the slide: 141, 146, 152 (sum 439), each = spend / CPL. The gold rounds $148.68 to $149 and $130.82 to $131 to exercise the engine's half-unit tolerance, and uses two derived lead counts that noro must get from the derive script and have the user confirm. The gold chart starts at $0."
+}

@@ -1,0 +1,35 @@
+{
+  "id": "04-quiet-week-padded",
+  "format_in": "weekly client report (written)",
+  "format_out": "same as input",
+  "platform": "google_ads",
+  "audience": "client",
+  "slop_types": [
+    "a quiet week padded into seven sections",
+    "says-nothing summary ('steady, consistent results', 'demonstrating the continued effectiveness of our current strategy', 'healthy and well-balanced account')",
+    "'deep dive' and 'insights' headings over routine numbers",
+    "tiny moves narrated as findings (mobile share 'slight increase', Wednesday 'slight dip')",
+    "punts posing as recommendations ('continue monitoring', 'keep an eye on', 'explore opportunities to further optimize')",
+    "bold-label bullets"
+  ],
+  "planted_traps": [
+    {"type": "quiet-week-inflated", "where": "the whole report", "why": "nothing moved enough to act on; the rewrite should say so in one line, give 2-4 numbers and the next date, and stop"},
+    {"type": "small-sample-rate-change", "where": "tablet conversion rate 1.9% from 2.4% (6 purchases)", "why": "a rate change on 6 purchases is noise and must not survive as a finding"},
+    {"type": "pattern-from-one-week", "where": "Saturday's 34 purchases 'could potentially indicate shifting weekend shopping behavior'", "why": "one week of day-of-week data supports no pattern"}
+  ],
+  "expected_watchouts": [
+    {"type": "small-sample-rate-change", "where": "tablet conversion rate 1.9% vs 2.4% on 6 purchases", "why": "below any sample floor for a rate claim; flagged 'may warrant further attention' anyway"},
+    {"type": "pattern-from-one-week", "where": "'shifting weekend shopping behavior'", "why": "a behavioral claim from a single Saturday"}
+  ],
+  "numbers": ["$5,240", "$5,180", "+1.2%", "188", "184", "+2.2%", "$21,590", "$20,980", "+2.9%", "4.12", "4.05", "380%", "$27.87", "$28.15", "41", "39", "112", "49", "27", "64%", "1.9%", "2.4%", "6", "34"],
+  "derived_in_gold": [],
+  "cut_list": [
+    "executive summary and closing line (no content)",
+    "revenue and CPA (ROAS and purchases already carry them)",
+    "campaign split (112 / 49 / 27): nothing changed",
+    "device insights, including the 6-purchase tablet rate",
+    "day-of-week section",
+    "three punt recommendations"
+  ],
+  "notes": "Synthetic coffee-subscription store. The quiet-week gold follows the research format: one line saying it's on track and nothing needs action, four numbers, the next date, a Basis line. ROAS 4.12 = $21,590 / $5,240; campaign purchases sum to 188. The gold is at the 25% floor on purpose: a quiet week should come out as short as the ratio allows."
+}

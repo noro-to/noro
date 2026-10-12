@@ -1,0 +1,22 @@
+id: V-distribution-chart
+slug: distribution-chart
+name: Distributions as histograms or box plots
+category: visual
+severity: warning
+engine: judge
+applies_to: visual
+message: Is a distribution shown as a histogram or box plot, not a line, pie or single average?
+why: An average hides the spread. The spread is often the story.
+fix: Use a histogram or a box plot. Label the bins.
+rubric:
+  question: Is a distribution shown as a histogram or box plot, not a line, pie or single average?
+  anchors:
+    0: A distribution shown as a pie, a line or a single number
+    1: Bars used, but bins unclear
+    2: Histogram or box plot with clear bins
+examples:
+  flag:
+  - Conversion rate across 200 keywords shown as one average
+  pass:
+  - Histogram of keyword conversion rates in 1-point bins
+source: 'Design principle: data speaks first. Locked chart rules, 2026-10-12.'

@@ -1,0 +1,22 @@
+id: T-corporate-words
+slug: corporate-words
+name: Corporate word
+category: tells
+severity: warning
+engine: phrase
+applies_to: text
+phrases: ["leverage", "leverages", "leveraged", "leveraging", "utilize", "utilizes", "utilized", "utilizing", "synergy", "synergies", "synergistic", "holistic", "holistically", "streamline", "streamlines", "streamlining", "elevate", "elevates", "elevating", "delve", "delves", "delving", "tapestry", "testament to", "cutting-edge", "seamless", "seamlessly", "surgical precision", "fast-paced", "moving forward", "going forward", "paradigm", "empower", "empowers", "empowering", "foster", "fosters", "fostering", "multifaceted", "spearhead", "spearheaded", "underscore", "underscores", "underscoring", "low-hanging fruit", "move the needle", "circle back"]
+message: "Corporate word: '{match}'"
+why: "Inflated words make a short point sound long and read as machine-written. Clients have learned to spot 'leverage' and 'underscore'; they don't add facts."
+fix: "Use the plain verb or cut it: 'use', not 'leverage'; 'from Nov 1', not 'moving forward'. Don't swap in a synonym; rewrite from the fact."
+examples:
+  flag:
+    - "We will leverage audience insights to drive growth."
+    - "Moving forward, we plan to utilize broad match."
+    - "This underscores the importance of a holistic strategy."
+    - "A seamless, cutting-edge approach to bidding."
+  pass:
+    - "We will use the PR-03 remarketing list in November."
+    - "From Nov 1, broad match runs on Brand only."
+    - "Sunday costs $138 per conversion; other days cost $101."
+source: "earlier draft banlist.md (corporate); 11-ai-writing-tells.md (era vocabulary); r/advertising 'surgical precision' (02-key-quotes.md)"

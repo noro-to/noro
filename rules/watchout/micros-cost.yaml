@@ -1,0 +1,19 @@
+id: W-micros-cost
+slug: micros-cost
+name: Cost that looks like micros
+category: watchout
+severity: advisory
+engine: regex
+applies_to: text
+patterns:
+- \b(?:cost|spend|spent|cpc|cpa)\b[^.\n]{0,25}?\$?\s?\d{1,3}(?:,\d{3}){3,}\b
+- \bcost_micros\b
+message: 'This cost may be in micros: ''{match}'''
+why: The Google Ads API reports cost in micros (1,000,000 = $1). An unconverted value looks a million times too big.
+fix: Check the source. If it's micros, divide by 1,000,000 before the number goes anywhere.
+examples:
+  flag:
+  - Total cost was 48,213,000,000 for the week.
+  pass:
+  - Total cost was $48,213 for the week.
+source: Research rounds 1–3; locked 2026-10-12.

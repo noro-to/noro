@@ -1,0 +1,22 @@
+id: A-vague-optimize
+slug: vague-optimize
+name: Vague 'optimize'
+category: actions
+severity: warning
+engine: regex
+applies_to: text
+patterns:
+- \b(?:continue|keep)\s+(?:to\s+)?optimi[sz](?:e|ing)\b
+- \bfurther\s+optimi[sz](?:e|ation|ations)\b
+- \boptimi[sz]e\s+(?:the\s+)?(?:campaigns?|account|performance|keywords,?\s+bids)\b
+- \boptimi[sz]ation\s+opportunities\b
+message: 'Vague action: ''{match}'''
+why: '''Optimize'' with no object, lever or number is a placeholder for an action. Clients read it as the agency having no plan.'
+fix: 'Say the lever and the size: ''Add 41 negative keywords'', ''Raise the tROAS target from 400% to 450%''.'
+examples:
+  flag:
+  - We recommend continuing to optimize keywords, bids and ad copy.
+  - There are several optimization opportunities.
+  pass:
+  - Add the 41 negative keywords in the appendix today.
+source: Research rounds 1–3; locked 2026-10-12.

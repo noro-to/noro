@@ -1,0 +1,24 @@
+id: P-vague-entities
+slug: vague-entities
+name: Vague entities
+category: specificity
+severity: warning
+engine: regex
+applies_to: text
+patterns:
+  - '\b(?:certain|some|several|various|select|specific|particular|multiple|a\s+few|a\s+handful\s+of|a\s+number\s+of|a\s+couple\s+of)\s+(?:of\s+(?:the|our|your)\s+)?(?:(?:key|top|core|main|underperforming|high[\s-]performing|low[\s-]performing|non[\s-]converting|poorly\s+performing|best[\s-]performing|new|newer|older|existing)\s+)?(?:campaigns?|ad\s+sets?|ad\s+groups?|ads|creatives?|keywords?|audiences?|placements?|segments?|search\s+terms?|products?|skus?|asset\s+groups?|channels?|markets?|regions?|geos?|devices?|platforms?|line\s+items?)\b'
+unless: '\([^()]*,[^()]*\)|:\s*[^:.;\n]+,|\b[a-z]{1,5}-\d{1,4}\b|["“][^"”\n]+["”]'
+message: "Vague entity: '{match}'"
+why: "'Certain ad sets' makes the reader ask which ones, and they can't act until you answer. A buyer can't pause 'some keywords'."
+fix: "Name them: 'PR-03 and PR-07', 'Brand and Generic', or 'three keywords (red tent, tent sale, cheap tents)'."
+examples:
+  flag:
+    - "Certain ad sets saw higher CPAs this week."
+    - "Several keywords are underperforming."
+    - "We paused some of the underperforming campaigns."
+    - "Results varied across various audiences."
+  pass:
+    - "PR-03 and PR-07 had CPAs above $60."
+    - "Three keywords (red tent, tent sale, cheap tents) spent $410 with no conversions."
+    - "Several ad sets (PR-03, PR-07) rose above $60."
+source: "earlier draft rule V1 ('PR-03 and PR-07', not 'certain ad sets'); 11-ai-writing-tells.md (vague sources and entities)"

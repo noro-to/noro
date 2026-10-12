@@ -1,0 +1,21 @@
+id: W-spike-unexplained
+slug: spike-unexplained
+name: Spike or drop with no reason
+category: watchout
+severity: advisory
+engine: regex
+applies_to: text
+patterns:
+- \b(?:spend|conversions?|clicks|CPA|CPC|ROAS|revenue|impressions|traffic)\b[^.\n]{0,30}\b(?:spiked|surged|jumped|crashed|plunged|doubled|tripled|halved|collapsed)\b
+unless: \b(?:because|due\s+to|after|when|launch|promo|holiday|black\s+friday|outage|paused|budget|sale|test|competitor|\()
+message: 'Spike or drop with no reason: ''{match}'''
+why: An unexplained spike invites the reader to make up a reason.
+fix: Name the cause if the original knows it (launch, holiday, outage, budget change). If not, flag it as unexplained.
+examples:
+  flag:
+  - Spend spiked 200% on Oct 15.
+  - Conversions crashed on Friday.
+  pass:
+  - Spend spiked 200% on Oct 15 because of Black Friday prep.
+  - Conversions crashed on Friday after the campaign was paused.
+source: 'Watchout rules for ad reports: flag when a claim could be luck, not signal (2026-10-12).'

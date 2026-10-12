@@ -1,0 +1,30 @@
+id: T-filler-openers
+slug: filler-openers
+name: Filler opener
+category: tells
+severity: error
+engine: regex
+applies_to: text
+patterns:
+  - '\bit(?:\s+is|[''’]s)\s+(?:important|worth|crucial|key|essential|interesting)\s+(?:to\s+(?:note|mention|highlight|remember|point\s+out|keep\s+in\s+mind)|noting|highlighting|mentioning|pointing\s+out)\b'
+  - '\bit\s+should\s+be\s+noted\b'
+  - '\blet[''’]s\s+(?:dive|dig|jump|unpack|explore|take\s+a\s+(?:closer\s+)?look|break\s+(?:it|this|things)\s+down)\b'
+  - '\bhere[''’]s\s+the\s+thing\b'
+  - '\bneedless\s+to\s+say\b'
+  - '\bwithout\s+further\s+ado\b'
+  - '\bas\s+you\s+(?:can\s+see|may\s+(?:know|have\s+noticed))\b'
+  - '\bhope\s+this\s+(?:email\s+|message\s+|note\s+|update\s+)?finds\s+you\s+well\b'
+message: "Filler opener: '{match}'"
+why: "These words announce a point instead of making it. Readers skim past them, and they are among the first phrases people spot as AI-written."
+fix: "Delete the opener and start with the fact: 'CPA rose 39% to $61', not 'It's important to note that CPA rose'."
+examples:
+  flag:
+    - "It's important to note that CPA rose this week."
+    - "It is worth highlighting that Sunday is the weak day."
+    - "Let's dive into the numbers."
+    - "Hope this email finds you well. Here are the results."
+  pass:
+    - "CPA rose 39% to $61 this week."
+    - "Sunday is the weak day: $138 per conversion vs $101."
+    - "Note: the last 2 days are still settling."
+source: "11-ai-writing-tells.md ban list #4; earlier draft banlist.md (filler openers); Wikipedia Signs of AI writing"

@@ -1,0 +1,22 @@
+id: W-one-day-claim
+slug: one-day-claim
+name: Claim from a single day
+category: watchout
+severity: advisory
+engine: regex
+applies_to: text
+patterns:
+- \b(?:yesterday|overnight|this\s+morning|in\s+(?:a\s+single|one)\s+day|in\s+24\s+hours|on\s+(?:monday|tuesday|wednesday|thursday|friday|saturday|sunday)\s+alone)\b[^.\n]{0,60}\b(?:up|down|rose|fell|jumped|dropped|doubled|tripled|halved|grew|increased|decreased|improved|declined|spiked|surged|crashed|soared|plunged|lift|lifted|gain|gained)\b
+- \b(?:up|down|rose|fell|jumped|dropped|doubled|tripled|halved|grew|increased|decreased|improved|declined|spiked|surged|crashed|soared|plunged|lift|lifted|gain|gained)\b[^.\n]{0,40}\b(?:yesterday|overnight|this\s+morning|in\s+(?:a\s+single|one)\s+day|in\s+24\s+hours)\b
+unless: \b(?:preliminary|early|one\s+day\s+is\s+too|too\s+early|settling|still\s+coming\s+in)\b
+message: 'Claim from a single day: ''{match}'''
+why: One day is noise, and the most recent days are still collecting conversions.
+fix: Judge on 7 or more complete days, or label it a one-day blip.
+examples:
+  flag:
+  - Overnight we saw a 40% lift in conversions.
+  - CPA dropped 30% yesterday.
+  pass:
+  - 'Oct 1 to 7: conversions rose 40%.'
+  - 'Preliminary: CPA dropped 30% yesterday; one day is too early to call.'
+source: 'Watchout rules for ad reports: flag when a claim could be luck, not signal (2026-10-12).'

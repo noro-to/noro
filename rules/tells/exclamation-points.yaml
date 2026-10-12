@@ -1,0 +1,22 @@
+id: T-exclamation-points
+slug: exclamation-points
+name: Exclamation point
+category: tells
+severity: warning
+engine: regex
+applies_to: text
+patterns:
+  - '[\w%)\]"''’”]!+(?![=\w])'
+message: "Exclamation point: '{match}'"
+why: "A performance report is read by someone deciding where money goes. Excitement reads as selling, and a good number doesn't need help."
+fix: "Use a period. If the news is good, the number shows it: 'CPA fell 12% to $54.'"
+examples:
+  flag:
+    - "Great news: CPA is down 12%!"
+    - "What a month!"
+    - "Sunday is fixed!!"
+  pass:
+    - "CPA fell 12% to $54."
+    - "![Sunday CPA chart](sunday-cpa.png)"
+    - "Sunday CPA is $138; other days are $101."
+source: "earlier draft rule V4; 11-ai-writing-tells.md (formatting tics)"

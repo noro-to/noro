@@ -1,0 +1,28 @@
+id: P-vague-sources
+slug: vague-sources
+name: Vague source
+category: specificity
+severity: warning
+engine: regex
+applies_to: text
+patterns:
+  - '\bindustry\s+(?:benchmarks?|averages?|standards?|data|reports?|research|experts?)\b'
+  - '\bbest\s+practices?\s+(?:suggest|say|show|recommend|dictate)s?\b'
+  - '\b(?:studies|research|experts|analysts)\s+(?:show|shows|suggest|suggests|say|says|indicate|indicates|agree|have\s+shown)\b'
+  - '\baccording\s+to\s+(?:experts|industry|research|studies|best\s+practices)\b'
+  - '\bit\s+is\s+(?:widely|generally|commonly)\s+(?:known|accepted|believed|agreed)\b'
+unless: '(?-i:\b(?:[Pp]er|[Aa]ccording\s+to|[Ff]rom|[Bb]y)\s+(?:the\s+)?[A-Z][\w&.''’-]+)|\bsource:|https?://'
+message: "Unnamed source: '{match}'"
+why: "'Industry benchmarks say 2% CTR is healthy' can't be checked, and a benchmark from another vertical can mislead a client into the wrong target."
+fix: "Name the source and year, or compare against the account's own history: 'Sunday CPA was $104 in 2025, per Google Ads.'"
+examples:
+  flag:
+    - "Industry benchmarks suggest a 2% CTR is good."
+    - "Studies show that video ads drive higher engagement."
+    - "Best practices suggest refreshing creative every two weeks."
+    - "It is widely known that broad match wastes spend."
+  pass:
+    - "The WordStream 2025 benchmark puts legal CTR at 2.9%."
+    - "Your own 2025 Sunday CPA was $104, per Google Ads."
+    - "Industry benchmarks for legal, per WordStream 2025, put CTR at 2.9%."
+source: "11-ai-writing-tells.md (vague sources: 'Industry reports suggest'); 13-report-best-practices.md (name the source of every finding)"

@@ -1,0 +1,22 @@
+id: V-three-colors-max
+slug: three-colors-max
+name: At most three colors
+category: visual
+severity: warning
+engine: judge
+applies_to: visual
+message: Does the chart use three colors or fewer?
+why: Every color asks for attention. With many, nothing stands out.
+fix: Use one accent for the point and gray for the rest.
+rubric:
+  question: Does the chart use three colors or fewer?
+  anchors:
+    0: 4 or more colors competing
+    1: 3 colors but no clear accent
+    2: One accent color, the rest gray or one neutral
+examples:
+  flag:
+  - Bar chart with each campaign a different color
+  pass:
+  - Sunday in the accent color, other days gray
+source: 'Design principle: clear hierarchy. Locked chart rules, 2026-10-12.'

@@ -1,0 +1,20 @@
+id: W-platform-roas-as-cause
+slug: platform-roas-as-cause
+name: Platform ROAS stated as cause
+category: watchout
+severity: advisory
+engine: regex
+applies_to: text
+patterns:
+- \b(?:drove|driving|generated|delivered|caused|produced)\b[^.\n]{0,40}\b(?:ROAS|revenue|conversions|sales)\b
+- \bROAS\b[^.\n]{0,40}\b(?:proves?|shows?\s+that|confirms?)\b
+unless: \b(?:platform[- ]reported|as reported by|attributed|incremental|holdout|lift\s+test|backend|shopify|crm|blended|MER)\b
+message: 'Attribution stated as cause: ''{match}'''
+why: Platform ROAS is the platform grading its own homework. 'Drove' claims causation the attribution model can't prove.
+fix: Say 'platform-reported' or 'attributed', or check against backend revenue or a holdout.
+examples:
+  flag:
+  - The PMax campaign drove $84k in revenue.
+  pass:
+  - The PMax campaign was attributed $84k in revenue (platform-reported).
+source: Research rounds 1–3; locked 2026-10-12.

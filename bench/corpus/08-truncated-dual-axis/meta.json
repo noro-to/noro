@@ -1,0 +1,33 @@
+{
+  "id": "08-truncated-dual-axis",
+  "format_in": "report slide with chart (visual + text)",
+  "format_out": "one-page visual",
+  "platform": "google_ads",
+  "audience": "client",
+  "slop_types": [
+    "truncated y-axis (starts at 380) that makes a 5.9% rise look like a doubling",
+    "dual axis: CPA on a second scale ($54 to $62) chosen so the line swings across the bars",
+    "a label on every bar and every point, with labels colliding",
+    "topic title ('Conversions & CPA Trend') instead of the point",
+    "hype words for small moves ('Surge!', 'surged', 'dropped sharply')",
+    "highlight color on the September bar that also reads as 'good'"
+  ],
+  "planted_traps": [
+    {"type": "exaggerated-change", "where": "'surged to 433 (+5.9% MoM)' and 'Surge!'", "why": "monthly requests stayed between 405 and 433 for six months; the rewrite should state the change, not the adjective"},
+    {"type": "correlation-as-cause", "where": "'The inverse relationship between volume and CPA shows our bidding strategy is scaling efficiently'", "why": "a visual pattern on two arbitrary axes across six points is not evidence about the bid strategy"},
+    {"type": "axis-truncated", "where": "left axis starts at 380", "why": "the gold chart must start bars at zero"}
+  ],
+  "expected_watchouts": [
+    {"type": "correlation-as-cause", "where": "'shows our bidding strategy is scaling efficiently'", "why": "causal claim drawn from a dual-axis chart; no bid-strategy change or test is named"}
+  ],
+  "numbers": ["2026", "380", "440", "$54", "$62", "412", "418", "405", "421", "409", "433", "$58.20", "$57.40", "$59.10", "$56.80", "$60.30", "$55.90", "+5.9%"],
+  "derived_in_gold": [],
+  "cut_list": [
+    "the second axis and the CPA line (two CPA figures kept as text)",
+    "CPA for April to July",
+    "'Surge!' annotation and 'surged' / 'dropped sharply'",
+    "the bidding-strategy claim",
+    "the truncated axis"
+  ],
+  "notes": "Synthetic multi-location dental group (appointment requests). 433 / 409 = +5.9%. The gold keeps 'highest in six months' because the original states it and the bar labels confirm it; it does not add 'lowest CPA in six months', which the original never says. The gold chart starts at 0."
+}

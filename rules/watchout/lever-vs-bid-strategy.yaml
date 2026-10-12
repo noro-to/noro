@@ -1,0 +1,21 @@
+id: W-lever-vs-bid-strategy
+slug: lever-vs-bid-strategy
+name: Lever that doesn't fit the bid strategy
+category: watchout
+severity: advisory
+engine: regex
+applies_to: text
+patterns:
+- \b(?:t?CPA|target\s+CPA)\b[^.\n]{0,60}\b(?:t?ROAS|target\s+ROAS)\s+campaigns?\b
+- \b(?:t?ROAS|target\s+ROAS)\b[^.\n]{0,60}\b(?:t?CPA|target\s+CPA)\s+campaigns?\b
+- \b(?:keyword|manual|max\s+CPC)\s+bids?\b[^.\n]{0,60}\b(?:smart\s+bidding|maximi[sz]e\s+conversions|t?ROAS|t?CPA)\b
+message: 'This lever may not exist under that bid strategy: ''{match}'''
+why: AI often recommends tCPA changes on tROAS campaigns, or keyword bids under Smart Bidding. The setting doesn't exist there.
+fix: Check the campaign's bid strategy and only keep levers it actually uses.
+examples:
+  flag:
+  - Lower the tCPA target on the tROAS campaigns.
+  - Raise keyword bids on the Maximize Conversions campaigns.
+  pass:
+  - Raise the tROAS target from 400% to 450% on Search - Brand.
+source: Research rounds 1–3; locked 2026-10-12.

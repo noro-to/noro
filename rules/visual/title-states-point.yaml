@@ -1,0 +1,23 @@
+id: V-title-states-point
+slug: title-states-point
+name: Title states the point
+category: visual
+severity: error
+engine: judge
+applies_to: visual
+message: Does the title say the finding, with its number, not just the topic?
+why: A topic title makes the reader find the point. A finding title hands it over.
+fix: Rewrite the title as the one-sentence finding, with its number.
+rubric:
+  question: Does the title say the finding, with its number, not just the topic?
+  anchors:
+    0: Topic title ('Performance overview')
+    1: Title hints at the point without the number
+    2: 'Declarative title with the number: ''Sunday costs $138 per conversion'''
+examples:
+  flag:
+  - Title 'Spend by channel'
+  - Title 'Performance overview'
+  pass:
+  - Title 'Search drove 60% of new revenue in Q3'
+source: 'Design principle: one point per visual. Locked chart rules, 2026-10-12.'

@@ -1,0 +1,21 @@
+id: W-metric-without-baseline
+slug: metric-without-baseline
+name: Metric with no baseline or target
+category: watchout
+severity: advisory
+engine: regex
+applies_to: text
+patterns:
+- \b(?:ROAS|CPA|CPL|CAC|cost\s+per\s+(?:lead|conversion|acquisition))\s+(?:is|was|of|came\s+in\s+at|improved\s+to|reached|hit)\s+[$€£]?\d[\d,.]*\s?x?
+unless: \b(?:vs\.?|versus|against|target|goal|prior|previous|last\s+(?:week|month|year|quarter)|baseline|benchmark|from\s+[$€£]?\d|compared)\b
+message: 'Metric with no baseline or target: ''{match}'''
+why: '''ROAS is 2.5'' can''t be judged. Good or bad depends on the target or the prior period.'
+fix: Add the comparison the original has (target, prior period). If it has none, flag that the number can't be judged.
+examples:
+  flag:
+  - ROAS is 2.5 this month.
+  - CPL improved to $12.
+  pass:
+  - ROAS is 2.5 vs 2.1 last month.
+  - CPL of $12 against a $15 target.
+source: 'Watchout rules for ad reports: flag when a claim could be luck, not signal (2026-10-12).'

@@ -1,0 +1,24 @@
+id: N-results-without-source-label
+slug: results-without-source-label
+name: Win with no source label
+category: numbers
+severity: advisory
+engine: regex
+applies_to: text
+patterns:
+  - '\b(?:roas|conversions?|conv\.|revenue|purchases|conversion\s+value)\b[^.\n]{0,60}?\b(?:up|rose|grew|increased|improved|jumped|climbed|hit|reached|beat|exceeded|surged|doubled|tripled|record|best|win|outperformed)\b'
+  - '\b(?:record|best|strong|winning|great|excellent)\s+(?:\w+\s+)?(?:roas|conversions?|revenue)\b'
+unless: '\bplatform[\s-](?:reported|attributed|side)\b|\b(?:per|according\s+to|in|from)\s+(?:google\s+ads|meta(?:\s+ads\s+manager)?|ads\s+manager|the\s+platform|ga4|google\s+analytics|shopify|the\s+crm|crm|backend|salesforce|hubspot)\b|\b(?:backend|shopify|crm|mer|blended|attributed)\b'
+message: "Result called a win with no source label: '{match}'"
+why: "Platform ROAS is the platform grading its own homework. When a budget decision rides on it, the reader needs to know whose number it is."
+fix: "Label it: 'platform-reported ROAS 4.1x', 'conversions rose 8% to 790, per Google Ads'. Add the backend figure (orders, revenue, MER) if you have it."
+examples:
+  flag:
+    - "ROAS hit 4.1x, our best month yet."
+    - "Conversions rose 8% to 790, a clear win."
+    - "Record revenue this quarter: $412k."
+  pass:
+    - "Platform-reported ROAS rose to 4.1x; Shopify revenue rose 6%."
+    - "Conversions rose 8% to 790, per Google Ads."
+    - "CPA rose 39% to $61."
+source: "r/FacebookAds 'platform roas is the platform grading its own homework' (02-key-quotes.md); earlier draft rule N8"

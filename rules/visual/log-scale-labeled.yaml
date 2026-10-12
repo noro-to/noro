@@ -1,0 +1,22 @@
+id: V-log-scale-labeled
+slug: log-scale-labeled
+name: Log scales labeled
+category: visual
+severity: warning
+engine: judge
+applies_to: visual
+message: If an axis is logarithmic, is that stated on the axis and justified?
+why: On a log scale, equal steps are multiples. Unlabeled, it hides how large the growth is.
+fix: Add '(log scale)' to the axis label, or switch to a linear scale.
+rubric:
+  question: If an axis is logarithmic, is that stated on the axis and justified?
+  anchors:
+    0: Log scale with no label
+    1: Labeled, but easy to miss
+    2: Clearly marked '(log scale)' with a reason in the caption
+examples:
+  flag:
+  - Impressions over 12 months on a log axis with no note
+  pass:
+  - Y-axis 'Impressions (log scale)', caption explains the 1,000x range
+source: 'Design principle: honesty first. Locked chart rules, 2026-10-12.'

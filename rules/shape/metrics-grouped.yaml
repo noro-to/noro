@@ -1,0 +1,22 @@
+id: S-metrics-grouped
+slug: metrics-grouped
+name: Related metrics together
+category: shape
+severity: warning
+engine: judge
+applies_to: text
+rubric:
+  question: Are numbers that explain each other (spend and conversions, CPA and its drivers) stated together?
+  anchors:
+    0: Related numbers are paragraphs apart
+    1: Partly grouped
+    2: Related numbers sit in the same sentence or line
+message: Are numbers that explain each other (spend and conversions, CPA and its drivers) stated together?
+why: '''Spend up 10%'' and ''ROAS down 15%'' mean something only together. Split apart, the reader has to do the joining.'
+fix: 'Put the numbers that explain each other in one sentence: ''Spend up 10% to $55k, ROAS down 15% to 3.1.'''
+examples:
+  flag:
+  - Spend was up 10%. [three paragraphs later] ROAS declined.
+  pass:
+  - Spend up 10% to $55k while ROAS fell 15% to 3.1.
+source: Shape rules for ad reports, locked 2026-10-12; noro-research.md (round 1 and 2).

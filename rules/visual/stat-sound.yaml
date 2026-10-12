@@ -1,0 +1,26 @@
+id: V-stat-sound
+slug: stat-sound
+name: Statistically sound
+category: visual
+severity: error
+engine: judge
+applies_to: visual
+message: "Is this chart or claim saying more than the data supports?"
+why: "The statistics reviewer checks methodology. Claims must match the sample size and confidence shown, and separate proven from directional."
+fix: "Label results as directional when they aren't proven. Show sample size and confidence intervals if the original has them. Never invent an interval or a p-value: if one is missing, flag it for the writer. Cut significance language the data can't back."
+rubric:
+  question: "Does each claim match the statistical rigor the data shows?"
+  anchors:
+    0: "Overstated claims; 'significant' or 'clear' with no test or a tiny sample; sample size missing"
+    1: "Mostly qualified, but one claim needs a caveat, or the sample size is shown without context"
+    2: "Claims match the data. Sample size clear. Intervals shown where the original has them. Directional vs. proven labeled."
+examples:
+  flag:
+    - "Campaign drove 15% lift in conversions (no sample size, no confidence interval shown)"
+    - "This is statistically significant (sample size is 12)"
+    - "Results show a clear correlation (correlation coefficient 0.3, n=8)"
+  pass:
+    - "Campaign drove 15% lift in conversions (95% CI: 8–22%, n=450)"
+    - "This is statistically significant at p<0.05 (sample size 120)"
+    - "Directional only: a weak correlation (r=0.3, n=120, not significant)"
+source: "Design principles: honesty first, data speaks first. Statistics person persona."

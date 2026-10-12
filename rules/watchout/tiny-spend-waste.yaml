@@ -1,0 +1,21 @@
+id: W-tiny-spend-waste
+slug: tiny-spend-waste
+name: Tiny spend called waste
+category: watchout
+severity: advisory
+engine: regex
+applies_to: text
+patterns:
+- \b(?:wasted?|wasting|wasteful|waste\s+of)\b[^.\n]{0,60}\$\s?\d{1,2}(?:\.\d+)?\b(?!\s?[km])
+- \$\s?\d{1,2}(?:\.\d+)?\b(?!\s?[km])[^.\n]{0,60}\b(?:wasted?|wasting|without\s+convert\w*)\b
+- '[$€£]\s?\d{1,2}(?:\.\d+)?\b(?!\s?[km])\s+(?:with|and)\s+(?:0|zero|no)\s+conversions\b'
+message: 'Small spend flagged as waste: ''{match}'''
+why: A $10 line item in a $100k account isn't a finding. Flagging it costs the reader attention and the writer credibility.
+fix: Drop items under about 5% of spend unless they caused a total-level change.
+examples:
+  flag:
+  - Tablet traffic wasted $12 without converting.
+  - Tablet devices spent $12.40 with 0 conversions in the last 7 days.
+  pass:
+  - Tablet spend was $4,800 with 2 conversions.
+source: Research rounds 1–3; locked 2026-10-12.

@@ -1,0 +1,19 @@
+id: W-black-box-campaign
+slug: black-box-campaign
+name: Black-box campaign with no caveat
+category: watchout
+severity: advisory
+engine: regex
+applies_to: text
+patterns:
+- \b(?:PMax|Performance\s+Max|AI\s+Max|Advantage\+(?:\s+(?:shopping|campaigns?))?)\b
+unless: \b(?:can't\s+see|cannot\s+see|doesn't\s+show|does\s+not\s+show|limited\s+visibility|no\s+(?:search\s+term|placement|channel)\s+(?:data|breakdown)|channel\s+report|by\s+channel|opaque|black\s+box|not\s+broken\s+out)\b
+message: 'No ''what we can''t see'' for this campaign: ''{match}'''
+why: PMax, AI Max and Advantage+ hide much of where the money goes. A result from them needs a line on what isn't visible.
+fix: Add what the report can't see (channel mix, search terms, placements) or use the channel breakdown if it exists.
+examples:
+  flag:
+  - PMax delivered a 4.2x ROAS this month.
+  pass:
+  - PMax reported a 4.2x ROAS; we can't see its channel mix this month.
+source: Research rounds 1–3; locked 2026-10-12.

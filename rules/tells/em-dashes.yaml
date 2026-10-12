@@ -1,0 +1,20 @@
+id: T-em-dashes
+slug: em-dashes
+name: Em dashes
+category: tells
+severity: warning
+engine: count
+applies_to: text
+count: {pattern: '—|(?<=\s)--(?=\s)', max: 1, per: report}
+message: "More than one em dash in the report: '{match}'"
+why: "Heavy em-dash use is a documented AI tell (Wikipedia tracks it 2022–2026). One is punctuation; three is a signature."
+fix: "Keep one at most. Use a period, a comma or a colon for the rest. En dashes in ranges (May–August) don't count."
+examples:
+  flag:
+    - "CPA rose — mostly on Sunday — while spend held — a pattern we expect to continue."
+    - "Spend held — CPA did not — and Sunday drove it."
+  pass:
+    - "CPA rose 39% to $61, mostly on Sunday."
+    - "Sunday is the weak day — $138 per conversion vs $101."
+    - "Jan–Apr vs May–Aug: Sunday moved from $92 to $138."
+source: "11-ai-writing-tells.md (cap list; Wikipedia em-dash note); r/marketing em-dash stacks; earlier draft rule V4"

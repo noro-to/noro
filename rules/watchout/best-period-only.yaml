@@ -1,0 +1,20 @@
+id: W-best-period-only
+slug: best-period-only
+name: Only the best period shown
+category: watchout
+severity: advisory
+engine: regex
+applies_to: text
+patterns:
+- \b(?:our\s+)?(?:best|strongest|record|peak)\s+(?:week|day|month|period|results|performance)\b
+unless: \b(?:vs\.?|versus|full\s+(?:quarter|month|year|period)|overall|despite|while\s+the|of\s+(?:Q[1-4]|the\s+(?:quarter|year)))\b
+message: 'Only the best period shown: ''{match}'''
+why: Showing only the best stretch hides the rest. Readers can't tell a good week from a good quarter.
+fix: Show the full period next to the best one, or say it's the best of how many.
+examples:
+  flag:
+  - This was our best week ever.
+  - Peak performance came in August.
+  pass:
+  - Best week of Q3 (Aug 15 to 21); the full quarter was down 5%.
+source: 'Watchout rules for ad reports: flag when a claim could be luck, not signal (2026-10-12).'

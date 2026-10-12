@@ -1,0 +1,21 @@
+id: A-action-has-date
+slug: action-has-date
+name: Action with no date
+category: actions
+severity: advisory
+engine: regex
+applies_to: text
+patterns:
+- (?m)^[ \t]*(?:[-*•]|\d+\.|next:|now:)[ \t]*(?:increase|decrease|raise|lower|add|pause|stop|launch|shift|move|cut|expand|scale|swap|exclude|split|refresh)\b[^\n]*$
+unless: \b(?:today|tomorrow|this\s+week|next\s+week|by\s+\w+|on\s+(?:mon|tue|wed|thu|fri|sat|sun)\w*|before\s+\w+|(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\w*\.?\s+\d{1,2}|\d{1,2}/\d{1,2}|within\s+\d+)\b
+message: 'Action with no date: ''{match}'''
+why: An action with no date drifts. The reader can't tell if it's this week or someday.
+fix: Add the date the original gives. If it gives none, flag it for the writer.
+examples:
+  flag:
+  - '- Pause the 12 broad-match keywords.'
+  - 'Next: shift $5k from Display to Search.'
+  pass:
+  - '- Pause the 12 broad-match keywords today.'
+  - 'Next: shift $5k from Display to Search by Friday.'
+source: Final rules for clarity in ad reports (2026-10-12).

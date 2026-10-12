@@ -1,0 +1,30 @@
+id: T-punts
+slug: punts
+name: Punt
+category: tells
+severity: error
+engine: regex
+applies_to: text
+patterns:
+  - '\b(?:further|more|additional|deeper)\s+(?:analysis|investigation|data|testing|research|review)\s+(?:is|are|will\s+be|would\s+be|may\s+be|might\s+be)\s+(?:needed|required|necessary|warranted)\b'
+  - '\b(?:need|needs|require|requires)\s+(?:further|more|additional)\s+(?:analysis|investigation|data|time|testing)\b'
+  - '\b(?:draw|reach|make)\s+(?:any\s+)?(?:definitive|firm|conclusive|meaningful)\s+conclusions\b'
+  - '\bremains?\s+to\s+be\s+seen\b'
+  - '\b(?:only\s+)?time\s+will\s+tell\b'
+  - '\bstay\s+tuned\b'
+  - '\btoo\s+(?:early|soon)\s+to\s+(?:tell|say|know|judge)\b'
+unless: '^(?=[\s\S]*?(?:\b(?:by|on|until|before|through|after)\s+(?:(?:mon(?:day)?|tue(?:s|sday)?|wed(?:nesday)?|thu(?:rs|rsday)?|fri(?:day)?|sat(?:urday)?|sun(?:day)?)\b|(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.?\s+\d{1,2}\b|\d{1,2}/\d{1,2}\b|20\d\d-\d\d-\d\d)|\b(?:in|after)\s+(?:another\s+)?\d+\s+(?:more\s+)?days\b))(?=[\s\S]*?(?:[$€£]\s?\d|\d\s?%|\d\s?pp\b|\d(?:\.\d+)?x\b|\b\d+\s+(?:conversions|clicks|leads|orders|sales|calls)\b|\b(?:above|below|over|under)\s+[$€£]?\d))'
+message: "Punt: '{match}'"
+why: "'More data is needed' hands the decision back to the reader with no date and no bar to clear. Clients hear it as the agency stalling."
+fix: "Name the check, the date and the threshold: 'If Sunday CPA is still above $120 on Oct 20, cut Sunday bids 20%.' If nothing is due, write 'Nothing to change. Next check: Oct 20.'"
+examples:
+  flag:
+    - "Further analysis is needed to determine the cause."
+    - "It's too early to tell whether the new creative is working."
+    - "More data is needed to draw definitive conclusions."
+    - "Whether Sunday recovers remains to be seen."
+  pass:
+    - "More data is needed: if Sunday CPA is still above $120 on Oct 20, we cut Sunday bids by 20%."
+    - "We judge new creative at 30 conversions per ad set; PR-07 has 12."
+    - "Sunday CPA is $138 against $101 on other days."
+source: "earlier draft banlist.md (punts) and rule X4; r/PPC: 'state how much data it stands on as a number' (02-key-quotes.md)"

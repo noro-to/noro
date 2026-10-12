@@ -1,0 +1,24 @@
+id: V-axes-start-at-zero
+slug: axes-start-at-zero
+name: Axes start at zero
+category: visual
+severity: error
+engine: judge
+applies_to: visual
+message: Do value axes start at zero, or is a break justified on the chart?
+why: A cut axis makes a small change look large. Readers trust the picture before the numbers.
+fix: Start bars at zero. If a line chart needs a tighter range, mark the break and say why in the caption.
+rubric:
+  question: Do value axes start at zero, or is a break justified on the chart?
+  anchors:
+    0: A bar or area axis starts above zero and exaggerates the difference
+    1: Bars start at zero but a line axis is cut with no note
+    2: Bars start at zero; any non-zero line axis is marked and explained
+examples:
+  flag:
+  - Bar chart of CPA by campaign with the y-axis running $50 to $100, so a 12% gap looks like 4x
+  - ROAS bars from 2.8 to 3.4
+  pass:
+  - CPA bars from $0, with the reference line at the account average
+  - CTR line from 1.8% to 2.4%, captioned 'axis starts at 1.8% to show the weekly pattern'
+source: 'Design principle: honesty first. Locked chart rules, 2026-10-12.'

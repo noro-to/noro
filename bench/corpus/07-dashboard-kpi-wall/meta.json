@@ -1,0 +1,34 @@
+{
+  "id": "07-dashboard-kpi-wall",
+  "format_in": "dashboard screenshot (visual)",
+  "format_out": "one-page visual",
+  "platform": "google_ads",
+  "audience": "client",
+  "slop_types": [
+    "wall of 12 KPI tiles with equal weight; the client's KPI (leads and cost per lead) gets the same size as impressions",
+    "no comparison period: no prior month, no target, no change arrows",
+    "rainbow tile colors that encode nothing",
+    "optimization score shown as a performance KPI",
+    "derived metrics shown next to their inputs (CTR, CPC, conv. rate, cost / conv.)",
+    "cheerleading highlights box ('Great month!', 'healthy', 'strong overall campaign health')"
+  ],
+  "planted_traps": [
+    {"type": "no-comparison-period", "where": "the whole dashboard", "why": "a rewrite must not call anything up, down, strong or weak; there is nothing to compare against"},
+    {"type": "unsupported-claim", "where": "'Search impression share of 46.2% shows significant room to scale'", "why": "headroom depends on how much share is lost to budget vs ad rank, which the dashboard doesn't show; 'significant' has no test behind it"},
+    {"type": "vanity-kpi", "where": "'optimization score of 91.3%' cited as campaign health", "why": "the score measures adoption of Google's recommendations, not results"}
+  ],
+  "expected_watchouts": [
+    {"type": "unsupported-claim", "where": "'46.2% shows significant room to scale'", "why": "lost IS (budget) vs lost IS (rank) is not shown, so headroom is unknown"},
+    {"type": "vanity-kpi", "where": "optimization score 91.3% as 'campaign health'", "why": "a platform adoption score, not a performance result"}
+  ],
+  "numbers": ["2026", "12", "184,220", "6,912", "3.75%", "$6.84", "$47,280", "512", "7.41%", "$92.34", "338", "174", "46.2%", "91.3%"],
+  "derived_in_gold": [],
+  "cut_list": [
+    "impressions, clicks, CTR, avg. CPC and conversion rate",
+    "search impression share and the 'room to scale' line",
+    "optimization score",
+    "'Great month!' highlights copy",
+    "eleven of the twelve tiles, folded into one chart of leads by type plus one line of text"
+  ],
+  "notes": "Synthetic regional HVAC company. The tiles tie out: CTR = 6,912 / 184,220; CPC = $47,280 / 6,912; conv. rate = 512 / 6,912; cost per conversion = $47,280 / 512; calls + forms = 512. The gold calls conversions 'leads' because calls and form fills sum to them. With no comparison period the honest point is the mix of leads, and the gold says plainly that nothing is marked up or down. The gold chart starts at 0."
+}

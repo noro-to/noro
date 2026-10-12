@@ -1,0 +1,20 @@
+id: S-jargon-unexplained
+slug: jargon-unexplained
+name: Jargon with no explanation
+category: shape
+severity: advisory
+engine: regex
+applies_to: text
+patterns:
+- (?<!\()(?-i:\b(?:CTR|CPC|CPM|CPA|CPL|CVR|ROAS|tROAS|tCPA|CAC|LTV|AOV|MER|PMax|IS)\b)(?!\s*\()
+unless: \((?:click|cost|return|target|customer|lifetime|average|conversion|marketing|performance|impression)
+message: 'Acronym not explained: ''{match}'''
+why: The media buyer's job is translation. For a client or a generalist, an unexplained acronym stops the read.
+fix: Spell it out on first use ('cost per conversion (CPA)') or use the plain words. For an internal media-buyer audience, ignore this flag.
+examples:
+  flag:
+  - CTR dropped 8% this week.
+  pass:
+  - Click-through rate (CTR) dropped 8% this week.
+  - Clicks per 100 views dropped from 2.1 to 1.9.
+source: Shape rules for ad reports, locked 2026-10-12; noro-research.md (round 1 and 2).

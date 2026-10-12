@@ -1,0 +1,22 @@
+id: S-sections-fit-length
+slug: sections-fit-length
+name: Structure fits the length
+category: shape
+severity: warning
+engine: judge
+applies_to: text
+rubric:
+  question: For a report longer than a short note, can the reader see what changed, why, and what's next as distinct parts?
+  anchors:
+    0: A long report is one block with no breaks
+    1: Some structure, but parts run together
+    2: Clear parts (what happened, what it means, what to do) or the report is short enough not to need them
+message: For a report longer than a short note, can the reader see what changed, why, and what's next as distinct parts?
+why: Long prose with no breaks hides the decision. A short note doesn't need headers, but a one-page doc does.
+fix: Break longer reports into what happened, what it means, and what to do. Leave short notes as they are.
+examples:
+  flag:
+  - A 400-word monthly report as one continuous block
+  pass:
+  - 'Three short labeled parts: what happened, what it means, what to do'
+source: Shape rules for ad reports, locked 2026-10-12; noro-research.md (round 1 and 2).

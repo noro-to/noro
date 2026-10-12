@@ -1,0 +1,22 @@
+id: V-no-red-green-pairs
+slug: no-red-green-pairs
+name: No red and green together
+category: visual
+severity: warning
+engine: judge
+applies_to: visual
+message: Does the chart avoid relying on red vs green to tell things apart?
+why: About 1 in 12 men can't tell red from green.
+fix: Use blue vs orange, or add direct labels.
+rubric:
+  question: Does the chart avoid relying on red vs green to tell things apart?
+  anchors:
+    0: Red vs green is the only difference between series
+    1: Red and green appear but are also labeled
+    2: No red-green pairs, or a colorblind-safe pair
+examples:
+  flag:
+  - Gain and loss bars only in red and green
+  pass:
+  - Gain in blue, loss in orange, values labeled
+source: 'Design principle: minimal friction. Locked chart rules, 2026-10-12.'

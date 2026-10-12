@@ -1,0 +1,38 @@
+{
+  "id": "06-exec-forecast-vague",
+  "format_in": "quarterly executive summary (written)",
+  "format_out": "one-page doc",
+  "platform": "google_ads",
+  "audience": "exec-CFO",
+  "slop_types": [
+    "vague entities in the prose ('certain campaigns', 'top-performing audiences', 'some product categories', 'a few underperforming ad groups', 'key markets') while the names sit in the appendix",
+    "puffery ('strategic investment', 'robust results', 'exceptional returns', 'strength of the Oakhaven brand')",
+    "era opener ('a challenging macroeconomic landscape')",
+    "bad news softened: ROAS fell from 3.34 to 3.04 but the overview says 'continued growth'",
+    "generic priorities that fit any account ('scale top performers', 'optimize underperformers', 'leverage first-party audiences to unlock incremental growth')",
+    "the decision-relevant table pushed to an appendix"
+  ],
+  "planted_traps": [
+    {"type": "forecast-no-assumptions", "where": "'we project Q4 paid search revenue to reach $1.2M, a 38% increase over Q3, with ROAS improving to 5.1'", "why": "no budget, demand, conversion-rate or seasonality assumptions; ROAS jumping from 3.04 to 5.1 is not explained; the rewrite must not repeat it as fact"},
+    {"type": "forecast-no-assumptions", "where": "'We expect efficiency to normalize in November as recent optimizations take hold'", "why": "the optimizations are not named and no date-bound test supports the expectation"},
+    {"type": "vague-entities", "where": "'certain campaigns underperformed'", "why": "the appendix names them (Outdoor Furniture at 1.90, Non-Brand at 1.31); the rewrite should use the names"},
+    {"type": "unsupported-claim", "where": "'our top-performing audiences continued to deliver exceptional returns' and 'Key markets continued to show strong engagement'", "why": "no audience or market data appears anywhere in the report"}
+  ],
+  "expected_watchouts": [
+    {"type": "forecast-no-assumptions", "where": "Q4 $1.2M revenue / 38% / ROAS 5.1", "why": "a forecast sent to a CFO with no assumptions; ask for budget and conversion-rate inputs or drop it"},
+    {"type": "forecast-no-assumptions", "where": "'efficiency to normalize in November'", "why": "no basis or test given"},
+    {"type": "revenue-source-unstated", "where": "'$869,500 in revenue'", "why": "the report doesn't say whether this is platform-reported conversion value or backend revenue; a CFO will reconcile it against the books"},
+    {"type": "unsupported-claim", "where": "audiences and key markets", "why": "claims with no data behind them in the report"}
+  ],
+  "numbers": ["2026", "$869,500", "$286,400", "13.7%", "3.3%", "+3.3%", "+13.7%", "3.04", "3.34", "1,412", "1,388", "$616", "$607", "$1.2M", "38%", "5.1", "$98,200", "$371,200", "3.78", "$71,800", "$136,400", "1.90", "$62,400", "$203,400", "3.26", "$18,600", "$112,300", "6.04", "$35,400", "$46,200", "1.31"],
+  "derived_in_gold": [],
+  "cut_list": [
+    "Q4 outlook ($1.2M, 38%, ROAS 5.1, 'normalize in November')",
+    "audience, product-category and 'key markets' sentences (no data behind them)",
+    "three generic strategic priorities",
+    "PMax row (3.26, near the account average)",
+    "revenue per campaign column",
+    "macro and brand-strength puffery"
+  ],
+  "notes": "Synthetic online furniture retailer. The appendix table sums to the totals ($286,400 spend, $869,500 revenue) and each ROAS = revenue / spend. The gold names the two weak campaigns from the appendix instead of 'certain campaigns' and leaves the forecast out; noro should flag the forecast to the user rather than rewrite it into something firmer or quietly soften it."
+}

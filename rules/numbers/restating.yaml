@@ -1,0 +1,26 @@
+id: N-restating
+slug: restating
+name: Restated number
+category: numbers
+severity: error
+engine: regex
+applies_to: text
+patterns:
+  - '\b(?:which\s+|this\s+|that\s+)?represent(?:s|ed|ing)\s+(?:an?\s+)?(?:[+-]?\d+(?:\.\d+)?\s?%\s+|\d+(?:\.\d+)?\s?(?:pp|percentage[\s-]points?)\s+)?(?:increase|decrease|rise|drop|decline|change|uplift|improvement|reduction|growth|jump|gain|lift)\b'
+  - '\b(?:an?\s+)?(?:increase|decrease|rise|drop|decline|change|uplift|improvement|reduction|growth|jump|gain|lift)\s+of\s+[+-]?\d+(?:\.\d+)?\s?%\s+(?:compared\s+(?:to|with)|versus|vs\.?|over|relative\s+to|from)\s+(?:the\s+)?(?:previous|prior|last|preceding)\b'
+  - '\bwhen\s+compared\s+(?:to|with)\s+(?:the\s+)?(?:previous|prior|preceding|last)\b'
+  - '\bcompared\s+(?:to|with)\s+(?:the\s+)?(?:previous|prior|preceding|last)\s+(?:week|month|period|quarter|year)[''’]s\s+(?:\w+\s+){0,2}(?:of|at)\s+[$€£]?\d'
+message: "Restated number: '{match}'"
+why: "'Spend increased to $48,213, which represents a 12% increase compared to the previous week's spend of $43,047' says one thing three times. It's the longest way to write the shortest fact."
+fix: "Say it once: 'Spend up 12% to $48.2k.'"
+examples:
+  flag:
+    - "Spend increased to $48,213, which represents a 12% increase compared to the previous week's spend of $43,047."
+    - "CPA reached $61, representing a 39% rise."
+    - "Conversions saw an increase of 8% compared to the prior month."
+    - "CTR was 1.5% when compared to the previous period's 1.2%."
+  pass:
+    - "Spend up 12% to $48.2k."
+    - "CPA rose 39% to $61."
+    - "Sunday represents 14% of spend."
+source: "earlier draft rule V2 (don't restate); noro landing page"

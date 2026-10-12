@@ -1,0 +1,133 @@
+{
+  "version": "0.1.0",
+  "rules": [
+    {
+      "id": "A-monitor-no-date",
+      "slug": "monitor-no-date",
+      "name": "Monitor with no date",
+      "category": "actions",
+      "severity": "warning",
+      "engine": "phrase",
+      "applies_to": "text",
+      "phrases": ["continue to monitor", "keep an eye on"],
+      "unless": "\\b(on|by) (mon|tue|wed|thu|fri|sat|sun)",
+      "message": "Open-ended next step: '{match}'",
+      "why": "A next step with no date is not a next step.",
+      "fix": "Name the action and the day it is decided.",
+      "examples": {
+        "flag": ["We will continue to monitor performance."],
+        "pass": ["We will continue to monitor and decide by Friday."]
+      },
+      "source": "synthetic engine test fixture"
+    },
+    {
+      "id": "N-placeholder",
+      "slug": "placeholder-number",
+      "name": "Placeholder number",
+      "category": "numbers",
+      "severity": "error",
+      "engine": "regex",
+      "applies_to": "text",
+      "patterns": ["\\[(?:X+|TBD|insert[^\\]]*)\\]", "\\bXX(?:\\.X+)?%"],
+      "message": "Unfilled placeholder: '{match}'",
+      "why": "A placeholder left in a report means a number was never filled in.",
+      "fix": "Fill it from the data or cut the sentence.",
+      "examples": {"flag": ["CPA rose [X]% to $61."], "pass": ["CPA rose 39% to $61."]},
+      "source": "synthetic engine test fixture"
+    },
+    {
+      "id": "P-vague-change",
+      "slug": "vague-change",
+      "name": "Vague change",
+      "category": "specificity",
+      "severity": "warning",
+      "engine": "regex",
+      "applies_to": "text",
+      "patterns": ["\\b(significant|substantial|notable) (increase|decrease|improvement|lift|growth|decline)\\b"],
+      "unless": "\\d",
+      "message": "Change with no size: '{match}'",
+      "why": "Readers want the number, not the adjective.",
+      "fix": "Give the change and the base.",
+      "examples": {"flag": ["We saw a significant increase in leads."], "pass": ["We saw a significant increase in leads, up 18%."]},
+      "source": "synthetic engine test fixture"
+    },
+    {
+      "id": "S-em-dash-count",
+      "slug": "em-dash-count",
+      "name": "Em dash pileup",
+      "category": "shape",
+      "severity": "warning",
+      "engine": "count",
+      "applies_to": "text",
+      "count": {"pattern": "—", "max": 1, "per": "report"},
+      "message": "{count} em dashes (max {max})",
+      "why": "Stacked em dashes read as AI-written.",
+      "fix": "Use periods and commas.",
+      "examples": {"flag": ["Spend rose — sharply — again."], "pass": ["Spend rose sharply again."]},
+      "source": "synthetic engine test fixture"
+    },
+    {
+      "id": "T-hedge-stack",
+      "slug": "hedge-stack",
+      "name": "Hedge stack",
+      "category": "tells",
+      "severity": "warning",
+      "engine": "phrase",
+      "applies_to": "text",
+      "phrases": ["may potentially", "could potentially"],
+      "message": "Hedge stack: '{match}'",
+      "why": "Readers read stacked hedges as AI-written and as the writer not knowing.",
+      "fix": "State the claim and what it rests on, or cut it.",
+      "examples": {"flag": ["This could potentially indicate a shift."], "pass": ["CPA rose 39% to $61."]},
+      "source": "synthetic engine test fixture"
+    },
+    {
+      "id": "T-worth-noting",
+      "slug": "worth-noting",
+      "name": "Worth noting",
+      "category": "tells",
+      "severity": "warning",
+      "engine": "phrase",
+      "applies_to": "both",
+      "phrases": ["it's worth noting", "it is important to note"],
+      "message": "Throat-clearing: '{match}'",
+      "why": "If it is worth noting, note it.",
+      "fix": "Cut the lead-in and keep the fact.",
+      "examples": {"flag": ["It’s worth noting that CPA rose."], "pass": ["CPA rose."]},
+      "source": "synthetic engine test fixture"
+    },
+    {
+      "id": "V-chart-title-point",
+      "slug": "chart-title-point",
+      "name": "Chart title states the point",
+      "category": "visual",
+      "severity": "warning",
+      "engine": "judge",
+      "applies_to": "visual",
+      "rubric": {
+        "question": "Does each chart's title state its point?",
+        "anchors": {"0": "Titles name the metric only.", "1": "Some titles state a point.", "2": "Every title states the point."}
+      },
+      "message": "Chart title does not state the point",
+      "why": "A title that names the metric makes the reader find the point.",
+      "fix": "Write the finding as the title.",
+      "examples": {"flag": ["[chart titled 'CPA by week']"], "pass": ["[chart titled 'CPA rose 39% in week 3']"]},
+      "source": "synthetic engine test fixture"
+    },
+    {
+      "id": "W-pmax-brand",
+      "slug": "pmax-brand",
+      "name": "PMax may be taking brand credit",
+      "category": "watchout",
+      "severity": "warning",
+      "engine": "regex",
+      "applies_to": "text",
+      "patterns": ["\\b(performance max|pmax)\\b"],
+      "message": "Check brand exclusions before crediting '{match}'",
+      "why": "Performance Max can claim brand searches that would have converted anyway.",
+      "fix": "Flag it for the reader; do not change the claim.",
+      "examples": {"flag": ["PMax drove 40% of conversions."], "pass": ["Search drove 40% of conversions."]},
+      "source": "synthetic engine test fixture"
+    }
+  ]
+}

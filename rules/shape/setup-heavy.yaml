@@ -1,0 +1,22 @@
+id: S-setup-heavy
+slug: setup-heavy
+name: Setup before substance
+category: shape
+severity: warning
+engine: regex
+applies_to: text
+patterns:
+- \b(?:this|the following)\s+report\s+(?:covers|provides|summari[sz]es|outlines|reviews|details)\b
+- \bthe\s+purpose\s+of\s+this\s+(?:report|update|summary)\b
+- \b(?:google\s+ads|meta\s+ads|facebook\s+ads|performance\s+max)\s+is\s+(?:a|an|the)\s+(?:platform|advertising|campaign\s+type)\b
+- \bbefore\s+(?:we\s+)?(?:diving|digging|getting)\s+into\b
+message: 'Setup instead of substance: ''{match}'''
+why: Explaining what the report is or what the platform does pushes the point down the page.
+fix: Cut the setup. Put the date range in one short line and start with what happened.
+examples:
+  flag:
+  - This report covers Google Ads performance for September.
+  - Before diving into the numbers, some context on PMax.
+  pass:
+  - 'Sep 1 to 30: CPA rose 12% to $48.'
+source: Shape rules for ad reports, locked 2026-10-12; noro-research.md (round 1 and 2).

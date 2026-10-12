@@ -1,0 +1,22 @@
+id: V-outliers-explained
+slug: outliers-explained
+name: Outliers explained
+category: visual
+severity: warning
+engine: judge
+applies_to: visual
+message: Are outliers labeled and explained, not hidden or left to distort the scale?
+why: An unexplained spike invites the wrong story. A silently removed one hides the real one.
+fix: Label the outlier and its cause. If it distorts the scale, note it and show it separately.
+rubric:
+  question: Are outliers labeled and explained, not hidden or left to distort the scale?
+  anchors:
+    0: An outlier is removed silently or squashes the rest of the chart
+    1: Outlier visible but unexplained
+    2: Outlier labeled with its cause
+examples:
+  flag:
+  - Black Friday spike flattening every other week, no label
+  pass:
+  - Black Friday labeled 'promo week', rest of weeks readable
+source: 'Design principle: honesty first. Locked chart rules, 2026-10-12.'

@@ -1,0 +1,22 @@
+id: S-findings-stand-out
+slug: findings-stand-out
+name: Findings stand out
+category: shape
+severity: error
+engine: judge
+applies_to: text
+rubric:
+  question: Can the reader find each finding without reading every sentence?
+  anchors:
+    0: Findings are scattered through long prose
+    1: Some findings stand out, others are buried
+    2: Each finding is its own line or short paragraph, easy to spot
+message: Can the reader find each finding without reading every sentence?
+why: A finding buried mid-paragraph gets missed. Readers scan for what changed.
+fix: Give each finding its own short line. Lead the line with the finding, not the label.
+examples:
+  flag:
+  - '...and while we were reviewing the account we also noticed mobile conversions grew 45%, which is worth...'
+  pass:
+  - Mobile conversions grew 45%; desktop was flat.
+source: Shape rules for ad reports, locked 2026-10-12; noro-research.md (round 1 and 2).

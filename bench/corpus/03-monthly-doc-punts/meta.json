@@ -1,0 +1,36 @@
+{
+  "id": "03-monthly-doc-punts",
+  "format_in": "monthly one-page client doc (written)",
+  "format_out": "one-page doc",
+  "platform": "google_ads",
+  "audience": "client",
+  "slop_types": [
+    "era opener ('an important month', 'navigate a shifting competitive landscape')",
+    "says-nothing summary ('overall performance remained solid' in the same paragraph as a 9.8% CPL rise)",
+    "punts ('continue to monitor efficiency closely', 'further analysis is needed to confirm', 'adjust as needed')",
+    "'continue to optimize' and five other generic next steps that would fit any account",
+    "the headline numbers repeated (executive summary, then Key Highlights)",
+    "Title Case section scaffold (Executive Summary / Key Highlights / Insights & Observations / Next Steps & Recommendations)",
+    "cheerleading closer ('We look forward to continuing to drive results')"
+  ],
+  "planted_traps": [
+    {"type": "hypothesis-upgraded", "where": "'likely due to increased competition as homeowners begin preparing for colder weather'", "why": "no auction-insights data backs it; the rewrite must keep it a hypothesis or cut it"},
+    {"type": "buried-action", "where": "the target CPA bullet among five generic next steps", "why": "it is the only concrete action; the rewrite keeps it and cuts the rest"},
+    {"type": "bad-news-softened", "where": "'Overall performance remained solid' and 'Emergency Plumbing continued to be the top-performing campaign'", "why": "the month's news is a cost-per-lead rise; the rewrite must lead with it"}
+  ],
+  "expected_watchouts": [
+    {"type": "aggressive-target", "where": "'a target CPA of $70' on a campaign running at $94.00 per lead", "why": "a target well below current cost, set at the same time as a bid-strategy switch, can choke volume during learning; usual practice is to start near current CPA and step down"},
+    {"type": "unverified-cause", "where": "'likely due to increased competition'", "why": "competition is asserted without auction insights; lost IS (rank) rising fits competition, lower Quality Score or both"}
+  ],
+  "numbers": ["2026", "228", "172", "56", "$11,860", "$52.02", "$47.36", "9.8%", "$11,860", "+8.4%", "228", "-1.3%", "$52.02", "+9.8%", "102", "104", "104", "$410", "27", "$15.19", "$14.11", "$5,060", "104", "$48.65", "$47.72", "$2,160", "52", "$41.54", "$39.90", "$4,230", "45", "$94.00", "$73.00", "$14.20", "$11.09", "15.1%", "31%", "19%", "$70"],
+  "derived_in_gold": [],
+  "cut_list": [
+    "calls vs form fills split (172 / 56)",
+    "spend change (+8.4%)",
+    "Brand, Emergency Plumbing and Drain Cleaning rows (summarised as 'stayed close to August')",
+    "Key Highlights list repeating the summary",
+    "five generic next steps (optimize bids, monitor, expand reach, test ad copy, negatives)",
+    "'well positioned' and closing cheer"
+  ],
+  "notes": "Synthetic regional plumber. The campaign table sums to the totals ($11,860 / 228 leads; August $10,940 / 231 leads, not shown in the report). Water Heater accounts for most of the CPL rise ((94 - 73) x 45 = $945 of about $1,060 excess cost), but the gold avoids that derived figure and says only where cost rose."
+}

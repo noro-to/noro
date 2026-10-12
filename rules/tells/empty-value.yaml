@@ -1,0 +1,22 @@
+id: T-empty-value
+slug: empty-value
+name: Empty value claim
+category: tells
+severity: error
+engine: phrase
+applies_to: text
+phrases: ["valuable insight", "valuable insights", "actionable insight", "actionable insights", "meaningful insights", "key insights", "key takeaways", "campaign health", "account health", "demonstrates the continued effectiveness", "insight into overall", "provides visibility into", "a deeper understanding", "data-driven insights", "data-driven decisions", "make informed decisions"]
+message: "Empty value claim: '{match}'"
+why: "Calling something an insight doesn't make it one. The reader still has to hunt for the number, and the label makes the report longer."
+fix: "Delete the label and write the insight itself: 'Sunday costs $138 per conversion; other days cost $101.'"
+examples:
+  flag:
+    - "This report provides valuable insights into campaign performance."
+    - "Key takeaways are listed below."
+    - "Overall campaign health remains positive."
+    - "These results help us make informed decisions."
+  pass:
+    - "Sunday costs $138 per conversion; other days cost $101."
+    - "Takeaway for the client: ask how Sunday calls are handled."
+    - "PR-03's CPA is $61 against a $50 target."
+source: "earlier draft banlist.md (empty value); 13-report-best-practices.md ('explain, don't just show')"

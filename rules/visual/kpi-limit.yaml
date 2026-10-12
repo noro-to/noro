@@ -1,0 +1,22 @@
+id: V-kpi-limit
+slug: kpi-limit
+name: At most five KPIs per visual
+category: visual
+severity: error
+engine: judge
+applies_to: visual
+message: Does any visual show more than five KPI tiles or metrics?
+why: A wall of tiles says nothing is more important than anything else.
+fix: Keep the 3 to 5 numbers that drive the decision. Move the rest to an appendix or cut them.
+rubric:
+  question: Does any visual show more than five KPI tiles or metrics?
+  anchors:
+    0: 6 or more KPIs in one visual (a metric wall)
+    1: Exactly 5 but several don't matter
+    2: 5 or fewer, each one used in the text
+examples:
+  flag:
+  - Dashboard with 12 KPI tiles and no comparison
+  pass:
+  - 'Three tiles: spend, conversions, CPA, each with last period'
+source: 'Design principle: clarity over decoration. Locked chart rules, 2026-10-12.'

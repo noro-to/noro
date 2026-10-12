@@ -1,0 +1,26 @@
+id: N-percent-without-base
+slug: percent-without-base
+name: Percent change with no base
+category: numbers
+severity: warning
+engine: regex
+applies_to: text
+patterns:
+  - '\b(?:up|down|increased?|decreased?|rose|fell|grew|dropped|declined|jumped|climbed|improved|surged|lifted|slipped|dipped|plunged|spiked)\s+(?:by\s+)?[+-]?\d+(?:\.\d+)?\s?%'
+  - '[+-]?\d+(?:\.\d+)?\s?%\s+(?:increase|decrease|rise|drop|decline|lift|improvement|growth|jump|reduction|uplift|gain|dip|swing)\b'
+unless: '[$€£]\s?\d|\b\d[\d,]*(?:\.\d+)?\s?[km]?\s+(?:conversions|clicks|leads|orders|sales|purchases|impressions|sessions|calls|signups|installs|visits)\b|\b(?:to|from|at|is|was|hit|reached|vs\.?|versus|against)\s+[$€£]?\d|\d(?:\.\d+)?x\b'
+message: "Percent change with no base or new value: '{match}'"
+why: "'CPA up 12%' could be $5 to $5.60 or $500 to $560. A CFO's first question is 'from what to what', and a report that can't answer it looks like it's hiding something."
+fix: "Give the new value with the change: 'CPA rose 12% to $61.' Add the old value only if the reader needs it."
+examples:
+  flag:
+    - "CPA increased 12% week over week."
+    - "Conversions fell 8% this month."
+    - "We saw a 25% lift in CTR."
+    - "ROAS is down 15%."
+  pass:
+    - "CPA rose 12% to $61."
+    - "Conversions fell 8% to 790."
+    - "CTR rose from 1.2% to 1.5% (+0.3 pp)."
+    - "ROAS 4.1x, down 15%."
+source: "earlier draft panel.yml (CFO rejects 'a percentage with no base value'); 12-numbers-and-tables-evidence.md"

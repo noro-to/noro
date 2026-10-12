@@ -1,0 +1,22 @@
+id: V-abbreviations-defined
+slug: abbreviations-defined
+name: Abbreviations defined
+category: visual
+severity: warning
+engine: judge
+applies_to: visual
+message: Is every abbreviation spelled out or explained for this audience?
+why: The media buyer's job is translation. An unexplained acronym stops a non-expert reader.
+fix: Spell it out once ('cost per conversion (CPA)') or use the plain words.
+rubric:
+  question: Is every abbreviation spelled out or explained for this audience?
+  anchors:
+    0: Unexplained jargon (tROAS, CPA, IS) for a non-expert reader
+    1: Some defined
+    2: All defined, or the audience is internal media buyers
+examples:
+  flag:
+  - Title 'tROAS vs IS lost to budget' for a client deck
+  pass:
+  - Title 'Target return on ad spend vs share of searches missed'
+source: 'Design principle: minimal friction. Locked chart rules, 2026-10-12.'

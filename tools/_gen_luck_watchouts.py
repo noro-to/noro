@@ -1,0 +1,67 @@
+"""One-off generator: 'could be luck' watchouts locked 2026-10-12 (voice). Edit the YAML directly after this."""
+import os, yaml
+OUT = os.path.join(os.path.dirname(__file__), "..", "rules", "watchout")
+SRC = "Watchout rules for ad reports: flag when a claim could be luck, not signal (2026-10-12)."
+CHANGE = r'(?:up|down|rose|fell|jumped|dropped|doubled|tripled|halved|grew|increased|decreased|improved|declined|spiked|surged|crashed|soared|plunged|lift|lifted|gain|gained)'
+R = [
+ ("small-sample-size", "Change claimed on a tiny sample",
+  [rf'\b{CHANGE}\b[^.\n]{{0,60}}?\b(?:n\s?=\s?|from\s+|on\s+|only\s+)?[1-9]\s+(?:conversions?|sales|orders|leads|purchases|clicks|signups|calls)\b',
+   rf'\bn\s?=\s?[1-9]\b', rf'\b[1-9]\s+(?:conversions?|sales|orders|leads|purchases)\b[^.\n]{{0,40}}\b{CHANGE}\b'],
+  r'\b(?:early|preliminary|too\s+(?:few|small|early)|directional|small\s+sample)\b',
+  "A rate built on fewer than 10 events swings on luck. 'Up 150%' on 4 conversions is noise.",
+  "Report the raw counts ('4 conversions vs 2') or wait for more data. Mark it 'early data' if it must be mentioned.",
+  ["Conversions were up 150% (n=4).", "Tablet sales doubled to 6 sales this week."],
+  ["Conversions were up 15% on 450 conversions.", "Early data: 8 conversions so far, too few to judge."]),
+ ("one-day-claim", "Claim from a single day",
+  [rf'\b(?:yesterday|overnight|this\s+morning|in\s+(?:a\s+single|one)\s+day|in\s+24\s+hours|on\s+(?:monday|tuesday|wednesday|thursday|friday|saturday|sunday)\s+alone)\b[^.\n]{{0,60}}\b{CHANGE}\b',
+   rf'\b{CHANGE}\b[^.\n]{{0,40}}\b(?:yesterday|overnight|this\s+morning|in\s+(?:a\s+single|one)\s+day|in\s+24\s+hours)\b'],
+  r'\b(?:preliminary|early|one\s+day\s+is\s+too|too\s+early|settling|still\s+coming\s+in)\b',
+  "One day is noise, and the most recent days are still collecting conversions.",
+  "Judge on 7 or more complete days, or label it a one-day blip.",
+  ["Overnight we saw a 40% lift in conversions.", "CPA dropped 30% yesterday."],
+  ["Oct 1 to 7: conversions rose 40%.", "Preliminary: CPA dropped 30% yesterday; one day is too early to call."]),
+ ("volatile-rate-claim", "Volatile rate called a win or loss",
+  [rf'\b(?:conversion\s+rate|CVR|CTR|click[- ]through\s+rate|CPL|cost\s+per\s+lead)\b[^.\n]{{0,30}}\b(?:jumped|spiked|surged|soared|crashed|plunged|improved|doubled|halved)\b'],
+  r'\b(?:directional|early|CI\b|confidence|interval|±|n\s?=\s?\d{2,}|\d{2,}\s+(?:conversions|clicks|leads))',
+  "Rates like conversion rate and CTR bounce week to week. A one-week jump often reverses.",
+  "Show the base it rests on (clicks, conversions) or call it directional.",
+  ["Conversion rate jumped 25% this week.", "CTR soared to 5.2%."],
+  ["Conversion rate rose to 3.2% on 1,200 clicks.", "CTR improved to 5.2%, an early signal."]),
+ ("spike-unexplained", "Spike or drop with no reason",
+  [rf'\b(?:spend|conversions?|clicks|CPA|CPC|ROAS|revenue|impressions|traffic)\b[^.\n]{{0,30}}\b(?:spiked|surged|jumped|crashed|plunged|doubled|tripled|halved|collapsed)\b'],
+  r'\b(?:because|due\s+to|after|when|launch|promo|holiday|black\s+friday|outage|paused|budget|sale|test|competitor|\()',
+  "An unexplained spike invites the reader to make up a reason.",
+  "Name the cause if the original knows it (launch, holiday, outage, budget change). If not, flag it as unexplained.",
+  ["Spend spiked 200% on Oct 15.", "Conversions crashed on Friday."],
+  ["Spend spiked 200% on Oct 15 because of Black Friday prep.", "Conversions crashed on Friday after the campaign was paused."]),
+ ("metric-without-baseline", "Metric with no baseline or target",
+  [r'\b(?:ROAS|CPA|CPL|CAC|cost\s+per\s+(?:lead|conversion|acquisition))\s+(?:is|was|of|came\s+in\s+at|improved\s+to|reached|hit)\s+[$€£]?\d[\d,.]*\s?x?'],
+  r'\b(?:vs\.?|versus|against|target|goal|prior|previous|last\s+(?:week|month|year|quarter)|baseline|benchmark|from\s+[$€£]?\d|compared)\b',
+  "'ROAS is 2.5' can't be judged. Good or bad depends on the target or the prior period.",
+  "Add the comparison the original has (target, prior period). If it has none, flag that the number can't be judged.",
+  ["ROAS is 2.5 this month.", "CPL improved to $12."],
+  ["ROAS is 2.5 vs 2.1 last month.", "CPL of $12 against a $15 target."]),
+ ("best-period-only", "Only the best period shown",
+  [r'\b(?:our\s+)?(?:best|strongest|record|peak)\s+(?:week|day|month|period|results|performance)\b'],
+  r'\b(?:vs\.?|versus|full\s+(?:quarter|month|year|period)|overall|despite|while\s+the|of\s+(?:Q[1-4]|the\s+(?:quarter|year)))\b',
+  "Showing only the best stretch hides the rest. Readers can't tell a good week from a good quarter.",
+  "Show the full period next to the best one, or say it's the best of how many.",
+  ["This was our best week ever.", "Peak performance came in August."],
+  ["Best week of Q3 (Aug 15 to 21); the full quarter was down 5%."]),
+ ("change-credited-without-alternatives", "Our change credited, alternatives ignored",
+  [rf'\bwe\s+(?:increased|raised|lowered|decreased|changed|launched|paused|added|cut|switched|moved)\b[^.\n]{{0,80}}\b(?:and|so|which|then)\b[^.\n]{{0,40}}\b(?:conversions?|ROAS|revenue|CPA|sales|leads)\b[^.\n]{{0,20}}\b{CHANGE}\b',
+   r'\bwe\s+(?:increased|raised|lowered|changed|launched|paused|added|cut|switched)\b[^.\n]{0,80}\b(?:led\s+to|resulted\s+in|caused|drove|causing)\b'],
+  r'\b(?:may|might|also|though|although|alongside|season\w*|competitor|other\s+factors|coincid\w*|holdout|test\s+group|control)\b',
+  "Our change and the result happened together, but seasonality, competitors or budget may explain it. 'We did X and Y rose' isn't proof.",
+  "Say what else changed in the same window, or call it a correlation until a holdout or test confirms it.",
+  ["We increased bids and conversions rose 30%.", "We paused low-ROAS keywords, which led to a 40% ROAS lift."],
+  ["We increased bids; conversions also rose 30%, though seasonality may explain part of it."]),
+]
+for slug, name, pats, unless, why, fix, flag, pas in R:
+    doc = {"id": f"W-{slug}", "slug": slug, "name": name, "category": "watchout", "severity": "advisory",
+           "engine": "regex", "applies_to": "text", "patterns": pats, "unless": unless,
+           "message": f"{name}: '{{match}}'", "why": why, "fix": fix,
+           "examples": {"flag": flag, "pass": pas}, "source": SRC}
+    with open(os.path.join(OUT, f"{slug}.yaml"), "w") as f:
+        yaml.safe_dump(doc, f, sort_keys=False, allow_unicode=True, width=1000)
+print(len(R), "watchouts written")

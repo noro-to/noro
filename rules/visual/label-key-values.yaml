@@ -1,0 +1,22 @@
+id: V-label-key-values
+slug: label-key-values
+name: Values on key points only
+category: visual
+severity: warning
+engine: judge
+applies_to: visual
+message: Are the values that matter labeled, without labeling every point?
+why: Labeling everything hides the one number that matters.
+fix: Label the value the title talks about, and the comparison. Remove the rest.
+rubric:
+  question: Are the values that matter labeled, without labeling every point?
+  anchors:
+    0: Every point labeled, or the key value unlabeled
+    1: Some clutter
+    2: Only the values the title and text use are labeled
+examples:
+  flag:
+  - Every bar of 30 days carries its value
+  pass:
+  - Only the peak day and the average labeled
+source: 'Design principle: data speaks first. Locked chart rules, 2026-10-12.'

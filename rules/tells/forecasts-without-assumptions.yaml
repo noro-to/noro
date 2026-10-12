@@ -1,0 +1,25 @@
+id: T-forecasts-without-assumptions
+slug: forecasts-without-assumptions
+name: Forecast without assumptions
+category: tells
+severity: warning
+engine: regex
+applies_to: text
+patterns:
+  - '\b(?:will|should|(?:is|are)\s+(?:expected|likely|poised|set)\s+to)\s+(?:naturally\s+|likely\s+|soon\s+|quickly\s+|continue\s+to\s+)?(?:recover|rebound|improve|stabili[sz]e|normali[sz]e|bounce\s+back|pick\s+up|grow|climb|accelerate|decline|level\s+(?:off|out)|turn\s+(?:around|positive))\b'
+  - '\bexpect(?:s|ed|ing)?\s+(?:[\w$%.-]+\s+){1,4}to\s+(?:recover|rebound|improve|stabili[sz]e|normali[sz]e|bounce\s+back|pick\s+up|grow|climb|decline|level\s+(?:off|out))\b'
+unless: '\b(?:if|assuming|provided|unless|once|based\s+on|at\s+(?:the\s+)?(?:current|this|today[''’]s)\s+(?:pace|rate|run[\s-]rate|spend))\b'
+message: "Forecast with no assumption: '{match}'"
+why: "'Performance will recover in Q1' is a promise the data can't make. When it doesn't happen, the client remembers the promise, not the caveat you didn't write."
+fix: "Say what the forecast rests on, or replace it with a test and a date: 'If Sunday CVR returns to 14%, CPA falls to about $100. We check on Oct 20.'"
+examples:
+  flag:
+    - "Performance will recover naturally in Q1."
+    - "We expect CPA to stabilize next month."
+    - "ROAS should improve as the algorithm learns."
+    - "Sunday is likely to rebound in October."
+  pass:
+    - "If Sunday CVR returns to 14%, CPA should improve to about $100."
+    - "At the current pace, spend will grow to $52k by Oct 31."
+    - "CPA fell 12% to $54 last week."
+source: "11-ai-writing-tells.md ban list #6; 13-report-best-practices.md (forecasts: practitioners favor a test, stop condition and review date)"

@@ -1,0 +1,28 @@
+id: T-era-openers
+slug: era-openers
+name: Era opener
+category: tells
+severity: error
+engine: regex
+applies_to: text
+patterns:
+  - '\bin\s+today[''’]s\s+(?:[\w-]+\s+){0,3}(?:landscape|world|environment|market(?:place)?|climate|era|age|economy)\b'
+  - '\bin\s+(?:an?|the|this|today[''’]s)\s+(?:ever[\s-]+(?:evolving|changing|shifting)|rapidly\s+(?:evolving|changing|shifting)|fast[\s-]+(?:paced|moving)|constantly\s+(?:evolving|changing))\b'
+  - '\bin\s+(?:an|this|the)\s+(?:new\s+)?(?:era|age)\s+of\b'
+  - '\bas\s+we\s+navigate\b'
+  - '\bnow\s+more\s+than\s+ever\b'
+  - '\bin\s+the\s+(?:current|modern|digital|new)\s+(?:digital\s+|advertising\s+|marketing\s+|media\s+)?(?:landscape|era|age|climate|world)\b'
+message: "Era opener: '{match}'"
+why: "'In today's fast-paced digital landscape' tells the reader nothing about their account and signals a template. Readers skip the first paragraph after seeing it."
+fix: "Delete it. Open with the client's number: 'Leads rose 8% to 412; CPL held at $61.'"
+examples:
+  flag:
+    - "In today's competitive digital landscape, every click counts."
+    - "In an ever-evolving paid media world, Q3 brought changes."
+    - "Now more than ever, efficiency matters."
+    - "As we navigate Q4, spend rose 12%."
+  pass:
+    - "Spend rose 12% to $48.2k in Q3."
+    - "CPCs in the auction rose 18% since Sep 1, per Auction Insights."
+    - "We are working within a 20% budget cut in November."
+source: "11-ai-writing-tells.md ban list #4 (era or throat-clearing openers)"

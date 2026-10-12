@@ -1,0 +1,22 @@
+id: V-missing-data-labeled
+slug: missing-data-labeled
+name: Missing data labeled
+category: visual
+severity: warning
+engine: judge
+applies_to: visual
+message: Are gaps in the data shown and labeled, not silently skipped or filled?
+why: A line across missing days invents data. A zero for 'no data' invents a drop.
+fix: Break the line at gaps and label why ('tracking outage Oct 3 to 5').
+rubric:
+  question: Are gaps in the data shown and labeled, not silently skipped or filled?
+  anchors:
+    0: 'Gaps hidden: a line drawn straight across missing days, or zeros for no data'
+    1: Gap visible but unexplained
+    2: Gap marked and explained
+examples:
+  flag:
+  - Line connecting across 3 days of missing conversions
+  pass:
+  - Line broken Oct 3 to 5, labeled 'tag outage'
+source: 'Design principle: honesty first. Locked chart rules, 2026-10-12.'

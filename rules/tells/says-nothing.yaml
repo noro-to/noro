@@ -1,0 +1,23 @@
+id: T-says-nothing
+slug: says-nothing
+name: Says nothing
+category: tells
+severity: error
+engine: phrase
+applies_to: text
+phrases: ["a mixed picture", "mixed results", "mixed performance", "positive developments", "positive trends", "solid results", "solid performance", "nuances worth considering", "an important period", "plays a unique and valuable role", "plays a key role", "plays a crucial role", "overall performance remained", "performance was steady", "performance remained stable", "performance remained steady", "delivered results", "moving in the right direction", "on the right track", "room for improvement", "areas for improvement", "areas of opportunity", "performed well", "performed as expected"]
+unless: '(?<![A-Za-z])\d'
+message: "Says nothing: '{match}'"
+why: "The sentence would fit any account in any month. A client who pays for the work reads it as no work."
+fix: "Replace it with the number that moved and which way: 'CPA rose 39% to $61; conversions fell 6% to 790.'"
+examples:
+  flag:
+    - "The account shows a mixed picture this month."
+    - "Q3 delivered solid results across campaigns."
+    - "Overall performance remained stable week over week."
+    - "There is still room for improvement in Search."
+  pass:
+    - "CPA rose 39% to $61 while conversions fell 6% to 790."
+    - "Brand performed well: CPA $22 against a $30 target."
+    - "Search CPA is $61; the target is $50."
+source: "earlier draft banlist.md (says nothing); 11-ai-writing-tells.md swap test"

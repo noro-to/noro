@@ -1,0 +1,24 @@
+id: V-axis-units-named
+slug: axis-units-named
+name: Axis units named
+category: visual
+severity: warning
+engine: judge
+applies_to: visual
+message: Does every axis say what it measures and in what unit?
+why: '''Conversions'' could be a count, a rate or a value. The reader shouldn''t have to guess.'
+fix: 'Put the unit in the axis label: ''Spend (USD)'', ''Conversion rate (%)'', ''Conversions (count)''.'
+rubric:
+  question: Does every axis say what it measures and in what unit?
+  anchors:
+    0: An axis has no label
+    1: Labels name the metric but not the unit
+    2: Every axis names the metric and unit, or the title does
+examples:
+  flag:
+  - Y-axis labeled 'Conversions' on a chart of conversion rate
+  - Unlabeled y-axis with ticks 0.5, 1.0, 1.5
+  pass:
+  - Y-axis 'Conversion rate (%)'
+  - Y-axis 'Spend (USD)'
+source: 'Design principle: context always included. Locked chart rules, 2026-10-12.'

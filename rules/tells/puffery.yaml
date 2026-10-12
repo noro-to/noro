@@ -1,0 +1,22 @@
+id: T-puffery
+slug: puffery
+name: Puffery
+category: tells
+severity: error
+engine: phrase
+applies_to: text
+phrases: ["robust", "strong momentum", "stellar", "phenomenal", "exceptional", "impressive", "remarkable", "unprecedented", "pivotal", "game-changer", "game changer", "game-changing", "skyrocketed", "skyrocketing", "soared", "soaring", "explosive", "crushed it", "crushing it", "knocked it out of the park", "world-class", "best-in-class", "record-breaking", "incredible results", "huge win", "massive win"]
+message: "Puffery: '{match}'"
+why: "Praise words make the account sound better than the numbers do. A CFO discounts the whole report when one adjective is doing the work a number should."
+fix: "Let the number carry it: 'ROAS rose from 3.2x to 4.1x (platform-reported)', not 'ROAS skyrocketed'."
+examples:
+  flag:
+    - "The account delivered robust performance in Q3."
+    - "ROAS skyrocketed thanks to the new creative."
+    - "PMax was a game-changer for the brand."
+    - "We saw impressive results across the board."
+  pass:
+    - "ROAS rose from 3.2x to 4.1x, platform-reported."
+    - "PMax brought in 412 of 790 conversions."
+    - "Spend rose 12% to $48.2k."
+source: "11-ai-writing-tells.md ban list #5 (puffery about the account); Wikipedia puffed-up significance"

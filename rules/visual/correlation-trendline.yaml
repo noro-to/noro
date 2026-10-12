@@ -1,0 +1,22 @@
+id: V-correlation-trendline
+slug: correlation-trendline
+name: Correlation shown as a scatter with a trend line
+category: visual
+severity: warning
+engine: judge
+applies_to: visual
+message: If the chart claims a relationship, is it a scatter plot with a trend line and its strength shown?
+why: Two lines moving together prove nothing. A scatter shows the actual relationship and its spread.
+fix: Plot one metric against the other, add a trend line, and show r.
+rubric:
+  question: If the chart claims a relationship, is it a scatter plot with a trend line and its strength shown?
+  anchors:
+    0: A relationship claimed from two bars or two lines
+    1: Scatter with no trend line or no strength shown
+    2: Scatter, trend line, and r or R² shown
+examples:
+  flag:
+  - Two lines, spend and revenue, captioned 'spend drives revenue'
+  pass:
+  - Scatter of weekly spend vs revenue, trend line, r = 0.62
+source: 'Design principle: honesty first. Locked chart rules, 2026-10-12.'

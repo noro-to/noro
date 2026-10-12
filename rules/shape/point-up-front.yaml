@@ -1,0 +1,22 @@
+id: S-point-up-front
+slug: point-up-front
+name: Bottom line up front
+category: shape
+severity: error
+engine: judge
+applies_to: text
+rubric:
+  question: Does the first sentence (or first line of a Slack note) state the bottom line, with its number?
+  anchors:
+    0: Opens with setup or details; the bottom line is buried or missing
+    1: Bottom line is near the top but vague or without its number
+    2: First line states the bottom line and its number
+message: Does the first sentence (or first line of a Slack note) state the bottom line, with its number?
+why: Clients read the first line and decide whether to read on. A report that opens with setup loses them.
+fix: 'Move the one-sentence answer to the top: what happened, with its number. Detail follows.'
+examples:
+  flag:
+  - This report covers Google Ads performance for September across Search and Shopping campaigns. Spend was...
+  pass:
+  - CPA rose 39% to $61 this week because two prospecting ad sets saturated.
+source: Shape rules for ad reports, locked 2026-10-12; noro-research.md (round 1 and 2).

@@ -1,0 +1,32 @@
+id: S-bold-label-bullets
+slug: bold-label-bullets
+name: Bold-label bullets in bulk
+category: shape
+severity: warning
+engine: count
+applies_to: text
+count:
+  pattern: (?m)^[ \t]*(?:[-*•]|\d+\.)[ \t]+\*\*[^*\n]{1,40}:?\*\*:?
+  max: 3
+  per: report
+message: 'More than 3 bold-label bullets: ''{match}'''
+why: '''**Label:** sentence'' on every bullet is the most recognizable AI layout. It slows reading because the eye stops at every label.'
+fix: Write the bullets as plain sentences, or turn the set into two or three short lines.
+examples:
+  flag:
+  - '- **Spend:** up 12%.
+
+    - **CPA:** up 39%.
+
+    - **Conversions:** down 19%.
+
+    - **CTR:** flat.
+
+    - **Next steps:** swap creative.'
+  pass:
+  - '- Spend up 12%.
+
+    - CPA up 39%.
+
+    - Conversions down 19%.'
+source: Research rounds 1–3; locked 2026-10-12.

@@ -1,0 +1,22 @@
+id: V-small-multiples
+slug: small-multiples
+name: Small multiples instead of a crowded chart
+category: visual
+severity: warning
+engine: judge
+applies_to: visual
+message: When comparing many groups, does the visual use small multiples instead of one crowded chart?
+why: Ten lines on one chart become spaghetti. Small charts with shared scales compare cleanly.
+fix: Break it into a grid of small charts with the same axes.
+rubric:
+  question: When comparing many groups, does the visual use small multiples instead of one crowded chart?
+  anchors:
+    0: Many lines or groups crammed into one chart
+    1: Crowded but readable
+    2: Small multiples with shared scales, or few enough groups
+examples:
+  flag:
+  - 8 campaign trend lines on one chart
+  pass:
+  - 8 small charts, one per campaign, shared y-axis
+source: 'Design principle: clarity over decoration. Locked chart rules, 2026-10-12.'

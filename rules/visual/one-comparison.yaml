@@ -1,0 +1,23 @@
+id: V-one-comparison
+slug: one-comparison
+name: A comparison shown, one per chart
+category: visual
+severity: warning
+engine: judge
+applies_to: visual
+message: Does the chart show what it's compared against, and only one comparison?
+why: A number with no comparison can't be judged. Three comparisons can't be read.
+fix: Pick the one comparison that matters (prior period, target or account average) and show it.
+rubric:
+  question: Does the chart show what it's compared against, and only one comparison?
+  anchors:
+    0: No comparison at all, or several fighting for attention
+    1: A comparison exists but is buried
+    2: 'One clear comparison: prior period, target or benchmark'
+examples:
+  flag:
+  - Spend this month with no prior period
+  - Bars with last month, last year and target all at once
+  pass:
+  - This month vs last month, one reference line for target
+source: 'Design principle: context always included. Locked chart rules, 2026-10-12.'

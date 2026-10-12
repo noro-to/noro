@@ -1,0 +1,22 @@
+id: V-no-scaffolding
+slug: no-scaffolding
+name: No chart junk
+category: visual
+severity: warning
+engine: judge
+applies_to: visual
+message: Is the chart free of gridlines, borders, 3D, shadows and decoration that carry no data?
+why: Every non-data mark competes with the data.
+fix: Remove gridlines, borders and 3D. Keep the axis, the data and the labels.
+rubric:
+  question: Is the chart free of gridlines, borders, 3D, shadows and decoration that carry no data?
+  anchors:
+    0: Heavy gridlines, 3D, shadows or decorative fills
+    1: Some unneeded scaffolding
+    2: Only what carries data or the point
+examples:
+  flag:
+  - 3D bar chart with gridlines and a gradient background
+  pass:
+  - Flat bars, no gridlines, light axis
+source: 'Design principle: clarity over decoration. Locked chart rules, 2026-10-12.'

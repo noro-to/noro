@@ -1,0 +1,22 @@
+id: V-one-point-per-chart
+slug: one-point-per-chart
+name: One point per chart
+category: visual
+severity: error
+engine: judge
+applies_to: visual
+message: Does each chart make exactly one point?
+why: A chart that makes three points makes none. The reader picks one at random.
+fix: Split it, or cut the series that don't serve the point.
+rubric:
+  question: Does each chart make exactly one point?
+  anchors:
+    0: Several competing points in one chart
+    1: One main point, but extra series distract
+    2: One point, everything else removed or quiet
+examples:
+  flag:
+  - One chart showing spend, CTR, CPA and ROAS by week
+  pass:
+  - 'One chart: CPA by week, the spike labeled'
+source: 'Design principle: one point per visual. Locked chart rules, 2026-10-12.'

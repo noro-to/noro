@@ -1,0 +1,22 @@
+id: T-emoji
+slug: emoji
+name: Emoji or Unicode decoration
+category: tells
+severity: error
+engine: regex
+applies_to: both
+patterns:
+  - '[\U0001F300-\U0001FAFF☀-➿⬅-⬇⭐⭕️]'
+message: "Emoji or decoration: '{match}'"
+why: "Rockets, checkmarks and warning signs in a client report are an AI formatting habit. They add nothing a word can't, and some readers stop trusting the rest."
+fix: "Delete it. If it marked status, say the status in words: 'on target', 'above target'."
+examples:
+  flag:
+    - "🚀 Spend scaled 40% this month."
+    - "CPA down 12% ✅"
+    - "Sunday is the weak day ⚠️"
+  pass:
+    - "Spend rose 40% to $67k."
+    - "CPA fell 12% to $54, under the $60 target."
+    - "Day × hour: Sunday 8–10 pm is the costliest window."
+source: "11-ai-writing-tells.md ban list #7 (emoji, Unicode decoration); earlier draft rule V4"

@@ -1,0 +1,23 @@
+id: V-smooth-line-for-trends
+slug: smooth-line-for-trends
+name: Smooth lines for trends
+category: visual
+severity: warning
+engine: judge
+applies_to: visual
+message: Are trends over 6 or more periods drawn as a single smooth line?
+why: A line shows the shape of a trend at a glance. Bars and dots make the reader connect them.
+fix: Draw 6 or more periods as a smoothed line. Mark only the points the title talks about.
+rubric:
+  question: Are trends over 6 or more periods drawn as a single smooth line?
+  anchors:
+    0: 6+ periods shown as bars, scatter or a step chart
+    1: Line used but jagged or cluttered with markers
+    2: Smooth line for 6+ periods, markers only on key points
+examples:
+  flag:
+  - 12 months of CPA as 12 bars
+  - Weekly conversions as a scatter plot
+  pass:
+  - 12 months of CPA as one smooth line with the peak labeled
+source: 'Design principle: minimal friction. Locked chart rules, 2026-10-12.'

@@ -1,0 +1,3035 @@
+{
+  "version": "0.1.0",
+  "rules": [
+    {
+      "id": "A-action-has-date",
+      "slug": "action-has-date",
+      "name": "Action with no date",
+      "category": "actions",
+      "severity": "advisory",
+      "engine": "regex",
+      "applies_to": "text",
+      "patterns": [
+        "(?m)^[ \\t]*(?:[-*•]|\\d+\\.|next:|now:)[ \\t]*(?:increase|decrease|raise|lower|add|pause|stop|launch|shift|move|cut|expand|scale|swap|exclude|split|refresh)\\b[^\\n]*$"
+      ],
+      "unless": "\\b(?:today|tomorrow|this\\s+week|next\\s+week|by\\s+\\w+|on\\s+(?:mon|tue|wed|thu|fri|sat|sun)\\w*|before\\s+\\w+|(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\\w*\\.?\\s+\\d{1,2}|\\d{1,2}/\\d{1,2}|within\\s+\\d+)\\b",
+      "message": "Action with no date: '{match}'",
+      "why": "An action with no date drifts. The reader can't tell if it's this week or someday.",
+      "fix": "Add the date the original gives. If it gives none, flag it for the writer.",
+      "examples": {
+        "flag": [
+          "- Pause the 12 broad-match keywords.",
+          "Next: shift $5k from Display to Search."
+        ],
+        "pass": [
+          "- Pause the 12 broad-match keywords today.",
+          "Next: shift $5k from Display to Search by Friday."
+        ]
+      },
+      "source": "Final rules for clarity in ad reports (2026-10-12)."
+    },
+    {
+      "id": "A-actions-tied-to-findings",
+      "slug": "actions-tied-to-findings",
+      "name": "Every action ties to a finding",
+      "category": "actions",
+      "severity": "error",
+      "engine": "judge",
+      "applies_to": "text",
+      "rubric": {
+        "question": "Does each action follow from a finding stated in the report?",
+        "anchors": {
+          "0": "Actions float with no link to any finding",
+          "1": "Some actions tie to findings, others are generic",
+          "2": "Each action follows from a specific finding"
+        }
+      },
+      "message": "Does each action follow from a finding stated in the report?",
+      "why": "An action with no finding behind it reads as boilerplate, and the reader can't judge whether to do it.",
+      "fix": "Put each action next to the finding it answers. Cut actions with no finding behind them. noro never invents what the original lacks: if it's missing, flag it for the writer.",
+      "examples": {
+        "flag": [
+          "Search ROAS fell 20%. Next: test new ad copy on Display.",
+          "Recommendation: review performance daily."
+        ],
+        "pass": [
+          "Search ROAS fell 20% on broad match. Next: pause the 12 broad-match keywords below 1.0 ROAS."
+        ]
+      },
+      "source": "Action rules for ad reports: recommendations clear, tied to data, executable (locked 2026-10-12)."
+    },
+    {
+      "id": "A-monitor-as-action",
+      "slug": "monitor-as-action",
+      "name": "Monitor as the action",
+      "category": "actions",
+      "severity": "error",
+      "engine": "regex",
+      "applies_to": "text",
+      "patterns": [
+        "\\b(?:continue|keep|will)\\s+(?:to\\s+)?monitor(?:ing)?\\b",
+        "\\bkeep\\s+an\\s+eye\\s+on\\b",
+        "\\bmonitor(?:ing)?\\s+(?:closely|performance|results|trends|the\\s+situation)\\b",
+        "\\bwatch\\s+(?:this|it|closely)\\b"
+      ],
+      "unless": "^(?=[\\s\\S]*?(?:\\b(?:by|on|until|before|through|after)\\s+(?:(?:mon|tue|wed|thu|fri|sat|sun)[a-z]*\\b|(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\\.?\\s+\\d{1,2}\\b|\\d{1,2}/\\d{1,2}\\b)|\\bnext\\s+(?:week|month|call)\\b))(?=[\\s\\S]*?(?:[$€£]\\s?\\d|\\d\\s?%|\\b(?:above|below|over|under)\\s+[$€£]?\\d))",
+      "message": "'{match}' isn't an action",
+      "why": "'Monitor' tells the reader nothing will happen. A check needs a date and a number that decides the next step.",
+      "fix": "Name the check: 'If CPA is above $50 on Fri, cut PR-03 budget 40%.' If nothing is due, write 'Nothing to change. Next check: Fri.'",
+      "examples": {
+        "flag": [
+          "We will continue to monitor performance closely.",
+          "Keep an eye on Sunday CPA."
+        ],
+        "pass": [
+          "Monitor Sunday CPA: if it's above $120 by Oct 20, cut Sunday bids 20%.",
+          "Nothing to change. Next check: Friday."
+        ]
+      },
+      "source": "Research rounds 1–3; locked 2026-10-12."
+    },
+    {
+      "id": "A-owner-implied",
+      "slug": "owner-implied",
+      "name": "Owner is clear",
+      "category": "actions",
+      "severity": "advisory",
+      "engine": "judge",
+      "applies_to": "text",
+      "rubric": {
+        "question": "Is it clear who does each action?",
+        "anchors": {
+          "0": "No sense of who acts",
+          "1": "Could belong to several roles",
+          "2": "Role or person is clear, or obvious from context"
+        }
+      },
+      "message": "Is it clear who does each action?",
+      "why": "An action nobody owns doesn't happen. Matters most in agency reports that go to a client team.",
+      "fix": "Name the role or person if the original does. If it doesn't, flag it for the writer. noro never invents what the original lacks: if it's missing, flag it for the writer.",
+      "examples": {
+        "flag": [
+          "Optimize bids, increase budget and review creative."
+        ],
+        "pass": [
+          "Our team raises brand bids 15%; your team confirms the Sunday call coverage."
+        ]
+      },
+      "source": "Action rules for ad reports: recommendations clear, tied to data, executable (locked 2026-10-12)."
+    },
+    {
+      "id": "A-priority-is-clear",
+      "slug": "priority-is-clear",
+      "name": "Priority is clear",
+      "category": "actions",
+      "severity": "warning",
+      "engine": "judge",
+      "applies_to": "text",
+      "rubric": {
+        "question": "Can the reader tell which action comes first, and which are tests?",
+        "anchors": {
+          "0": "Several actions with equal weight and no order",
+          "1": "Order implied but not stated",
+          "2": "Clear order: what to do now, what to test, what to check later with a date"
+        }
+      },
+      "message": "Can the reader tell which action comes first, and which are tests?",
+      "why": "When every action sounds equally urgent, the reader does none or all of them.",
+      "fix": "Order the actions and say which is now and which is a test. If the original gives no priority, flag it. noro never invents what the original lacks: if it's missing, flag it for the writer.",
+      "examples": {
+        "flag": [
+          "Pause weak keywords. Increase Search budget. Test new audiences."
+        ],
+        "pass": [
+          "Now: pause keywords below 0.9 ROAS. Test next: 15% higher bids on brand for 14 days."
+        ]
+      },
+      "source": "Action rules for ad reports: recommendations clear, tied to data, executable (locked 2026-10-12)."
+    },
+    {
+      "id": "A-success-metric-stated",
+      "slug": "success-metric-stated",
+      "name": "Success is defined",
+      "category": "actions",
+      "severity": "warning",
+      "engine": "judge",
+      "applies_to": "text",
+      "rubric": {
+        "question": "Does each action say how we'll know it worked?",
+        "anchors": {
+          "0": "No result or threshold to judge the action by",
+          "1": "A metric is named but no threshold or date",
+          "2": "A threshold and a date: 'ROAS at 1.2 or above by Oct 31'"
+        }
+      },
+      "message": "Does each action say how we'll know it worked?",
+      "why": "Without a bar to clear, every result can be called a success.",
+      "fix": "Add the threshold and date from the original. If the original has none, flag it. noro never invents what the original lacks: if it's missing, flag it for the writer.",
+      "examples": {
+        "flag": [
+          "Increase the daily budget."
+        ],
+        "pass": [
+          "Raise the daily budget to $100; keep it if ROAS holds at 1.2 or above through Oct 31."
+        ]
+      },
+      "source": "Action rules for ad reports: recommendations clear, tied to data, executable (locked 2026-10-12)."
+    },
+    {
+      "id": "A-test-without-stop",
+      "slug": "test-without-stop",
+      "name": "Test with no stop condition",
+      "category": "actions",
+      "severity": "advisory",
+      "engine": "regex",
+      "applies_to": "text",
+      "patterns": [
+        "\\b(?:test|trial|experiment\\s+with)\\s+(?:a\\s+|new\\s+|different\\s+)?(?:creative|audiences?|bids?|bidding|landing\\s+pages?|copy|headlines?|budgets?)\\b"
+      ],
+      "unless": "(?:\\bif\\b|\\buntil\\b|\\bstop\\b|\\bend\\b|\\broll\\s*back\\b|\\brevert\\b|\\bfor\\s+\\d+\\s+(?:days|weeks)\\b|\\bafter\\s+\\d+\\s+(?:conversions|clicks|days)\\b)",
+      "message": "Test with no stop condition: '{match}'",
+      "why": "A test with no end date or success bar runs forever and proves nothing.",
+      "fix": "Add the stop condition: how long, what result counts, and what happens if it fails.",
+      "examples": {
+        "flag": [
+          "Next month we will test new creative on prospecting."
+        ],
+        "pass": [
+          "Test new creative on PR-03 for 14 days; if CPA isn't under $50, revert."
+        ]
+      },
+      "source": "Research rounds 1–3; locked 2026-10-12."
+    },
+    {
+      "id": "A-too-many-actions",
+      "slug": "too-many-actions",
+      "name": "Too many actions",
+      "category": "actions",
+      "severity": "advisory",
+      "engine": "count",
+      "applies_to": "text",
+      "count": {
+        "pattern": "(?m)^[ \\t]*(?:[-*•]|\\d+\\.)[ \\t]+(?:increase|decrease|raise|lower|add|pause|stop|launch|test|shift|move|cut|expand|scale|review|update|create|consider|optimi[sz]e|refresh|swap|exclude|split)\\b",
+        "max": 3,
+        "per": "report"
+      },
+      "message": "More than 3 recommended actions: '{match}'",
+      "why": "Changing many things at once means nobody can tell what worked. Practitioners have watched AI 'fix everything' and tank accounts.",
+      "fix": "Keep the one to three changes that matter most. Change one variable per campaign at a time.",
+      "examples": {
+        "flag": [
+          "- Raise budgets.\n- Pause Display.\n- Test new creative.\n- Add negatives.\n- Shift spend to PMax."
+        ],
+        "pass": [
+          "- Swap creative on PR-03 by Wed.\n- If CPA isn't under $50 by Fri, move 40% of its budget to retargeting."
+        ]
+      },
+      "source": "Research rounds 1–3; locked 2026-10-12."
+    },
+    {
+      "id": "A-vague-optimize",
+      "slug": "vague-optimize",
+      "name": "Vague 'optimize'",
+      "category": "actions",
+      "severity": "warning",
+      "engine": "regex",
+      "applies_to": "text",
+      "patterns": [
+        "\\b(?:continue|keep)\\s+(?:to\\s+)?optimi[sz](?:e|ing)\\b",
+        "\\bfurther\\s+optimi[sz](?:e|ation|ations)\\b",
+        "\\boptimi[sz]e\\s+(?:the\\s+)?(?:campaigns?|account|performance|keywords,?\\s+bids)\\b",
+        "\\boptimi[sz]ation\\s+opportunities\\b"
+      ],
+      "message": "Vague action: '{match}'",
+      "why": "'Optimize' with no object, lever or number is a placeholder for an action. Clients read it as the agency having no plan.",
+      "fix": "Say the lever and the size: 'Add 41 negative keywords', 'Raise the tROAS target from 400% to 450%'.",
+      "examples": {
+        "flag": [
+          "We recommend continuing to optimize keywords, bids and ad copy.",
+          "There are several optimization opportunities."
+        ],
+        "pass": [
+          "Add the 41 negative keywords in the appendix today."
+        ]
+      },
+      "source": "Research rounds 1–3; locked 2026-10-12."
+    },
+    {
+      "id": "N-metric-bombing",
+      "slug": "metric-bombing",
+      "name": "Metric bombing",
+      "category": "numbers",
+      "severity": "warning",
+      "engine": "count",
+      "applies_to": "text",
+      "count": {
+        "pattern": "(?<![\\w.$€£])(?:[$€£]\\s?\\d[\\d,]*(?:\\.\\d+)?(?:\\s?[km]\\b)?|[+-]?\\d[\\d,]*(?:\\.\\d+)?\\s?(?:%|pp\\b|x\\b)|\\d{1,3}(?:,\\d{3})+(?:\\.\\d+)?|\\d+\\.\\d+|\\d+\\s+(?:conversions|clicks|leads|orders|sales|purchases|impressions|calls|sessions)\\b)(?![^\\[\\]\\n]*\\])",
+        "max": 8,
+        "per": "100 words"
+      },
+      "message": "More than 8 numbers per 100 words: '{match}'",
+      "why": "Every number, no point. Clients read a one-page note with the 3–4 numbers that mattered; a wall of figures makes them find the point themselves, and most won't.",
+      "fix": "Keep the numbers the decision rests on and cut the rest. Numbers in [chart: …] descriptions don't count here; the visual rules cover charts.",
+      "examples": {
+        "flag": [
+          "Spend $48.2k (+12%), CPA $61 (+39%), CVR 9.8% (-4.3 pp), CTR 1.5% (+0.3 pp), CPC $13.52, ROAS 4.1x on 790 conversions."
+        ],
+        "pass": [
+          "CPA held at $61 on 790 conversions this month, so nothing in the account needs to change, and we will review it with you again at the next weekly call."
+        ]
+      },
+      "source": "LinkedIn 'metric bombing' (14-social-x-linkedin.md); r/agency 'one-page note with the 3–4 numbers that mattered' (02-key-quotes.md); AgencyAnalytics 5–8 metrics"
+    },
+    {
+      "id": "N-numbers-in-context",
+      "slug": "numbers-in-context",
+      "name": "Number with no comparison",
+      "category": "numbers",
+      "severity": "warning",
+      "engine": "regex",
+      "applies_to": "text",
+      "patterns": [
+        "\\b(?:spend|ROAS|CPA|CPL|CPC|CTR|CVR|conversions?|revenue|leads|cost\\s+per\\s+\\w+)\\s*(?::|is|was|of|came\\s+in\\s+at|totaled|hit|reached)\\s*[$€£]?\\d[\\d,.]*\\s?(?:[kKmM]\\b|%|x\\b)?"
+      ],
+      "unless": "\\b(?:vs\\.?|versus|against|target|goal|prior|previous|last\\s+(?:week|month|year|quarter)|up|down|rose|fell|from|flat|unchanged|compared|budget|plan)\\b",
+      "message": "Number with no comparison: '{match}'",
+      "why": "'Spend is $50k' can't be judged. Every number the reader needs to act on needs its comparison.",
+      "fix": "Add the comparison the original gives: prior period, target or budget. If it gives none, cut the number or flag it.",
+      "examples": {
+        "flag": [
+          "Spend is $50k.",
+          "Conversions: 240.",
+          "ROAS of 1.8 this month."
+        ],
+        "pass": [
+          "Spend is $50k, up 20% vs last month.",
+          "Conversions: 240 against a 200 target.",
+          "ROAS of 1.8, down from 2.1."
+        ]
+      },
+      "source": "Final rules for clarity in ad reports (2026-10-12)."
+    },
+    {
+      "id": "N-percent-without-base",
+      "slug": "percent-without-base",
+      "name": "Percent change with no base",
+      "category": "numbers",
+      "severity": "warning",
+      "engine": "regex",
+      "applies_to": "text",
+      "patterns": [
+        "\\b(?:up|down|increased?|decreased?|rose|fell|grew|dropped|declined|jumped|climbed|improved|surged|lifted|slipped|dipped|plunged|spiked)\\s+(?:by\\s+)?[+-]?\\d+(?:\\.\\d+)?\\s?%",
+        "[+-]?\\d+(?:\\.\\d+)?\\s?%\\s+(?:increase|decrease|rise|drop|decline|lift|improvement|growth|jump|reduction|uplift|gain|dip|swing)\\b"
+      ],
+      "unless": "[$€£]\\s?\\d|\\b\\d[\\d,]*(?:\\.\\d+)?\\s?[km]?\\s+(?:conversions|clicks|leads|orders|sales|purchases|impressions|sessions|calls|signups|installs|visits)\\b|\\b(?:to|from|at|is|was|hit|reached|vs\\.?|versus|against)\\s+[$€£]?\\d|\\d(?:\\.\\d+)?x\\b",
+      "message": "Percent change with no base or new value: '{match}'",
+      "why": "'CPA up 12%' could be $5 to $5.60 or $500 to $560. A CFO's first question is 'from what to what', and a report that can't answer it looks like it's hiding something.",
+      "fix": "Give the new value with the change: 'CPA rose 12% to $61.' Add the old value only if the reader needs it.",
+      "examples": {
+        "flag": [
+          "CPA increased 12% week over week.",
+          "Conversions fell 8% this month.",
+          "We saw a 25% lift in CTR.",
+          "ROAS is down 15%."
+        ],
+        "pass": [
+          "CPA rose 12% to $61.",
+          "Conversions fell 8% to 790.",
+          "CTR rose from 1.2% to 1.5% (+0.3 pp).",
+          "ROAS 4.1x, down 15%."
+        ]
+      },
+      "source": "earlier draft panel.yml (CFO rejects 'a percentage with no base value'); 12-numbers-and-tables-evidence.md"
+    },
+    {
+      "id": "N-restating",
+      "slug": "restating",
+      "name": "Restated number",
+      "category": "numbers",
+      "severity": "error",
+      "engine": "regex",
+      "applies_to": "text",
+      "patterns": [
+        "\\b(?:which\\s+|this\\s+|that\\s+)?represent(?:s|ed|ing)\\s+(?:an?\\s+)?(?:[+-]?\\d+(?:\\.\\d+)?\\s?%\\s+|\\d+(?:\\.\\d+)?\\s?(?:pp|percentage[\\s-]points?)\\s+)?(?:increase|decrease|rise|drop|decline|change|uplift|improvement|reduction|growth|jump|gain|lift)\\b",
+        "\\b(?:an?\\s+)?(?:increase|decrease|rise|drop|decline|change|uplift|improvement|reduction|growth|jump|gain|lift)\\s+of\\s+[+-]?\\d+(?:\\.\\d+)?\\s?%\\s+(?:compared\\s+(?:to|with)|versus|vs\\.?|over|relative\\s+to|from)\\s+(?:the\\s+)?(?:previous|prior|last|preceding)\\b",
+        "\\bwhen\\s+compared\\s+(?:to|with)\\s+(?:the\\s+)?(?:previous|prior|preceding|last)\\b",
+        "\\bcompared\\s+(?:to|with)\\s+(?:the\\s+)?(?:previous|prior|preceding|last)\\s+(?:week|month|period|quarter|year)['’]s\\s+(?:\\w+\\s+){0,2}(?:of|at)\\s+[$€£]?\\d"
+      ],
+      "message": "Restated number: '{match}'",
+      "why": "'Spend increased to $48,213, which represents a 12% increase compared to the previous week's spend of $43,047' says one thing three times. It's the longest way to write the shortest fact.",
+      "fix": "Say it once: 'Spend up 12% to $48.2k.'",
+      "examples": {
+        "flag": [
+          "Spend increased to $48,213, which represents a 12% increase compared to the previous week's spend of $43,047.",
+          "CPA reached $61, representing a 39% rise.",
+          "Conversions saw an increase of 8% compared to the prior month.",
+          "CTR was 1.5% when compared to the previous period's 1.2%."
+        ],
+        "pass": [
+          "Spend up 12% to $48.2k.",
+          "CPA rose 39% to $61.",
+          "Sunday represents 14% of spend."
+        ]
+      },
+      "source": "earlier draft rule V2 (don't restate); noro landing page"
+    },
+    {
+      "id": "N-results-without-source-label",
+      "slug": "results-without-source-label",
+      "name": "Win with no source label",
+      "category": "numbers",
+      "severity": "advisory",
+      "engine": "regex",
+      "applies_to": "text",
+      "patterns": [
+        "\\b(?:roas|conversions?|conv\\.|revenue|purchases|conversion\\s+value)\\b[^.\\n]{0,60}?\\b(?:up|rose|grew|increased|improved|jumped|climbed|hit|reached|beat|exceeded|surged|doubled|tripled|record|best|win|outperformed)\\b",
+        "\\b(?:record|best|strong|winning|great|excellent)\\s+(?:\\w+\\s+)?(?:roas|conversions?|revenue)\\b"
+      ],
+      "unless": "\\bplatform[\\s-](?:reported|attributed|side)\\b|\\b(?:per|according\\s+to|in|from)\\s+(?:google\\s+ads|meta(?:\\s+ads\\s+manager)?|ads\\s+manager|the\\s+platform|ga4|google\\s+analytics|shopify|the\\s+crm|crm|backend|salesforce|hubspot)\\b|\\b(?:backend|shopify|crm|mer|blended|attributed)\\b",
+      "message": "Result called a win with no source label: '{match}'",
+      "why": "Platform ROAS is the platform grading its own homework. When a budget decision rides on it, the reader needs to know whose number it is.",
+      "fix": "Label it: 'platform-reported ROAS 4.1x', 'conversions rose 8% to 790, per Google Ads'. Add the backend figure (orders, revenue, MER) if you have it.",
+      "examples": {
+        "flag": [
+          "ROAS hit 4.1x, our best month yet.",
+          "Conversions rose 8% to 790, a clear win.",
+          "Record revenue this quarter: $412k."
+        ],
+        "pass": [
+          "Platform-reported ROAS rose to 4.1x; Shopify revenue rose 6%.",
+          "Conversions rose 8% to 790, per Google Ads.",
+          "CPA rose 39% to $61."
+        ]
+      },
+      "source": "r/FacebookAds 'platform roas is the platform grading its own homework' (02-key-quotes.md); earlier draft rule N8"
+    },
+    {
+      "id": "P-flag-words-without-number",
+      "slug": "flag-words-without-number",
+      "name": "Flag word with no number",
+      "category": "specificity",
+      "severity": "warning",
+      "engine": "regex",
+      "applies_to": "text",
+      "patterns": [
+        "\\b(?:likely|unlikely|probably|healthy|unhealthy|efficient(?:ly)?|inefficient(?:ly)?|strong(?:ly|er)?|weak(?:er)?|saturated|solid|stable)\\b"
+      ],
+      "unless": "\\d",
+      "message": "'{match}' with no number in the sentence",
+      "why": "'Healthy', 'efficient' and 'likely' are judgments. Without the number behind them, the reader has to trust you, and a skeptical client won't.",
+      "fix": "Put the number in the same sentence: 'Brand is efficient at $22 per conversion', 'likely saturated: frequency is 4.2'.",
+      "examples": {
+        "flag": [
+          "Search looks healthy this week.",
+          "Meta is likely saturated in the core audience.",
+          "Brand remains efficient and strong.",
+          "The problem is probably creative."
+        ],
+        "pass": [
+          "Search CPA is $48 against a $55 target.",
+          "Meta frequency is 4.2 in the core audience, so it is likely saturated.",
+          "Brand is efficient at $22 per conversion."
+        ]
+      },
+      "source": "earlier draft rule V3 (flag words need a number); r/PPC 'state how much data it stands on as a number' (02-key-quotes.md)"
+    },
+    {
+      "id": "P-significant-without-number",
+      "slug": "significant-without-number",
+      "name": "\"Significant\" with no number",
+      "category": "specificity",
+      "severity": "warning",
+      "engine": "regex",
+      "applies_to": "text",
+      "patterns": [
+        "\\b(?:significant(?:ly)?|substantial(?:ly)?|considerabl[ey]|dramatic(?:ally)?|sizable|sizeable)\\b"
+      ],
+      "unless": "\\d",
+      "message": "'{match}' with no number in the sentence",
+      "why": "To an analyst, 'significant' means a test passed. To a client it means 'big'. With no number, neither reader knows how big.",
+      "fix": "Say the number: 'CPA rose 39% to $61.' Use 'significant' only for a test result, with its threshold: 'significant at 95% on 2,400 conversions'.",
+      "examples": {
+        "flag": [
+          "CPA increased significantly this month.",
+          "Sunday saw a substantial drop in conversion rate.",
+          "There was a dramatic shift in spend toward PMax."
+        ],
+        "pass": [
+          "CPA rose 39% to $61.",
+          "The lift is significant at 95% confidence on 2,400 conversions.",
+          "Sunday's conversion rate fell from 14.1% to 9.8%."
+        ]
+      },
+      "source": "11-ai-writing-tells.md ban list #2; earlier draft rule V3"
+    },
+    {
+      "id": "P-vague-entities",
+      "slug": "vague-entities",
+      "name": "Vague entities",
+      "category": "specificity",
+      "severity": "warning",
+      "engine": "regex",
+      "applies_to": "text",
+      "patterns": [
+        "\\b(?:certain|some|several|various|select|specific|particular|multiple|a\\s+few|a\\s+handful\\s+of|a\\s+number\\s+of|a\\s+couple\\s+of)\\s+(?:of\\s+(?:the|our|your)\\s+)?(?:(?:key|top|core|main|underperforming|high[\\s-]performing|low[\\s-]performing|non[\\s-]converting|poorly\\s+performing|best[\\s-]performing|new|newer|older|existing)\\s+)?(?:campaigns?|ad\\s+sets?|ad\\s+groups?|ads|creatives?|keywords?|audiences?|placements?|segments?|search\\s+terms?|products?|skus?|asset\\s+groups?|channels?|markets?|regions?|geos?|devices?|platforms?|line\\s+items?)\\b"
+      ],
+      "unless": "\\([^()]*,[^()]*\\)|:\\s*[^:.;\\n]+,|\\b[a-z]{1,5}-\\d{1,4}\\b|[\"“][^\"”\\n]+[\"”]",
+      "message": "Vague entity: '{match}'",
+      "why": "'Certain ad sets' makes the reader ask which ones, and they can't act until you answer. A buyer can't pause 'some keywords'.",
+      "fix": "Name them: 'PR-03 and PR-07', 'Brand and Generic', or 'three keywords (red tent, tent sale, cheap tents)'.",
+      "examples": {
+        "flag": [
+          "Certain ad sets saw higher CPAs this week.",
+          "Several keywords are underperforming.",
+          "We paused some of the underperforming campaigns.",
+          "Results varied across various audiences."
+        ],
+        "pass": [
+          "PR-03 and PR-07 had CPAs above $60.",
+          "Three keywords (red tent, tent sale, cheap tents) spent $410 with no conversions.",
+          "Several ad sets (PR-03, PR-07) rose above $60."
+        ]
+      },
+      "source": "earlier draft rule V1 ('PR-03 and PR-07', not 'certain ad sets'); 11-ai-writing-tells.md (vague sources and entities)"
+    },
+    {
+      "id": "P-vague-sources",
+      "slug": "vague-sources",
+      "name": "Vague source",
+      "category": "specificity",
+      "severity": "warning",
+      "engine": "regex",
+      "applies_to": "text",
+      "patterns": [
+        "\\bindustry\\s+(?:benchmarks?|averages?|standards?|data|reports?|research|experts?)\\b",
+        "\\bbest\\s+practices?\\s+(?:suggest|say|show|recommend|dictate)s?\\b",
+        "\\b(?:studies|research|experts|analysts)\\s+(?:show|shows|suggest|suggests|say|says|indicate|indicates|agree|have\\s+shown)\\b",
+        "\\baccording\\s+to\\s+(?:experts|industry|research|studies|best\\s+practices)\\b",
+        "\\bit\\s+is\\s+(?:widely|generally|commonly)\\s+(?:known|accepted|believed|agreed)\\b"
+      ],
+      "unless": "(?-i:\\b(?:[Pp]er|[Aa]ccording\\s+to|[Ff]rom|[Bb]y)\\s+(?:the\\s+)?[A-Z][\\w&.'’-]+)|\\bsource:|https?://",
+      "message": "Unnamed source: '{match}'",
+      "why": "'Industry benchmarks say 2% CTR is healthy' can't be checked, and a benchmark from another vertical can mislead a client into the wrong target.",
+      "fix": "Name the source and year, or compare against the account's own history: 'Sunday CPA was $104 in 2025, per Google Ads.'",
+      "examples": {
+        "flag": [
+          "Industry benchmarks suggest a 2% CTR is good.",
+          "Studies show that video ads drive higher engagement.",
+          "Best practices suggest refreshing creative every two weeks.",
+          "It is widely known that broad match wastes spend."
+        ],
+        "pass": [
+          "The WordStream 2025 benchmark puts legal CTR at 2.9%.",
+          "Your own 2025 Sunday CPA was $104, per Google Ads.",
+          "Industry benchmarks for legal, per WordStream 2025, put CTR at 2.9%."
+        ]
+      },
+      "source": "11-ai-writing-tells.md (vague sources: 'Industry reports suggest'); 13-report-best-practices.md (name the source of every finding)"
+    },
+    {
+      "id": "P-variety-of-factors",
+      "slug": "variety-of-factors",
+      "name": "\"A variety of factors\"",
+      "category": "specificity",
+      "severity": "warning",
+      "engine": "regex",
+      "applies_to": "text",
+      "patterns": [
+        "\\b(?:a\\s+(?:variety|number|combination|range|mix|host|myriad)\\s+of|multiple|several|various|many|numerous|external|other|different)\\s+(?:factors|reasons|variables|elements|drivers|dynamics|headwinds|influences)\\b",
+        "\\bmarket\\s+(?:conditions|dynamics|volatility|headwinds|fluctuations)\\b",
+        "\\b(?:macro(?:economic)?|external)\\s+(?:conditions|headwinds|trends|environment)\\b",
+        "\\bseasonal(?:ity|\\s+(?:trends|factors|fluctuations|effects))\\b"
+      ],
+      "unless": "\\d",
+      "message": "Unnamed cause: '{match}'",
+      "why": "'A variety of factors' is a cause with nothing in it. It reads as 'we didn't look', and a buyer can't act on it.",
+      "fix": "Name the cause with its number, broken into CPM, CTR and CVR or a budget shift: 'CPM rose 18%; CTR and CVR held.' If you didn't check, say what you didn't check.",
+      "examples": {
+        "flag": [
+          "CPA rose due to a variety of factors.",
+          "Results were affected by market conditions.",
+          "Several factors contributed to the decline.",
+          "Seasonality played a role."
+        ],
+        "pass": [
+          "CPA rose because CPM rose 18% while CTR and CVR held.",
+          "Last November CPA was also 22% above October, so the rise matches past seasonality.",
+          "Two things changed on Oct 3: the budget and the landing page."
+        ]
+      },
+      "source": "earlier draft banlist.md (hedges: 'a variety of factors') and rule D1 (decompose before you explain)"
+    },
+    {
+      "id": "S-bold-label-bullets",
+      "slug": "bold-label-bullets",
+      "name": "Bold-label bullets in bulk",
+      "category": "shape",
+      "severity": "warning",
+      "engine": "count",
+      "applies_to": "text",
+      "count": {
+        "pattern": "(?m)^[ \\t]*(?:[-*•]|\\d+\\.)[ \\t]+\\*\\*[^*\\n]{1,40}:?\\*\\*:?",
+        "max": 3,
+        "per": "report"
+      },
+      "message": "More than 3 bold-label bullets: '{match}'",
+      "why": "'**Label:** sentence' on every bullet is the most recognizable AI layout. It slows reading because the eye stops at every label.",
+      "fix": "Write the bullets as plain sentences, or turn the set into two or three short lines.",
+      "examples": {
+        "flag": [
+          "- **Spend:** up 12%.\n- **CPA:** up 39%.\n- **Conversions:** down 19%.\n- **CTR:** flat.\n- **Next steps:** swap creative."
+        ],
+        "pass": [
+          "- Spend up 12%.\n- CPA up 39%.\n- Conversions down 19%."
+        ]
+      },
+      "source": "Research rounds 1–3; locked 2026-10-12."
+    },
+    {
+      "id": "S-bullet-wall",
+      "slug": "bullet-wall",
+      "name": "Wall of bullets",
+      "category": "shape",
+      "severity": "warning",
+      "engine": "count",
+      "applies_to": "text",
+      "count": {
+        "pattern": "(?m)^[ \\t]*(?:[-*•]|\\d+\\.)[ \\t]+\\S",
+        "max": 8,
+        "per": "report"
+      },
+      "message": "More than 8 bullets: '{match}'",
+      "why": "A long bullet list has no hierarchy. The reader can't tell which line matters.",
+      "fix": "Keep the 3 to 5 bullets that change the decision. Cut or merge the rest.",
+      "examples": {
+        "flag": [
+          "- Item 1 changed.\n- Item 2 changed.\n- Item 3 changed.\n- Item 4 changed.\n- Item 5 changed.\n- Item 6 changed.\n- Item 7 changed.\n- Item 8 changed.\n- Item 9 changed.\n- Item 10 changed."
+        ],
+        "pass": [
+          "- Spend up 12%.\n- CPA up 39%.\n- Swap creative on PR-03 by Wed."
+        ]
+      },
+      "source": "Research rounds 1–3; locked 2026-10-12."
+    },
+    {
+      "id": "S-findings-stand-out",
+      "slug": "findings-stand-out",
+      "name": "Findings stand out",
+      "category": "shape",
+      "severity": "error",
+      "engine": "judge",
+      "applies_to": "text",
+      "rubric": {
+        "question": "Can the reader find each finding without reading every sentence?",
+        "anchors": {
+          "0": "Findings are scattered through long prose",
+          "1": "Some findings stand out, others are buried",
+          "2": "Each finding is its own line or short paragraph, easy to spot"
+        }
+      },
+      "message": "Can the reader find each finding without reading every sentence?",
+      "why": "A finding buried mid-paragraph gets missed. Readers scan for what changed.",
+      "fix": "Give each finding its own short line. Lead the line with the finding, not the label.",
+      "examples": {
+        "flag": [
+          "...and while we were reviewing the account we also noticed mobile conversions grew 45%, which is worth..."
+        ],
+        "pass": [
+          "Mobile conversions grew 45%; desktop was flat."
+        ]
+      },
+      "source": "Shape rules for ad reports, locked 2026-10-12; noro-research.md (round 1 and 2)."
+    },
+    {
+      "id": "S-jargon-unexplained",
+      "slug": "jargon-unexplained",
+      "name": "Jargon with no explanation",
+      "category": "shape",
+      "severity": "advisory",
+      "engine": "regex",
+      "applies_to": "text",
+      "patterns": [
+        "(?<!\\()(?-i:\\b(?:CTR|CPC|CPM|CPA|CPL|CVR|ROAS|tROAS|tCPA|CAC|LTV|AOV|MER|PMax|IS)\\b)(?!\\s*\\()"
+      ],
+      "unless": "\\((?:click|cost|return|target|customer|lifetime|average|conversion|marketing|performance|impression)",
+      "message": "Acronym not explained: '{match}'",
+      "why": "The media buyer's job is translation. For a client or a generalist, an unexplained acronym stops the read.",
+      "fix": "Spell it out on first use ('cost per conversion (CPA)') or use the plain words. For an internal media-buyer audience, ignore this flag.",
+      "examples": {
+        "flag": [
+          "CTR dropped 8% this week."
+        ],
+        "pass": [
+          "Click-through rate (CTR) dropped 8% this week.",
+          "Clicks per 100 views dropped from 2.1 to 1.9."
+        ]
+      },
+      "source": "Shape rules for ad reports, locked 2026-10-12; noro-research.md (round 1 and 2)."
+    },
+    {
+      "id": "S-long-paragraph",
+      "slug": "long-paragraph",
+      "name": "Long paragraph",
+      "category": "shape",
+      "severity": "advisory",
+      "engine": "count",
+      "applies_to": "text",
+      "count": {
+        "pattern": "(?m)^(?:[^\\n]*?[.!?](?:[ \\t]+|$)){6,}",
+        "max": 0,
+        "per": "report"
+      },
+      "message": "Paragraph of 6+ sentences: '{match}'",
+      "why": "A wall of sentences can't be scanned. Each paragraph should carry one idea.",
+      "fix": "Split it so each paragraph holds one idea in three sentences or fewer.",
+      "examples": {
+        "flag": [
+          "Spend rose. CPA rose. Conversions fell. CTR held. CPM rose. Frequency rose. We will act."
+        ],
+        "pass": [
+          "Spend rose 12%. CPA rose 39%.\n\nTwo ad sets drove the rise."
+        ]
+      },
+      "source": "Shape rules for ad reports, locked 2026-10-12; noro-research.md (round 1 and 2)."
+    },
+    {
+      "id": "S-metrics-grouped",
+      "slug": "metrics-grouped",
+      "name": "Related metrics together",
+      "category": "shape",
+      "severity": "warning",
+      "engine": "judge",
+      "applies_to": "text",
+      "rubric": {
+        "question": "Are numbers that explain each other (spend and conversions, CPA and its drivers) stated together?",
+        "anchors": {
+          "0": "Related numbers are paragraphs apart",
+          "1": "Partly grouped",
+          "2": "Related numbers sit in the same sentence or line"
+        }
+      },
+      "message": "Are numbers that explain each other (spend and conversions, CPA and its drivers) stated together?",
+      "why": "'Spend up 10%' and 'ROAS down 15%' mean something only together. Split apart, the reader has to do the joining.",
+      "fix": "Put the numbers that explain each other in one sentence: 'Spend up 10% to $55k, ROAS down 15% to 3.1.'",
+      "examples": {
+        "flag": [
+          "Spend was up 10%. [three paragraphs later] ROAS declined."
+        ],
+        "pass": [
+          "Spend up 10% to $55k while ROAS fell 15% to 3.1."
+        ]
+      },
+      "source": "Shape rules for ad reports, locked 2026-10-12; noro-research.md (round 1 and 2)."
+    },
+    {
+      "id": "S-point-up-front",
+      "slug": "point-up-front",
+      "name": "Bottom line up front",
+      "category": "shape",
+      "severity": "error",
+      "engine": "judge",
+      "applies_to": "text",
+      "rubric": {
+        "question": "Does the first sentence (or first line of a Slack note) state the bottom line, with its number?",
+        "anchors": {
+          "0": "Opens with setup or details; the bottom line is buried or missing",
+          "1": "Bottom line is near the top but vague or without its number",
+          "2": "First line states the bottom line and its number"
+        }
+      },
+      "message": "Does the first sentence (or first line of a Slack note) state the bottom line, with its number?",
+      "why": "Clients read the first line and decide whether to read on. A report that opens with setup loses them.",
+      "fix": "Move the one-sentence answer to the top: what happened, with its number. Detail follows.",
+      "examples": {
+        "flag": [
+          "This report covers Google Ads performance for September across Search and Shopping campaigns. Spend was..."
+        ],
+        "pass": [
+          "CPA rose 39% to $61 this week because two prospecting ad sets saturated."
+        ]
+      },
+      "source": "Shape rules for ad reports, locked 2026-10-12; noro-research.md (round 1 and 2)."
+    },
+    {
+      "id": "S-prose-repeats-chart",
+      "slug": "prose-repeats-chart",
+      "name": "Prose repeats the chart",
+      "category": "shape",
+      "severity": "warning",
+      "engine": "judge",
+      "applies_to": "text",
+      "rubric": {
+        "question": "Does the text next to a chart add meaning, or just narrate what the chart already shows?",
+        "anchors": {
+          "0": "The text walks through the chart value by value",
+          "1": "Mostly adds meaning, with some narration",
+          "2": "The chart shows the numbers; the text gives the why and the next step"
+        }
+      },
+      "message": "Does the text add to the chart or just repeat it?",
+      "why": "Reading the same numbers twice doubles the length and adds nothing. The chart carries the numbers; the words carry the meaning.",
+      "fix": "Cut the narration. Keep one line on why it happened and one on what to do.",
+      "examples": {
+        "flag": [
+          "[chart: CPA by day] Monday was $104, Tuesday $97, Wednesday $95, Thursday $105, Friday $101, Saturday $109 and Sunday $138."
+        ],
+        "pass": [
+          "[chart: CPA by day] Why: Sunday's conversion rate fell to 9.8% while CPC held. Next: check Sunday call handling."
+        ]
+      },
+      "source": "Final rules for clarity in ad reports (2026-10-12)."
+    },
+    {
+      "id": "S-sections-fit-length",
+      "slug": "sections-fit-length",
+      "name": "Structure fits the length",
+      "category": "shape",
+      "severity": "warning",
+      "engine": "judge",
+      "applies_to": "text",
+      "rubric": {
+        "question": "For a report longer than a short note, can the reader see what changed, why, and what's next as distinct parts?",
+        "anchors": {
+          "0": "A long report is one block with no breaks",
+          "1": "Some structure, but parts run together",
+          "2": "Clear parts (what happened, what it means, what to do) or the report is short enough not to need them"
+        }
+      },
+      "message": "For a report longer than a short note, can the reader see what changed, why, and what's next as distinct parts?",
+      "why": "Long prose with no breaks hides the decision. A short note doesn't need headers, but a one-page doc does.",
+      "fix": "Break longer reports into what happened, what it means, and what to do. Leave short notes as they are.",
+      "examples": {
+        "flag": [
+          "A 400-word monthly report as one continuous block"
+        ],
+        "pass": [
+          "Three short labeled parts: what happened, what it means, what to do"
+        ]
+      },
+      "source": "Shape rules for ad reports, locked 2026-10-12; noro-research.md (round 1 and 2)."
+    },
+    {
+      "id": "S-setup-heavy",
+      "slug": "setup-heavy",
+      "name": "Setup before substance",
+      "category": "shape",
+      "severity": "warning",
+      "engine": "regex",
+      "applies_to": "text",
+      "patterns": [
+        "\\b(?:this|the following)\\s+report\\s+(?:covers|provides|summari[sz]es|outlines|reviews|details)\\b",
+        "\\bthe\\s+purpose\\s+of\\s+this\\s+(?:report|update|summary)\\b",
+        "\\b(?:google\\s+ads|meta\\s+ads|facebook\\s+ads|performance\\s+max)\\s+is\\s+(?:a|an|the)\\s+(?:platform|advertising|campaign\\s+type)\\b",
+        "\\bbefore\\s+(?:we\\s+)?(?:diving|digging|getting)\\s+into\\b"
+      ],
+      "message": "Setup instead of substance: '{match}'",
+      "why": "Explaining what the report is or what the platform does pushes the point down the page.",
+      "fix": "Cut the setup. Put the date range in one short line and start with what happened.",
+      "examples": {
+        "flag": [
+          "This report covers Google Ads performance for September.",
+          "Before diving into the numbers, some context on PMax."
+        ],
+        "pass": [
+          "Sep 1 to 30: CPA rose 12% to $48."
+        ]
+      },
+      "source": "Shape rules for ad reports, locked 2026-10-12; noro-research.md (round 1 and 2)."
+    },
+    {
+      "id": "S-title-case-headings",
+      "slug": "title-case-headings",
+      "name": "Title Case headings",
+      "category": "shape",
+      "severity": "advisory",
+      "engine": "regex",
+      "applies_to": "text",
+      "patterns": [
+        "(?m)^#{1,6}[ \\t]+(?-i:(?:[A-Z][a-z]+[ \\t]+){2,}[A-Z][a-z]+)[ \\t]*$"
+      ],
+      "message": "Title Case heading: '{match}'",
+      "why": "Title Case on every heading is a template habit. Sentence-case headings that state a point read like a person wrote them.",
+      "fix": "Use sentence case, and make the heading say the point ('Sunday costs the most') or drop it.",
+      "examples": {
+        "flag": [
+          "## Weekly Performance Overview Summary"
+        ],
+        "pass": [
+          "## Sunday costs the most per conversion"
+        ]
+      },
+      "source": "Research rounds 1–3; locked 2026-10-12."
+    },
+    {
+      "id": "T-colon-reveal",
+      "slug": "colon-reveal",
+      "name": "Colon reveal",
+      "category": "tells",
+      "severity": "warning",
+      "engine": "regex",
+      "applies_to": "text",
+      "patterns": [
+        "\\b(?:the\\s+)?(?:best|worst|real|good|bad|big|biggest|key|short|surprising|interesting|important)\\s+(?:part|news|story|takeaway|thing|insight|answer|win|lesson|surprise|twist)\\s*:",
+        "\\bhere['’]s\\s+(?:the\\s+(?:thing|kicker|catch|deal|twist|truth|story|takeaway)|what\\s+(?:happened|changed|matters|we\\s+found|stood\\s+out)|why|how)\\s*:",
+        "\\bthe\\s+(?:kicker|catch|twist|upshot|verdict|bottom\\s+line|takeaway|punchline|secret)\\s*:",
+        "\\b(?:one|1)\\s+(?:word|thing)\\s*:"
+      ],
+      "message": "Colon reveal: '{match}'",
+      "why": "'The best part: it learns' builds suspense in a report nobody wants suspense in. Plain labels like 'Why:' and 'Next:' are fine; drumroll labels aren't.",
+      "fix": "Drop the setup and state the fact: 'CPA fell 12% while spend grew 8%.'",
+      "examples": {
+        "flag": [
+          "The best part: CPA fell while spend grew.",
+          "Here's what happened: Sunday got expensive.",
+          "The bottom line: ROAS beat target.",
+          "The kicker: none of it was incremental."
+        ],
+        "pass": [
+          "Why: CPC held at $13.52, but Sunday's conversion rate is 9.8%.",
+          "Next: ask the client how Sunday calls are handled.",
+          "Since May, Sunday costs $138 per conversion. Other days: $101."
+        ]
+      },
+      "source": "11-ai-writing-tells.md (colon reveal; ban list #3)"
+    },
+    {
+      "id": "T-contrast-reveal",
+      "slug": "contrast-reveal",
+      "name": "Contrast reveal",
+      "category": "tells",
+      "severity": "error",
+      "engine": "regex",
+      "applies_to": "text",
+      "patterns": [
+        "\\b(?:it|this|that|which)(?:\\s+is|\\s+was|['’]s)\\s+not\\s+(?:just|only|merely|simply)\\b",
+        "\\b(?:isn['’]t|wasn['’]t|aren['’]t|weren['’]t)\\s+(?:just|only|merely|simply)\\b",
+        "\\bnot\\s+only\\b[^.!?\\n]{1,120}?\\bbut\\s+also\\b",
+        "\\b(?:it|this|that)(?:['’]s\\s+not|\\s+is\\s+not|\\s+isn['’]t|\\s+was\\s+not|\\s+wasn['’]t)\\s+(?:about\\s+)?(?:an?\\s+|the\\s+)?[\\w-]+(?:\\s+[\\w-]+){0,3}\\s*[,;—–]\\s*(?:it|this|that)(?:['’]s|\\s+is|\\s+was)\\b",
+        "\\bnot\\s+because\\b[^.!?\\n]{1,80}?[.;]\\s+because\\b",
+        "\\bless\\s+about\\b[^.!?\\n]{1,80}?\\bmore\\s+about\\b"
+      ],
+      "message": "Contrast reveal: '{match}'",
+      "why": "'It's not just X, it's Y' knocks down a belief nobody stated. It's the most recognized AI rhythm in client emails, and it hides the one fact the reader needs.",
+      "fix": "State Y with its number. A contrast is fine when it rules out a real alternative the reader might hold: 'saturated, not underfunded: frequency is 4.2'.",
+      "examples": {
+        "flag": [
+          "It's not just a bidding issue, it's a landing-page issue.",
+          "This isn't about budget; it's about creative.",
+          "PMax is not only driving volume but also improving efficiency.",
+          "It's not a tracking problem, it's a demand problem."
+        ],
+        "pass": [
+          "Neither ad set got worse; allocation changed.",
+          "PR-03 is saturated, not underfunded: frequency is 4.2.",
+          "The problem is after the click, not the ad."
+        ]
+      },
+      "source": "11-ai-writing-tells.md (contrast reveal, both sources); r/marketing 'it's not just X, it's Y' (07-reddit-marketing.md); earlier draft rule V4"
+    },
+    {
+      "id": "T-corporate-ad-terms",
+      "slug": "corporate-ad-terms",
+      "name": "Corporate word with an ad meaning",
+      "category": "tells",
+      "severity": "advisory",
+      "engine": "phrase",
+      "applies_to": "text",
+      "phrases": [
+        "landscape",
+        "landscapes",
+        "harness",
+        "harnessing",
+        "unlock",
+        "unlocks",
+        "unlocking",
+        "deep dive",
+        "deep-dive",
+        "journey",
+        "ecosystem"
+      ],
+      "unless": "\\blandscape\\s+(?:images?|assets?|videos?|formats?|crops?|orientation)\\b|\\b(?:customer|user|buyer|purchase)\\s+journeys?\\b|\\bjourney[\\s-]aware\\b",
+      "message": "Check this word: '{match}'",
+      "why": "These are AI favorites, but each also has a real ad meaning: landscape image assets in PMax and Demand Gen, the customer journey, the deep dive a client paid for. So noro points them out and leaves the call to you.",
+      "fix": "Keep it when it's the literal term ('3 landscape image assets', 'the Q3 deep dive you asked for'). Otherwise write the fact: 'two competitors raised bids', not 'the competitive landscape shifted'.",
+      "examples": {
+        "flag": [
+          "The competitive landscape shifted in Q3.",
+          "Broader audiences can unlock new growth.",
+          "We will harness first-party data across the ecosystem."
+        ],
+        "pass": [
+          "Add 3 landscape image assets to the PMax asset group.",
+          "Two competitors entered the auction on Sep 4; our impression share fell from 62% to 48%.",
+          "Most of the customer journey starts on mobile."
+        ]
+      },
+      "source": "owner note (ad meanings); 11-ai-writing-tells.md (2023-24 vocabulary: landscape)"
+    },
+    {
+      "id": "T-corporate-words",
+      "slug": "corporate-words",
+      "name": "Corporate word",
+      "category": "tells",
+      "severity": "warning",
+      "engine": "phrase",
+      "applies_to": "text",
+      "phrases": [
+        "leverage",
+        "leverages",
+        "leveraged",
+        "leveraging",
+        "utilize",
+        "utilizes",
+        "utilized",
+        "utilizing",
+        "synergy",
+        "synergies",
+        "synergistic",
+        "holistic",
+        "holistically",
+        "streamline",
+        "streamlines",
+        "streamlining",
+        "elevate",
+        "elevates",
+        "elevating",
+        "delve",
+        "delves",
+        "delving",
+        "tapestry",
+        "testament to",
+        "cutting-edge",
+        "seamless",
+        "seamlessly",
+        "surgical precision",
+        "fast-paced",
+        "moving forward",
+        "going forward",
+        "paradigm",
+        "empower",
+        "empowers",
+        "empowering",
+        "foster",
+        "fosters",
+        "fostering",
+        "multifaceted",
+        "spearhead",
+        "spearheaded",
+        "underscore",
+        "underscores",
+        "underscoring",
+        "low-hanging fruit",
+        "move the needle",
+        "circle back"
+      ],
+      "message": "Corporate word: '{match}'",
+      "why": "Inflated words make a short point sound long and read as machine-written. Clients have learned to spot 'leverage' and 'underscore'; they don't add facts.",
+      "fix": "Use the plain verb or cut it: 'use', not 'leverage'; 'from Nov 1', not 'moving forward'. Don't swap in a synonym; rewrite from the fact.",
+      "examples": {
+        "flag": [
+          "We will leverage audience insights to drive growth.",
+          "Moving forward, we plan to utilize broad match.",
+          "This underscores the importance of a holistic strategy.",
+          "A seamless, cutting-edge approach to bidding."
+        ],
+        "pass": [
+          "We will use the PR-03 remarketing list in November.",
+          "From Nov 1, broad match runs on Brand only.",
+          "Sunday costs $138 per conversion; other days cost $101."
+        ]
+      },
+      "source": "earlier draft banlist.md (corporate); 11-ai-writing-tells.md (era vocabulary); r/advertising 'surgical precision' (02-key-quotes.md)"
+    },
+    {
+      "id": "T-em-dashes",
+      "slug": "em-dashes",
+      "name": "Em dashes",
+      "category": "tells",
+      "severity": "warning",
+      "engine": "count",
+      "applies_to": "text",
+      "count": {
+        "pattern": "—|(?<=\\s)--(?=\\s)",
+        "max": 1,
+        "per": "report"
+      },
+      "message": "More than one em dash in the report: '{match}'",
+      "why": "Heavy em-dash use is a documented AI tell (Wikipedia tracks it 2022–2026). One is punctuation; three is a signature.",
+      "fix": "Keep one at most. Use a period, a comma or a colon for the rest. En dashes in ranges (May–August) don't count.",
+      "examples": {
+        "flag": [
+          "CPA rose — mostly on Sunday — while spend held — a pattern we expect to continue.",
+          "Spend held — CPA did not — and Sunday drove it."
+        ],
+        "pass": [
+          "CPA rose 39% to $61, mostly on Sunday.",
+          "Sunday is the weak day — $138 per conversion vs $101.",
+          "Jan–Apr vs May–Aug: Sunday moved from $92 to $138."
+        ]
+      },
+      "source": "11-ai-writing-tells.md (cap list; Wikipedia em-dash note); r/marketing em-dash stacks; earlier draft rule V4"
+    },
+    {
+      "id": "T-emoji",
+      "slug": "emoji",
+      "name": "Emoji or Unicode decoration",
+      "category": "tells",
+      "severity": "error",
+      "engine": "regex",
+      "applies_to": "both",
+      "patterns": [
+        "[\\U0001F300-\\U0001FAFF☀-➿⬅-⬇⭐⭕️]"
+      ],
+      "message": "Emoji or decoration: '{match}'",
+      "why": "Rockets, checkmarks and warning signs in a client report are an AI formatting habit. They add nothing a word can't, and some readers stop trusting the rest.",
+      "fix": "Delete it. If it marked status, say the status in words: 'on target', 'above target'.",
+      "examples": {
+        "flag": [
+          "🚀 Spend scaled 40% this month.",
+          "CPA down 12% ✅",
+          "Sunday is the weak day ⚠️"
+        ],
+        "pass": [
+          "Spend rose 40% to $67k.",
+          "CPA fell 12% to $54, under the $60 target.",
+          "Day × hour: Sunday 8–10 pm is the costliest window."
+        ]
+      },
+      "source": "11-ai-writing-tells.md ban list #7 (emoji, Unicode decoration); earlier draft rule V4"
+    },
+    {
+      "id": "T-empty-value",
+      "slug": "empty-value",
+      "name": "Empty value claim",
+      "category": "tells",
+      "severity": "error",
+      "engine": "phrase",
+      "applies_to": "text",
+      "phrases": [
+        "valuable insight",
+        "valuable insights",
+        "actionable insight",
+        "actionable insights",
+        "meaningful insights",
+        "key insights",
+        "key takeaways",
+        "campaign health",
+        "account health",
+        "demonstrates the continued effectiveness",
+        "insight into overall",
+        "provides visibility into",
+        "a deeper understanding",
+        "data-driven insights",
+        "data-driven decisions",
+        "make informed decisions"
+      ],
+      "message": "Empty value claim: '{match}'",
+      "why": "Calling something an insight doesn't make it one. The reader still has to hunt for the number, and the label makes the report longer.",
+      "fix": "Delete the label and write the insight itself: 'Sunday costs $138 per conversion; other days cost $101.'",
+      "examples": {
+        "flag": [
+          "This report provides valuable insights into campaign performance.",
+          "Key takeaways are listed below.",
+          "Overall campaign health remains positive.",
+          "These results help us make informed decisions."
+        ],
+        "pass": [
+          "Sunday costs $138 per conversion; other days cost $101.",
+          "Takeaway for the client: ask how Sunday calls are handled.",
+          "PR-03's CPA is $61 against a $50 target."
+        ]
+      },
+      "source": "earlier draft banlist.md (empty value); 13-report-best-practices.md ('explain, don't just show')"
+    },
+    {
+      "id": "T-era-openers",
+      "slug": "era-openers",
+      "name": "Era opener",
+      "category": "tells",
+      "severity": "error",
+      "engine": "regex",
+      "applies_to": "text",
+      "patterns": [
+        "\\bin\\s+today['’]s\\s+(?:[\\w-]+\\s+){0,3}(?:landscape|world|environment|market(?:place)?|climate|era|age|economy)\\b",
+        "\\bin\\s+(?:an?|the|this|today['’]s)\\s+(?:ever[\\s-]+(?:evolving|changing|shifting)|rapidly\\s+(?:evolving|changing|shifting)|fast[\\s-]+(?:paced|moving)|constantly\\s+(?:evolving|changing))\\b",
+        "\\bin\\s+(?:an|this|the)\\s+(?:new\\s+)?(?:era|age)\\s+of\\b",
+        "\\bas\\s+we\\s+navigate\\b",
+        "\\bnow\\s+more\\s+than\\s+ever\\b",
+        "\\bin\\s+the\\s+(?:current|modern|digital|new)\\s+(?:digital\\s+|advertising\\s+|marketing\\s+|media\\s+)?(?:landscape|era|age|climate|world)\\b"
+      ],
+      "message": "Era opener: '{match}'",
+      "why": "'In today's fast-paced digital landscape' tells the reader nothing about their account and signals a template. Readers skip the first paragraph after seeing it.",
+      "fix": "Delete it. Open with the client's number: 'Leads rose 8% to 412; CPL held at $61.'",
+      "examples": {
+        "flag": [
+          "In today's competitive digital landscape, every click counts.",
+          "In an ever-evolving paid media world, Q3 brought changes.",
+          "Now more than ever, efficiency matters.",
+          "As we navigate Q4, spend rose 12%."
+        ],
+        "pass": [
+          "Spend rose 12% to $48.2k in Q3.",
+          "CPCs in the auction rose 18% since Sep 1, per Auction Insights.",
+          "We are working within a 20% budget cut in November."
+        ]
+      },
+      "source": "11-ai-writing-tells.md ban list #4 (era or throat-clearing openers)"
+    },
+    {
+      "id": "T-exclamation-points",
+      "slug": "exclamation-points",
+      "name": "Exclamation point",
+      "category": "tells",
+      "severity": "warning",
+      "engine": "regex",
+      "applies_to": "text",
+      "patterns": [
+        "[\\w%)\\]\"'’”]!+(?![=\\w])"
+      ],
+      "message": "Exclamation point: '{match}'",
+      "why": "A performance report is read by someone deciding where money goes. Excitement reads as selling, and a good number doesn't need help.",
+      "fix": "Use a period. If the news is good, the number shows it: 'CPA fell 12% to $54.'",
+      "examples": {
+        "flag": [
+          "Great news: CPA is down 12%!",
+          "What a month!",
+          "Sunday is fixed!!"
+        ],
+        "pass": [
+          "CPA fell 12% to $54.",
+          "![Sunday CPA chart](sunday-cpa.png)",
+          "Sunday CPA is $138; other days are $101."
+        ]
+      },
+      "source": "earlier draft rule V4; 11-ai-writing-tells.md (formatting tics)"
+    },
+    {
+      "id": "T-filler-openers",
+      "slug": "filler-openers",
+      "name": "Filler opener",
+      "category": "tells",
+      "severity": "error",
+      "engine": "regex",
+      "applies_to": "text",
+      "patterns": [
+        "\\bit(?:\\s+is|['’]s)\\s+(?:important|worth|crucial|key|essential|interesting)\\s+(?:to\\s+(?:note|mention|highlight|remember|point\\s+out|keep\\s+in\\s+mind)|noting|highlighting|mentioning|pointing\\s+out)\\b",
+        "\\bit\\s+should\\s+be\\s+noted\\b",
+        "\\blet['’]s\\s+(?:dive|dig|jump|unpack|explore|take\\s+a\\s+(?:closer\\s+)?look|break\\s+(?:it|this|things)\\s+down)\\b",
+        "\\bhere['’]s\\s+the\\s+thing\\b",
+        "\\bneedless\\s+to\\s+say\\b",
+        "\\bwithout\\s+further\\s+ado\\b",
+        "\\bas\\s+you\\s+(?:can\\s+see|may\\s+(?:know|have\\s+noticed))\\b",
+        "\\bhope\\s+this\\s+(?:email\\s+|message\\s+|note\\s+|update\\s+)?finds\\s+you\\s+well\\b"
+      ],
+      "message": "Filler opener: '{match}'",
+      "why": "These words announce a point instead of making it. Readers skim past them, and they are among the first phrases people spot as AI-written.",
+      "fix": "Delete the opener and start with the fact: 'CPA rose 39% to $61', not 'It's important to note that CPA rose'.",
+      "examples": {
+        "flag": [
+          "It's important to note that CPA rose this week.",
+          "It is worth highlighting that Sunday is the weak day.",
+          "Let's dive into the numbers.",
+          "Hope this email finds you well. Here are the results."
+        ],
+        "pass": [
+          "CPA rose 39% to $61 this week.",
+          "Sunday is the weak day: $138 per conversion vs $101.",
+          "Note: the last 2 days are still settling."
+        ]
+      },
+      "source": "11-ai-writing-tells.md ban list #4; earlier draft banlist.md (filler openers); Wikipedia Signs of AI writing"
+    },
+    {
+      "id": "T-forecasts-without-assumptions",
+      "slug": "forecasts-without-assumptions",
+      "name": "Forecast without assumptions",
+      "category": "tells",
+      "severity": "warning",
+      "engine": "regex",
+      "applies_to": "text",
+      "patterns": [
+        "\\b(?:will|should|(?:is|are)\\s+(?:expected|likely|poised|set)\\s+to)\\s+(?:naturally\\s+|likely\\s+|soon\\s+|quickly\\s+|continue\\s+to\\s+)?(?:recover|rebound|improve|stabili[sz]e|normali[sz]e|bounce\\s+back|pick\\s+up|grow|climb|accelerate|decline|level\\s+(?:off|out)|turn\\s+(?:around|positive))\\b",
+        "\\bexpect(?:s|ed|ing)?\\s+(?:[\\w$%.-]+\\s+){1,4}to\\s+(?:recover|rebound|improve|stabili[sz]e|normali[sz]e|bounce\\s+back|pick\\s+up|grow|climb|decline|level\\s+(?:off|out))\\b"
+      ],
+      "unless": "\\b(?:if|assuming|provided|unless|once|based\\s+on|at\\s+(?:the\\s+)?(?:current|this|today['’]s)\\s+(?:pace|rate|run[\\s-]rate|spend))\\b",
+      "message": "Forecast with no assumption: '{match}'",
+      "why": "'Performance will recover in Q1' is a promise the data can't make. When it doesn't happen, the client remembers the promise, not the caveat you didn't write.",
+      "fix": "Say what the forecast rests on, or replace it with a test and a date: 'If Sunday CVR returns to 14%, CPA falls to about $100. We check on Oct 20.'",
+      "examples": {
+        "flag": [
+          "Performance will recover naturally in Q1.",
+          "We expect CPA to stabilize next month.",
+          "ROAS should improve as the algorithm learns.",
+          "Sunday is likely to rebound in October."
+        ],
+        "pass": [
+          "If Sunday CVR returns to 14%, CPA should improve to about $100.",
+          "At the current pace, spend will grow to $52k by Oct 31.",
+          "CPA fell 12% to $54 last week."
+        ]
+      },
+      "source": "11-ai-writing-tells.md ban list #6; 13-report-best-practices.md (forecasts: practitioners favor a test, stop condition and review date)"
+    },
+    {
+      "id": "T-hedge-stack",
+      "slug": "hedge-stack",
+      "name": "Hedge stack",
+      "category": "tells",
+      "severity": "error",
+      "engine": "regex",
+      "applies_to": "text",
+      "patterns": [
+        "\\b(?:may|might|could)\\s+(?:potentially|possibly|perhaps|conceivably)\\b",
+        "\\b(?:may|might|could)\\s+(?:warrant|suggest|indicate|imply|signal|point\\s+to)\\b",
+        "\\b(?:seems?|appears?)\\s+to\\s+(?:suggest|indicate|imply|signal|point\\s+to)\\b",
+        "\\bit(?:\\s+is|['’]s)\\s+(?:possible|conceivable)\\s+that\\b",
+        "\\bto\\s+(?:some|a\\s+certain)\\s+(?:extent|degree)\\b",
+        "\\b(?:may|might|could)\\s+(?:have\\s+)?been\\s+(?:impacted|affected|influenced)\\b",
+        "\\b(?:may|might)\\s+be\\s+worth\\s+(?:considering|exploring|investigating|looking\\s+into)\\b"
+      ],
+      "message": "Hedge stack: '{match}'",
+      "why": "Two hedges in a row tell the reader you don't know and are covering for it. A media buyer reads it as filler; a client reads it as an agency that won't commit.",
+      "fix": "State the claim and what it rests on ('based on 38 conversions; last 2 days still settling'). If it's a hypothesis, say so once and name who confirms it. If you can't back it, cut it.",
+      "examples": {
+        "flag": [
+          "This could potentially indicate efficiency may have been impacted.",
+          "The CPA rise may suggest creative fatigue on PR-03.",
+          "Results seem to indicate that Sunday is weaker.",
+          "It's possible that the new landing page is to some extent responsible."
+        ],
+        "pass": [
+          "CPA rose 39% to $61, based on 790 conversions.",
+          "Sunday's conversion rate is 9.8% vs 14.1% on other days; our hypothesis is call handling, for the client to confirm.",
+          "CPCs may rise in November, so Brand has a $4.50 max CPC cap."
+        ]
+      },
+      "source": "noro landing page (generic-draft example); 11-ai-writing-tells.md ban list #1; earlier draft rule E5"
+    },
+    {
+      "id": "T-intensifiers",
+      "slug": "intensifiers",
+      "name": "Intensifiers",
+      "category": "tells",
+      "severity": "warning",
+      "engine": "count",
+      "applies_to": "text",
+      "count": {
+        "pattern": "\\b(?:truly|really|very|extremely|incredibly|remarkably|exceptionally|absolutely|tremendously|massively|hugely|super)\\b",
+        "max": 1,
+        "per": "report"
+      },
+      "message": "More than one intensifier in the report: '{match}'",
+      "why": "'Really high' and 'very weak' ask the reader to take your word for it. One is speech; several stacked read as padding.",
+      "fix": "Swap the intensifier for the number: '$138 per conversion', not 'very expensive'.",
+      "examples": {
+        "flag": [
+          "CPA was really high and Sunday was very weak.",
+          "This is a truly important change and extremely urgent."
+        ],
+        "pass": [
+          "CPA was $61, against a $50 target.",
+          "Sunday was very weak: $138 per conversion."
+        ]
+      },
+      "source": "11-ai-writing-tells.md (cap list: intensifiers)"
+    },
+    {
+      "id": "T-puffery",
+      "slug": "puffery",
+      "name": "Puffery",
+      "category": "tells",
+      "severity": "error",
+      "engine": "phrase",
+      "applies_to": "text",
+      "phrases": [
+        "robust",
+        "strong momentum",
+        "stellar",
+        "phenomenal",
+        "exceptional",
+        "impressive",
+        "remarkable",
+        "unprecedented",
+        "pivotal",
+        "game-changer",
+        "game changer",
+        "game-changing",
+        "skyrocketed",
+        "skyrocketing",
+        "soared",
+        "soaring",
+        "explosive",
+        "crushed it",
+        "crushing it",
+        "knocked it out of the park",
+        "world-class",
+        "best-in-class",
+        "record-breaking",
+        "incredible results",
+        "huge win",
+        "massive win"
+      ],
+      "message": "Puffery: '{match}'",
+      "why": "Praise words make the account sound better than the numbers do. A CFO discounts the whole report when one adjective is doing the work a number should.",
+      "fix": "Let the number carry it: 'ROAS rose from 3.2x to 4.1x (platform-reported)', not 'ROAS skyrocketed'.",
+      "examples": {
+        "flag": [
+          "The account delivered robust performance in Q3.",
+          "ROAS skyrocketed thanks to the new creative.",
+          "PMax was a game-changer for the brand.",
+          "We saw impressive results across the board."
+        ],
+        "pass": [
+          "ROAS rose from 3.2x to 4.1x, platform-reported.",
+          "PMax brought in 412 of 790 conversions.",
+          "Spend rose 12% to $48.2k."
+        ]
+      },
+      "source": "11-ai-writing-tells.md ban list #5 (puffery about the account); Wikipedia puffed-up significance"
+    },
+    {
+      "id": "T-punts",
+      "slug": "punts",
+      "name": "Punt",
+      "category": "tells",
+      "severity": "error",
+      "engine": "regex",
+      "applies_to": "text",
+      "patterns": [
+        "\\b(?:further|more|additional|deeper)\\s+(?:analysis|investigation|data|testing|research|review)\\s+(?:is|are|will\\s+be|would\\s+be|may\\s+be|might\\s+be)\\s+(?:needed|required|necessary|warranted)\\b",
+        "\\b(?:need|needs|require|requires)\\s+(?:further|more|additional)\\s+(?:analysis|investigation|data|time|testing)\\b",
+        "\\b(?:draw|reach|make)\\s+(?:any\\s+)?(?:definitive|firm|conclusive|meaningful)\\s+conclusions\\b",
+        "\\bremains?\\s+to\\s+be\\s+seen\\b",
+        "\\b(?:only\\s+)?time\\s+will\\s+tell\\b",
+        "\\bstay\\s+tuned\\b",
+        "\\btoo\\s+(?:early|soon)\\s+to\\s+(?:tell|say|know|judge)\\b"
+      ],
+      "unless": "^(?=[\\s\\S]*?(?:\\b(?:by|on|until|before|through|after)\\s+(?:(?:mon(?:day)?|tue(?:s|sday)?|wed(?:nesday)?|thu(?:rs|rsday)?|fri(?:day)?|sat(?:urday)?|sun(?:day)?)\\b|(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\\.?\\s+\\d{1,2}\\b|\\d{1,2}/\\d{1,2}\\b|20\\d\\d-\\d\\d-\\d\\d)|\\b(?:in|after)\\s+(?:another\\s+)?\\d+\\s+(?:more\\s+)?days\\b))(?=[\\s\\S]*?(?:[$€£]\\s?\\d|\\d\\s?%|\\d\\s?pp\\b|\\d(?:\\.\\d+)?x\\b|\\b\\d+\\s+(?:conversions|clicks|leads|orders|sales|calls)\\b|\\b(?:above|below|over|under)\\s+[$€£]?\\d))",
+      "message": "Punt: '{match}'",
+      "why": "'More data is needed' hands the decision back to the reader with no date and no bar to clear. Clients hear it as the agency stalling.",
+      "fix": "Name the check, the date and the threshold: 'If Sunday CPA is still above $120 on Oct 20, cut Sunday bids 20%.' If nothing is due, write 'Nothing to change. Next check: Oct 20.'",
+      "examples": {
+        "flag": [
+          "Further analysis is needed to determine the cause.",
+          "It's too early to tell whether the new creative is working.",
+          "More data is needed to draw definitive conclusions.",
+          "Whether Sunday recovers remains to be seen."
+        ],
+        "pass": [
+          "More data is needed: if Sunday CPA is still above $120 on Oct 20, we cut Sunday bids by 20%.",
+          "We judge new creative at 30 conversions per ad set; PR-07 has 12.",
+          "Sunday CPA is $138 against $101 on other days."
+        ]
+      },
+      "source": "earlier draft banlist.md (punts) and rule X4; r/PPC: 'state how much data it stands on as a number' (02-key-quotes.md)"
+    },
+    {
+      "id": "T-recap-closers",
+      "slug": "recap-closers",
+      "name": "Recap closer",
+      "category": "tells",
+      "severity": "error",
+      "engine": "regex",
+      "applies_to": "text",
+      "patterns": [
+        "(?:^|(?<=\\n)|(?<=[.!?]\\s))[ \\t]*(?:overall|in\\s+summary|to\\s+summari[sz]e|to\\s+sum\\s+(?:it\\s+)?up|all\\s+in\\s+all|all\\s+told|in\\s+short|ultimately|in\\s+closing|taken\\s+together)\\s*,",
+        "\\bin\\s+conclusion\\b",
+        "\\bat\\s+the\\s+end\\s+of\\s+the\\s+day\\b",
+        "\\b(?:the\\s+)?bottom\\s+line\\s+is\\b",
+        "(?:^|(?<=\\n)|(?<=[.!?]\\s))[ \\t]*(?:all\\s+in\\s+all|overall)\\s*,?\\s+an?\\s+(?:solid|strong|good|great|positive|productive|successful)\\s+(?:week|month|quarter|period)\\b"
+      ],
+      "message": "Recap closer: '{match}'",
+      "why": "A one-page report doesn't need a summary of itself. 'Overall,' and 'In conclusion' are template endings that make the reader re-read what they just read.",
+      "fix": "Cut the recap. End on the action, its date and its stop condition, or on 'Nothing to change. Next check: <date>.'",
+      "examples": {
+        "flag": [
+          "Overall, it was a solid month for the account.",
+          "In conclusion, the campaigns performed to plan.",
+          "At the end of the day, ROAS is what matters.",
+          "CPA held. All in all, a good week."
+        ],
+        "pass": [
+          "Overall CPA fell 12% to $54.",
+          "CPA held at $54. Next check is Oct 20.",
+          "Ultimately the client decides the Sunday budget."
+        ]
+      },
+      "source": "11-ai-writing-tells.md ban list #4 (recap closers); Wikipedia formulaic conclusions; earlier draft banlist.md"
+    },
+    {
+      "id": "T-rhetorical-reveal",
+      "slug": "rhetorical-reveal",
+      "name": "Rhetorical-question reveal",
+      "category": "tells",
+      "severity": "error",
+      "engine": "regex",
+      "applies_to": "text",
+      "patterns": [
+        "(?:^|(?<=\\n)|(?<=[.!?:]\\s))[ \\t]*(?:the\\s+|our\\s+)?(?:result|results|culprit|reason|answer|takeaway|outcome|kicker|catch|problem|fix|verdict|good\\s+news|bad\\s+news|upshot|bottom\\s+line|short\\s+answer|real\\s+story|twist)\\?",
+        "\\b(?:why|what)\\s+(?:does|did|do)\\s+(?:this|that|it|these)\\s+(?:matter|mean)(?:\\s+for\\s+(?:you|us|the\\s+\\w+))?\\?",
+        "\\bso\\s+what\\s+(?:happened|changed|went\\s+wrong|drove\\s+(?:this|it)|does\\s+this\\s+mean)\\?",
+        "\\bwhat\\s+(?:drove|caused|explains|is\\s+behind)\\s+(?:this|the\\s+(?:drop|rise|spike|dip|jump|change|increase|decrease))\\?"
+      ],
+      "message": "Rhetorical-question reveal: '{match}'",
+      "why": "'The culprit? Creative fatigue.' is a drumroll. It labels the claim instead of supporting it, and readers now spot it as AI style.",
+      "fix": "Say the answer as a sentence with its evidence: 'CPA rose because Sunday's conversion rate fell to 9.8%.' Keep real questions you need the client to answer.",
+      "examples": {
+        "flag": [
+          "The culprit? Creative fatigue.",
+          "CPA rose 39%. The reason? Sunday.",
+          "So what changed? Mostly CPM.",
+          "Why does this matter? Because CPA is above target."
+        ],
+        "pass": [
+          "CPA rose 39% because Sunday's conversion rate fell to 9.8%.",
+          "Can you confirm how Sunday calls are handled?",
+          "The cause is after the click: CVR fell, CPC held."
+        ]
+      },
+      "source": "11-ai-writing-tells.md (rhetorical question → answer; ban list #3)"
+    },
+    {
+      "id": "T-says-nothing",
+      "slug": "says-nothing",
+      "name": "Says nothing",
+      "category": "tells",
+      "severity": "error",
+      "engine": "phrase",
+      "applies_to": "text",
+      "phrases": [
+        "a mixed picture",
+        "mixed results",
+        "mixed performance",
+        "positive developments",
+        "positive trends",
+        "solid results",
+        "solid performance",
+        "nuances worth considering",
+        "an important period",
+        "plays a unique and valuable role",
+        "plays a key role",
+        "plays a crucial role",
+        "overall performance remained",
+        "performance was steady",
+        "performance remained stable",
+        "performance remained steady",
+        "delivered results",
+        "moving in the right direction",
+        "on the right track",
+        "room for improvement",
+        "areas for improvement",
+        "areas of opportunity",
+        "performed well",
+        "performed as expected"
+      ],
+      "unless": "(?<![A-Za-z])\\d",
+      "message": "Says nothing: '{match}'",
+      "why": "The sentence would fit any account in any month. A client who pays for the work reads it as no work.",
+      "fix": "Replace it with the number that moved and which way: 'CPA rose 39% to $61; conversions fell 6% to 790.'",
+      "examples": {
+        "flag": [
+          "The account shows a mixed picture this month.",
+          "Q3 delivered solid results across campaigns.",
+          "Overall performance remained stable week over week.",
+          "There is still room for improvement in Search."
+        ],
+        "pass": [
+          "CPA rose 39% to $61 while conversions fell 6% to 790.",
+          "Brand performed well: CPA $22 against a $30 target.",
+          "Search CPA is $61; the target is $50."
+        ]
+      },
+      "source": "earlier draft banlist.md (says nothing); 11-ai-writing-tells.md swap test"
+    },
+    {
+      "id": "T-scaffold-left-in",
+      "slug": "scaffold-left-in",
+      "name": "Scaffold left in",
+      "category": "tells",
+      "severity": "error",
+      "engine": "regex",
+      "applies_to": "both",
+      "patterns": [
+        "(?:^|(?<=\\n))[ \\t]*\\[(?!\\s*(?:chart|image|img|figure|fig|table|screenshot|graph|visual|photo|dashboard)\\b)[^\\]\\n]{3,}\\][ \\t]*(?=\\n|$)",
+        "\\[(?:insert|add|tbd|todo|to\\s+do|placeholder|fill\\s+in|need|client(?:\\s+name)?|company(?:\\s+name)?|your\\s+name|name|date|link|url|xx+|number|metric|source)\\b[^\\]\\n]{0,80}\\](?!\\()",
+        "\\{\\{[^{}\\n]{1,60}\\}\\}",
+        "(?<![\\w$])\\$X{1,3}(?:,X{3})*(?:\\.X{1,2})?(?!\\w)|(?<!\\w)X{2,3}(?:\\.X)?%",
+        "\\blorem\\s+ipsum\\b"
+      ],
+      "message": "Scaffold left in: '{match}'",
+      "why": "An empty outline line like '[Hour-of-day performance: …]' shows the report was generated and never read. One placeholder costs the credibility of every number around it.",
+      "fix": "Cut the line. Don't write the section it promised: noro does no new analysis. If the section matters, tell the user it's missing.",
+      "examples": {
+        "flag": [
+          "[Hour-of-day performance: daypart patterns in spend, conversion and efficiency]",
+          "CPA came in at $X,XXX against a target of [insert target].",
+          "Hi {{client_name}}, here is your weekly update.",
+          "[Day × hour hotspots: best and worst specific windows from the heatmap]"
+        ],
+        "pass": [
+          "[chart: bars from $0, cost per conversion by day, May–August 2026; Sunday highlighted at $138]",
+          "See the [search terms report](https://example.com/terms) for the full list.",
+          "- [x] Negative keywords added on Oct 3"
+        ]
+      },
+      "source": "bench/corpus/11-day-of-week-dense (owner-flagged real report: two empty placeholder sections); marketingskills [NEED: proof] marker (11-ai-writing-tells.md)"
+    },
+    {
+      "id": "V-abbreviations-defined",
+      "slug": "abbreviations-defined",
+      "name": "Abbreviations defined",
+      "category": "visual",
+      "severity": "warning",
+      "engine": "judge",
+      "applies_to": "visual",
+      "rubric": {
+        "question": "Is every abbreviation spelled out or explained for this audience?",
+        "anchors": {
+          "0": "Unexplained jargon (tROAS, CPA, IS) for a non-expert reader",
+          "1": "Some defined",
+          "2": "All defined, or the audience is internal media buyers"
+        }
+      },
+      "message": "Is every abbreviation spelled out or explained for this audience?",
+      "why": "The media buyer's job is translation. An unexplained acronym stops a non-expert reader.",
+      "fix": "Spell it out once ('cost per conversion (CPA)') or use the plain words.",
+      "examples": {
+        "flag": [
+          "Title 'tROAS vs IS lost to budget' for a client deck"
+        ],
+        "pass": [
+          "Title 'Target return on ad spend vs share of searches missed'"
+        ]
+      },
+      "source": "Design principle: minimal friction. Locked chart rules, 2026-10-12."
+    },
+    {
+      "id": "V-annotations-over-legends",
+      "slug": "annotations-over-legends",
+      "name": "Annotations explain changes",
+      "category": "visual",
+      "severity": "warning",
+      "engine": "judge",
+      "applies_to": "visual",
+      "rubric": {
+        "question": "Are spikes, dips and changes annotated on the chart where they happen?",
+        "anchors": {
+          "0": "A visible spike or dip with no explanation",
+          "1": "Explained only in text far from the chart",
+          "2": "Annotated on the chart at the point"
+        }
+      },
+      "message": "Are spikes, dips and changes annotated on the chart where they happen?",
+      "why": "Readers look at the spike first. If the reason is elsewhere, they make one up.",
+      "fix": "Add a short note at the point: 'promo ended', 'tag outage'.",
+      "examples": {
+        "flag": [
+          "CPA spike in week 6 explained three paragraphs later"
+        ],
+        "pass": [
+          "Note on week 6: 'budget cut 40%'"
+        ]
+      },
+      "source": "Design principle: data speaks first. Locked chart rules, 2026-10-12."
+    },
+    {
+      "id": "V-axes-start-at-zero",
+      "slug": "axes-start-at-zero",
+      "name": "Axes start at zero",
+      "category": "visual",
+      "severity": "error",
+      "engine": "judge",
+      "applies_to": "visual",
+      "rubric": {
+        "question": "Do value axes start at zero, or is a break justified on the chart?",
+        "anchors": {
+          "0": "A bar or area axis starts above zero and exaggerates the difference",
+          "1": "Bars start at zero but a line axis is cut with no note",
+          "2": "Bars start at zero; any non-zero line axis is marked and explained"
+        }
+      },
+      "message": "Do value axes start at zero, or is a break justified on the chart?",
+      "why": "A cut axis makes a small change look large. Readers trust the picture before the numbers.",
+      "fix": "Start bars at zero. If a line chart needs a tighter range, mark the break and say why in the caption.",
+      "examples": {
+        "flag": [
+          "Bar chart of CPA by campaign with the y-axis running $50 to $100, so a 12% gap looks like 4x",
+          "ROAS bars from 2.8 to 3.4"
+        ],
+        "pass": [
+          "CPA bars from $0, with the reference line at the account average",
+          "CTR line from 1.8% to 2.4%, captioned 'axis starts at 1.8% to show the weekly pattern'"
+        ]
+      },
+      "source": "Design principle: honesty first. Locked chart rules, 2026-10-12."
+    },
+    {
+      "id": "V-axis-units-named",
+      "slug": "axis-units-named",
+      "name": "Axis units named",
+      "category": "visual",
+      "severity": "warning",
+      "engine": "judge",
+      "applies_to": "visual",
+      "rubric": {
+        "question": "Does every axis say what it measures and in what unit?",
+        "anchors": {
+          "0": "An axis has no label",
+          "1": "Labels name the metric but not the unit",
+          "2": "Every axis names the metric and unit, or the title does"
+        }
+      },
+      "message": "Does every axis say what it measures and in what unit?",
+      "why": "'Conversions' could be a count, a rate or a value. The reader shouldn't have to guess.",
+      "fix": "Put the unit in the axis label: 'Spend (USD)', 'Conversion rate (%)', 'Conversions (count)'.",
+      "examples": {
+        "flag": [
+          "Y-axis labeled 'Conversions' on a chart of conversion rate",
+          "Unlabeled y-axis with ticks 0.5, 1.0, 1.5"
+        ],
+        "pass": [
+          "Y-axis 'Conversion rate (%)'",
+          "Y-axis 'Spend (USD)'"
+        ]
+      },
+      "source": "Design principle: context always included. Locked chart rules, 2026-10-12."
+    },
+    {
+      "id": "V-baseline-visible",
+      "slug": "baseline-visible",
+      "name": "Baseline or prior period visible",
+      "category": "visual",
+      "severity": "warning",
+      "engine": "judge",
+      "applies_to": "visual",
+      "rubric": {
+        "question": "Is the baseline the claim depends on visible on the chart?",
+        "anchors": {
+          "0": "A change is claimed but the before isn't shown",
+          "1": "Before shown only in text",
+          "2": "Before and after both visible"
+        }
+      },
+      "message": "Is the baseline the claim depends on visible on the chart?",
+      "why": "'Up 40%' means nothing if the reader can't see from what.",
+      "fix": "Show the prior period or baseline as a reference line or a muted bar.",
+      "examples": {
+        "flag": [
+          "Bar for October only, title 'Conversions up 40%'"
+        ],
+        "pass": [
+          "September muted, October in the accent color"
+        ]
+      },
+      "source": "Design principle: context always included. Locked chart rules, 2026-10-12."
+    },
+    {
+      "id": "V-brevity-hierarchy",
+      "slug": "brevity-hierarchy",
+      "name": "Brevity and hierarchy",
+      "category": "visual",
+      "severity": "warning",
+      "engine": "judge",
+      "applies_to": "visual",
+      "rubric": {
+        "question": "Is the hierarchy clear, and can the reader get the point in 10 seconds?",
+        "anchors": {
+          "0": "Wall of text; several competing insights; flat hierarchy; title doesn't answer 'so what'",
+          "1": "One main insight, but secondary details distract or the caption runs long",
+          "2": "Title answers 'so what' in one sentence. One insight. Key data in the accent color, the rest gray. Caption under 20 words."
+        }
+      },
+      "message": "Can the reader get the point in 10 seconds?",
+      "why": "The ADHD reviewer needs extreme brevity: one insight per visual, no walls of text, a hierarchy that makes the point obvious.",
+      "fix": "Cut caption text. Keep one insight per chart. Make the title the point, put one accent color on the key data, gray the rest, remove decoration.",
+      "examples": {
+        "flag": [
+          "Long caption explaining methodology, caveats, and three different insights; title is generic 'Performance by Channel'",
+          "Five different colors, gridlines, legend with 8 items, title doesn't say what this means",
+          "Chart with 15 bars and a 3-line explanation of what changed and why"
+        ],
+        "pass": [
+          "Title: 'Search drove 60% of new revenue'. Search in the accent color, the rest gray. Caption: 'Q3 vs Q2, n=8K users'.",
+          "Bar chart, one accent color on the highest bar. Title: 'Mobile spend increased 45%'. No gridlines, no legend.",
+          "One metric over time as a smooth line. Title: 'Conversion rate rose through August'. One color."
+        ]
+      },
+      "source": "Design principle: minimal friction. ADHD reader persona."
+    },
+    {
+      "id": "V-color-means-something",
+      "slug": "color-means-something",
+      "name": "Color carries meaning",
+      "category": "visual",
+      "severity": "warning",
+      "engine": "judge",
+      "applies_to": "visual",
+      "rubric": {
+        "question": "Does each color mean something, used the same way across every chart?",
+        "anchors": {
+          "0": "Colors are decorative or change meaning between charts",
+          "1": "Mostly consistent",
+          "2": "Same metric same color everywhere; red only for loss, green only for gain"
+        }
+      },
+      "message": "Does each color mean something, used the same way across every chart?",
+      "why": "If spend is blue in one chart and orange in the next, the reader has to relearn every chart.",
+      "fix": "Fix one color per metric for the whole report. Use red and green only for bad and good.",
+      "examples": {
+        "flag": [
+          "Spend blue in chart 1, orange in chart 2",
+          "Red used for the best campaign"
+        ],
+        "pass": [
+          "Spend blue in every chart; losses red"
+        ]
+      },
+      "source": "Design principle: consistency as trust. Locked chart rules, 2026-10-12."
+    },
+    {
+      "id": "V-contrast-aa",
+      "slug": "contrast-aa",
+      "name": "Readable contrast",
+      "category": "visual",
+      "severity": "warning",
+      "engine": "judge",
+      "applies_to": "visual",
+      "rubric": {
+        "question": "Does all text meet WCAG AA contrast against its background?",
+        "anchors": {
+          "0": "Light gray text on white, or text on busy fills",
+          "1": "Mostly fine, a few faint labels",
+          "2": "All text meets AA (4.5:1 for small text)"
+        }
+      },
+      "message": "Does all text meet WCAG AA contrast against its background?",
+      "why": "Faint labels get skipped, and skipped labels mean misread charts.",
+      "fix": "Darken text to at least 4.5:1 contrast. Don't put text on colored fills.",
+      "examples": {
+        "flag": [
+          "Pale gray axis labels on white"
+        ],
+        "pass": [
+          "Dark gray labels, black title"
+        ]
+      },
+      "source": "Design principle: minimal friction. Locked chart rules, 2026-10-12."
+    },
+    {
+      "id": "V-correlation-trendline",
+      "slug": "correlation-trendline",
+      "name": "Correlation shown as a scatter with a trend line",
+      "category": "visual",
+      "severity": "warning",
+      "engine": "judge",
+      "applies_to": "visual",
+      "rubric": {
+        "question": "If the chart claims a relationship, is it a scatter plot with a trend line and its strength shown?",
+        "anchors": {
+          "0": "A relationship claimed from two bars or two lines",
+          "1": "Scatter with no trend line or no strength shown",
+          "2": "Scatter, trend line, and r or R² shown"
+        }
+      },
+      "message": "If the chart claims a relationship, is it a scatter plot with a trend line and its strength shown?",
+      "why": "Two lines moving together prove nothing. A scatter shows the actual relationship and its spread.",
+      "fix": "Plot one metric against the other, add a trend line, and show r.",
+      "examples": {
+        "flag": [
+          "Two lines, spend and revenue, captioned 'spend drives revenue'"
+        ],
+        "pass": [
+          "Scatter of weekly spend vs revenue, trend line, r = 0.62"
+        ]
+      },
+      "source": "Design principle: honesty first. Locked chart rules, 2026-10-12."
+    },
+    {
+      "id": "V-date-range-listed",
+      "slug": "date-range-listed",
+      "name": "Date range always listed",
+      "category": "visual",
+      "severity": "error",
+      "engine": "judge",
+      "applies_to": "visual",
+      "rubric": {
+        "question": "Does the chart say exactly which dates it covers?",
+        "anchors": {
+          "0": "No dates anywhere",
+          "1": "Vague ('last month', 'recently')",
+          "2": "Exact range in the title, subtitle or caption"
+        }
+      },
+      "message": "Does the chart say exactly which dates it covers?",
+      "why": "Every number depends on its window. Without it, the chart can't be checked.",
+      "fix": "Add the exact range: 'May 1 to Aug 31, 2026'.",
+      "examples": {
+        "flag": [
+          "Title 'CPA by day of week' with no dates"
+        ],
+        "pass": [
+          "Subtitle 'Cost per conversion, May to August 2026'"
+        ]
+      },
+      "source": "Design principle: context always included. Locked chart rules, 2026-10-12."
+    },
+    {
+      "id": "V-direct-labels",
+      "slug": "direct-labels",
+      "name": "Label directly; legend only for three or more series",
+      "category": "visual",
+      "severity": "warning",
+      "engine": "judge",
+      "applies_to": "visual",
+      "rubric": {
+        "question": "Are series labeled directly on the chart, with a legend only when there are three or more?",
+        "anchors": {
+          "0": "A legend for one or two series, or a legend the eye must bounce to",
+          "1": "Direct labels on some series",
+          "2": "Direct labels; a legend only for 3+ series"
+        }
+      },
+      "message": "Are series labeled directly on the chart, with a legend only when there are three or more?",
+      "why": "Every trip to the legend costs the reader a second and a mistake.",
+      "fix": "Put the series name at the end of its line or on its bar. Drop the legend.",
+      "examples": {
+        "flag": [
+          "Two-line chart with a legend in the corner"
+        ],
+        "pass": [
+          "Each line labeled at its right end, no legend"
+        ]
+      },
+      "source": "Design principle: minimal friction. Locked chart rules, 2026-10-12."
+    },
+    {
+      "id": "V-distribution-chart",
+      "slug": "distribution-chart",
+      "name": "Distributions as histograms or box plots",
+      "category": "visual",
+      "severity": "warning",
+      "engine": "judge",
+      "applies_to": "visual",
+      "rubric": {
+        "question": "Is a distribution shown as a histogram or box plot, not a line, pie or single average?",
+        "anchors": {
+          "0": "A distribution shown as a pie, a line or a single number",
+          "1": "Bars used, but bins unclear",
+          "2": "Histogram or box plot with clear bins"
+        }
+      },
+      "message": "Is a distribution shown as a histogram or box plot, not a line, pie or single average?",
+      "why": "An average hides the spread. The spread is often the story.",
+      "fix": "Use a histogram or a box plot. Label the bins.",
+      "examples": {
+        "flag": [
+          "Conversion rate across 200 keywords shown as one average"
+        ],
+        "pass": [
+          "Histogram of keyword conversion rates in 1-point bins"
+        ]
+      },
+      "source": "Design principle: data speaks first. Locked chart rules, 2026-10-12."
+    },
+    {
+      "id": "V-dual-axes-related",
+      "slug": "dual-axes-related",
+      "name": "Dual axes only for related metrics",
+      "category": "visual",
+      "severity": "warning",
+      "engine": "judge",
+      "applies_to": "visual",
+      "rubric": {
+        "question": "If the chart has two y-axes, are the two metrics directly related, with scales that don't invent a crossover?",
+        "anchors": {
+          "0": "Two unrelated metrics share a chart, or the scales are set so lines cross for effect",
+          "1": "Metrics are related but the scales or labels are unclear",
+          "2": "One axis, or two related metrics with clearly labeled, honest scales"
+        }
+      },
+      "message": "If the chart has two y-axes, are the two metrics directly related, with scales that don't invent a crossover?",
+      "why": "Dual axes let any two lines look correlated. The crossover point is chosen by whoever set the scales.",
+      "fix": "Split into two small charts with a shared x-axis, or index both metrics to 100.",
+      "examples": {
+        "flag": [
+          "Left axis: sessions. Right axis: brand awareness score. Lines cross in March.",
+          "Spend in bars and CTR as a line on a right axis scaled so they meet"
+        ],
+        "pass": [
+          "Two small charts stacked: spend, then ROAS, same months",
+          "Spend and revenue both indexed to 100 in January"
+        ]
+      },
+      "source": "Design principle: honesty first. Locked chart rules, 2026-10-12."
+    },
+    {
+      "id": "V-kpi-limit",
+      "slug": "kpi-limit",
+      "name": "At most five KPIs per visual",
+      "category": "visual",
+      "severity": "error",
+      "engine": "judge",
+      "applies_to": "visual",
+      "rubric": {
+        "question": "Does any visual show more than five KPI tiles or metrics?",
+        "anchors": {
+          "0": "6 or more KPIs in one visual (a metric wall)",
+          "1": "Exactly 5 but several don't matter",
+          "2": "5 or fewer, each one used in the text"
+        }
+      },
+      "message": "Does any visual show more than five KPI tiles or metrics?",
+      "why": "A wall of tiles says nothing is more important than anything else.",
+      "fix": "Keep the 3 to 5 numbers that drive the decision. Move the rest to an appendix or cut them.",
+      "examples": {
+        "flag": [
+          "Dashboard with 12 KPI tiles and no comparison"
+        ],
+        "pass": [
+          "Three tiles: spend, conversions, CPA, each with last period"
+        ]
+      },
+      "source": "Design principle: clarity over decoration. Locked chart rules, 2026-10-12."
+    },
+    {
+      "id": "V-label-key-values",
+      "slug": "label-key-values",
+      "name": "Values on key points only",
+      "category": "visual",
+      "severity": "warning",
+      "engine": "judge",
+      "applies_to": "visual",
+      "rubric": {
+        "question": "Are the values that matter labeled, without labeling every point?",
+        "anchors": {
+          "0": "Every point labeled, or the key value unlabeled",
+          "1": "Some clutter",
+          "2": "Only the values the title and text use are labeled"
+        }
+      },
+      "message": "Are the values that matter labeled, without labeling every point?",
+      "why": "Labeling everything hides the one number that matters.",
+      "fix": "Label the value the title talks about, and the comparison. Remove the rest.",
+      "examples": {
+        "flag": [
+          "Every bar of 30 days carries its value"
+        ],
+        "pass": [
+          "Only the peak day and the average labeled"
+        ]
+      },
+      "source": "Design principle: data speaks first. Locked chart rules, 2026-10-12."
+    },
+    {
+      "id": "V-log-scale-labeled",
+      "slug": "log-scale-labeled",
+      "name": "Log scales labeled",
+      "category": "visual",
+      "severity": "warning",
+      "engine": "judge",
+      "applies_to": "visual",
+      "rubric": {
+        "question": "If an axis is logarithmic, is that stated on the axis and justified?",
+        "anchors": {
+          "0": "Log scale with no label",
+          "1": "Labeled, but easy to miss",
+          "2": "Clearly marked '(log scale)' with a reason in the caption"
+        }
+      },
+      "message": "If an axis is logarithmic, is that stated on the axis and justified?",
+      "why": "On a log scale, equal steps are multiples. Unlabeled, it hides how large the growth is.",
+      "fix": "Add '(log scale)' to the axis label, or switch to a linear scale.",
+      "examples": {
+        "flag": [
+          "Impressions over 12 months on a log axis with no note"
+        ],
+        "pass": [
+          "Y-axis 'Impressions (log scale)', caption explains the 1,000x range"
+        ]
+      },
+      "source": "Design principle: honesty first. Locked chart rules, 2026-10-12."
+    },
+    {
+      "id": "V-missing-data-labeled",
+      "slug": "missing-data-labeled",
+      "name": "Missing data labeled",
+      "category": "visual",
+      "severity": "warning",
+      "engine": "judge",
+      "applies_to": "visual",
+      "rubric": {
+        "question": "Are gaps in the data shown and labeled, not silently skipped or filled?",
+        "anchors": {
+          "0": "Gaps hidden: a line drawn straight across missing days, or zeros for no data",
+          "1": "Gap visible but unexplained",
+          "2": "Gap marked and explained"
+        }
+      },
+      "message": "Are gaps in the data shown and labeled, not silently skipped or filled?",
+      "why": "A line across missing days invents data. A zero for 'no data' invents a drop.",
+      "fix": "Break the line at gaps and label why ('tracking outage Oct 3 to 5').",
+      "examples": {
+        "flag": [
+          "Line connecting across 3 days of missing conversions"
+        ],
+        "pass": [
+          "Line broken Oct 3 to 5, labeled 'tag outage'"
+        ]
+      },
+      "source": "Design principle: honesty first. Locked chart rules, 2026-10-12."
+    },
+    {
+      "id": "V-no-cherry-picked-window",
+      "slug": "no-cherry-picked-window",
+      "name": "No cherry-picked window",
+      "category": "visual",
+      "severity": "error",
+      "engine": "judge",
+      "applies_to": "visual",
+      "rubric": {
+        "question": "Does the date window show the trend fairly, not start or stop where it flatters?",
+        "anchors": {
+          "0": "Window starts at a low point or ends at a peak to exaggerate",
+          "1": "Window is short with no reason given",
+          "2": "Window is standard (week, month, quarter) or justified"
+        }
+      },
+      "message": "Does the date window show the trend fairly, not start or stop where it flatters?",
+      "why": "Choose the window and you choose the story. Readers can't see what was left out.",
+      "fix": "Use a standard window, or say why this one.",
+      "examples": {
+        "flag": [
+          "ROAS chart starting the week after an outage"
+        ],
+        "pass": [
+          "ROAS for the full quarter, the outage week labeled"
+        ]
+      },
+      "source": "Design principle: honesty first. Locked chart rules, 2026-10-12."
+    },
+    {
+      "id": "V-no-red-green-pairs",
+      "slug": "no-red-green-pairs",
+      "name": "No red and green together",
+      "category": "visual",
+      "severity": "warning",
+      "engine": "judge",
+      "applies_to": "visual",
+      "rubric": {
+        "question": "Does the chart avoid relying on red vs green to tell things apart?",
+        "anchors": {
+          "0": "Red vs green is the only difference between series",
+          "1": "Red and green appear but are also labeled",
+          "2": "No red-green pairs, or a colorblind-safe pair"
+        }
+      },
+      "message": "Does the chart avoid relying on red vs green to tell things apart?",
+      "why": "About 1 in 12 men can't tell red from green.",
+      "fix": "Use blue vs orange, or add direct labels.",
+      "examples": {
+        "flag": [
+          "Gain and loss bars only in red and green"
+        ],
+        "pass": [
+          "Gain in blue, loss in orange, values labeled"
+        ]
+      },
+      "source": "Design principle: minimal friction. Locked chart rules, 2026-10-12."
+    },
+    {
+      "id": "V-no-scaffolding",
+      "slug": "no-scaffolding",
+      "name": "No chart junk",
+      "category": "visual",
+      "severity": "warning",
+      "engine": "judge",
+      "applies_to": "visual",
+      "rubric": {
+        "question": "Is the chart free of gridlines, borders, 3D, shadows and decoration that carry no data?",
+        "anchors": {
+          "0": "Heavy gridlines, 3D, shadows or decorative fills",
+          "1": "Some unneeded scaffolding",
+          "2": "Only what carries data or the point"
+        }
+      },
+      "message": "Is the chart free of gridlines, borders, 3D, shadows and decoration that carry no data?",
+      "why": "Every non-data mark competes with the data.",
+      "fix": "Remove gridlines, borders and 3D. Keep the axis, the data and the labels.",
+      "examples": {
+        "flag": [
+          "3D bar chart with gridlines and a gradient background"
+        ],
+        "pass": [
+          "Flat bars, no gridlines, light axis"
+        ]
+      },
+      "source": "Design principle: clarity over decoration. Locked chart rules, 2026-10-12."
+    },
+    {
+      "id": "V-no-truncated-baseline",
+      "slug": "no-truncated-baseline",
+      "name": "No hidden baseline",
+      "category": "visual",
+      "severity": "warning",
+      "engine": "judge",
+      "applies_to": "visual",
+      "rubric": {
+        "question": "Is the baseline or zero line visible where the reader needs it to judge size?",
+        "anchors": {
+          "0": "The baseline is cropped out so size can't be judged",
+          "1": "Baseline present but hard to see",
+          "2": "Baseline visible, or the chart doesn't depend on one"
+        }
+      },
+      "message": "Is the baseline or zero line visible where the reader needs it to judge size?",
+      "why": "Without the baseline, the eye compares bar tops instead of bar lengths.",
+      "fix": "Show the zero line or the baseline period. Remove crops that hide it.",
+      "examples": {
+        "flag": [
+          "Bar chart cropped so all bars start mid-frame"
+        ],
+        "pass": [
+          "Bars with the zero line drawn"
+        ]
+      },
+      "source": "Design principle: honesty first. Locked chart rules, 2026-10-12."
+    },
+    {
+      "id": "V-one-comparison",
+      "slug": "one-comparison",
+      "name": "A comparison shown, one per chart",
+      "category": "visual",
+      "severity": "warning",
+      "engine": "judge",
+      "applies_to": "visual",
+      "rubric": {
+        "question": "Does the chart show what it's compared against, and only one comparison?",
+        "anchors": {
+          "0": "No comparison at all, or several fighting for attention",
+          "1": "A comparison exists but is buried",
+          "2": "One clear comparison: prior period, target or benchmark"
+        }
+      },
+      "message": "Does the chart show what it's compared against, and only one comparison?",
+      "why": "A number with no comparison can't be judged. Three comparisons can't be read.",
+      "fix": "Pick the one comparison that matters (prior period, target or account average) and show it.",
+      "examples": {
+        "flag": [
+          "Spend this month with no prior period",
+          "Bars with last month, last year and target all at once"
+        ],
+        "pass": [
+          "This month vs last month, one reference line for target"
+        ]
+      },
+      "source": "Design principle: context always included. Locked chart rules, 2026-10-12."
+    },
+    {
+      "id": "V-one-point-per-chart",
+      "slug": "one-point-per-chart",
+      "name": "One point per chart",
+      "category": "visual",
+      "severity": "error",
+      "engine": "judge",
+      "applies_to": "visual",
+      "rubric": {
+        "question": "Does each chart make exactly one point?",
+        "anchors": {
+          "0": "Several competing points in one chart",
+          "1": "One main point, but extra series distract",
+          "2": "One point, everything else removed or quiet"
+        }
+      },
+      "message": "Does each chart make exactly one point?",
+      "why": "A chart that makes three points makes none. The reader picks one at random.",
+      "fix": "Split it, or cut the series that don't serve the point.",
+      "examples": {
+        "flag": [
+          "One chart showing spend, CTR, CPA and ROAS by week"
+        ],
+        "pass": [
+          "One chart: CPA by week, the spike labeled"
+        ]
+      },
+      "source": "Design principle: one point per visual. Locked chart rules, 2026-10-12."
+    },
+    {
+      "id": "V-outliers-explained",
+      "slug": "outliers-explained",
+      "name": "Outliers explained",
+      "category": "visual",
+      "severity": "warning",
+      "engine": "judge",
+      "applies_to": "visual",
+      "rubric": {
+        "question": "Are outliers labeled and explained, not hidden or left to distort the scale?",
+        "anchors": {
+          "0": "An outlier is removed silently or squashes the rest of the chart",
+          "1": "Outlier visible but unexplained",
+          "2": "Outlier labeled with its cause"
+        }
+      },
+      "message": "Are outliers labeled and explained, not hidden or left to distort the scale?",
+      "why": "An unexplained spike invites the wrong story. A silently removed one hides the real one.",
+      "fix": "Label the outlier and its cause. If it distorts the scale, note it and show it separately.",
+      "examples": {
+        "flag": [
+          "Black Friday spike flattening every other week, no label"
+        ],
+        "pass": [
+          "Black Friday labeled 'promo week', rest of weeks readable"
+        ]
+      },
+      "source": "Design principle: honesty first. Locked chart rules, 2026-10-12."
+    },
+    {
+      "id": "V-parts-sum-to-whole",
+      "slug": "parts-sum-to-whole",
+      "name": "Percentages sum to 100% or say they're partial",
+      "category": "visual",
+      "severity": "warning",
+      "engine": "judge",
+      "applies_to": "visual",
+      "rubric": {
+        "question": "Do shares add up to 100%, or does the chart say what's missing?",
+        "anchors": {
+          "0": "Shares don't add to 100% and nothing explains it",
+          "1": "Small gap with no note",
+          "2": "Sums to 100%, or labeled 'top 5 shown, other 18%'"
+        }
+      },
+      "message": "Do shares add up to 100%, or does the chart say what's missing?",
+      "why": "Missing shares make the shown ones look bigger than they are.",
+      "fix": "Add an 'Other' group, or label the chart as partial.",
+      "examples": {
+        "flag": [
+          "Channel share pie adding to 84%"
+        ],
+        "pass": [
+          "Top 5 channels shown, 'Other: 16%'"
+        ]
+      },
+      "source": "Design principle: honesty first. Locked chart rules, 2026-10-12."
+    },
+    {
+      "id": "V-pie-three-slices",
+      "slug": "pie-three-slices",
+      "name": "Pie charts have at most three slices",
+      "category": "visual",
+      "severity": "warning",
+      "engine": "judge",
+      "applies_to": "visual",
+      "rubric": {
+        "question": "If there's a pie or donut, does it have three slices or fewer?",
+        "anchors": {
+          "0": "Pie or donut with 6 or more slices",
+          "1": "Pie with 4 or 5 slices",
+          "2": "No pie, or a pie with 1 to 3 slices"
+        }
+      },
+      "message": "If there's a pie or donut, does it have three slices or fewer?",
+      "why": "People can't compare angles. Beyond three slices, a sorted bar chart reads faster and truer.",
+      "fix": "Use a sorted horizontal bar chart. Keep a pie only for a part of a whole with three or fewer parts.",
+      "examples": {
+        "flag": [
+          "Donut of spend across 9 campaigns",
+          "Pie with 5 channel slices"
+        ],
+        "pass": [
+          "Sorted bar chart of spend across 9 campaigns",
+          "Pie with 2 slices: brand vs non-brand spend"
+        ]
+      },
+      "source": "Design principle: clarity over decoration. Locked chart rules, 2026-10-12."
+    },
+    {
+      "id": "V-readable-text-size",
+      "slug": "readable-text-size",
+      "name": "Text readable at display size",
+      "category": "visual",
+      "severity": "warning",
+      "engine": "judge",
+      "applies_to": "visual",
+      "rubric": {
+        "question": "Is every label readable at the size the chart is actually shown?",
+        "anchors": {
+          "0": "Labels too small to read in the deck or doc",
+          "1": "Some small labels",
+          "2": "All text readable at display size"
+        }
+      },
+      "message": "Is every label readable at the size the chart is actually shown?",
+      "why": "A chart exported at dashboard size and pasted into a slide shrinks every label.",
+      "fix": "Re-render at the display size, or cut labels until the rest can grow.",
+      "examples": {
+        "flag": [
+          "Dashboard screenshot pasted into a slide, 6pt labels"
+        ],
+        "pass": [
+          "Chart re-rendered for the slide, labels at 12pt"
+        ]
+      },
+      "source": "Design principle: minimal friction. Locked chart rules, 2026-10-12."
+    },
+    {
+      "id": "V-sample-size-shown",
+      "slug": "sample-size-shown",
+      "name": "Sample size shown when small",
+      "category": "visual",
+      "severity": "warning",
+      "engine": "judge",
+      "applies_to": "visual",
+      "rubric": {
+        "question": "When a value rests on fewer than 30 observations, is n shown?",
+        "anchors": {
+          "0": "Rates on tiny samples with no n",
+          "1": "n shown somewhere but not near the value",
+          "2": "n shown next to any value under 30 observations"
+        }
+      },
+      "message": "When a value rests on fewer than 30 observations, is n shown?",
+      "why": "A 50% conversion rate on 4 clicks is noise. Without n it looks like a finding.",
+      "fix": "Show n next to the value, or group small segments.",
+      "examples": {
+        "flag": [
+          "Tablet CVR 50% (from 4 clicks, not shown)"
+        ],
+        "pass": [
+          "Tablet CVR 50% (n = 4, too small to judge)"
+        ]
+      },
+      "source": "Design principle: honesty first. Locked chart rules, 2026-10-12."
+    },
+    {
+      "id": "V-small-multiples",
+      "slug": "small-multiples",
+      "name": "Small multiples instead of a crowded chart",
+      "category": "visual",
+      "severity": "warning",
+      "engine": "judge",
+      "applies_to": "visual",
+      "rubric": {
+        "question": "When comparing many groups, does the visual use small multiples instead of one crowded chart?",
+        "anchors": {
+          "0": "Many lines or groups crammed into one chart",
+          "1": "Crowded but readable",
+          "2": "Small multiples with shared scales, or few enough groups"
+        }
+      },
+      "message": "When comparing many groups, does the visual use small multiples instead of one crowded chart?",
+      "why": "Ten lines on one chart become spaghetti. Small charts with shared scales compare cleanly.",
+      "fix": "Break it into a grid of small charts with the same axes.",
+      "examples": {
+        "flag": [
+          "8 campaign trend lines on one chart"
+        ],
+        "pass": [
+          "8 small charts, one per campaign, shared y-axis"
+        ]
+      },
+      "source": "Design principle: clarity over decoration. Locked chart rules, 2026-10-12."
+    },
+    {
+      "id": "V-smooth-line-for-trends",
+      "slug": "smooth-line-for-trends",
+      "name": "Smooth lines for trends",
+      "category": "visual",
+      "severity": "warning",
+      "engine": "judge",
+      "applies_to": "visual",
+      "rubric": {
+        "question": "Are trends over 6 or more periods drawn as a single smooth line?",
+        "anchors": {
+          "0": "6+ periods shown as bars, scatter or a step chart",
+          "1": "Line used but jagged or cluttered with markers",
+          "2": "Smooth line for 6+ periods, markers only on key points"
+        }
+      },
+      "message": "Are trends over 6 or more periods drawn as a single smooth line?",
+      "why": "A line shows the shape of a trend at a glance. Bars and dots make the reader connect them.",
+      "fix": "Draw 6 or more periods as a smoothed line. Mark only the points the title talks about.",
+      "examples": {
+        "flag": [
+          "12 months of CPA as 12 bars",
+          "Weekly conversions as a scatter plot"
+        ],
+        "pass": [
+          "12 months of CPA as one smooth line with the peak labeled"
+        ]
+      },
+      "source": "Design principle: minimal friction. Locked chart rules, 2026-10-12."
+    },
+    {
+      "id": "V-stacked-vs-side-by-side",
+      "slug": "stacked-vs-side-by-side",
+      "name": "Stacked for parts, side by side for comparison",
+      "category": "visual",
+      "severity": "warning",
+      "engine": "judge",
+      "applies_to": "visual",
+      "rubric": {
+        "question": "Do stacked bars show parts of a whole, and side-by-side bars show comparisons?",
+        "anchors": {
+          "0": "Stacked bars used to compare periods or groups",
+          "1": "Mostly right, but the intent is ambiguous",
+          "2": "Chart type matches the point"
+        }
+      },
+      "message": "Do stacked bars show parts of a whole, and side-by-side bars show comparisons?",
+      "why": "Only the bottom segment of a stack shares a baseline. Comparing the other segments is guesswork.",
+      "fix": "Compare groups or periods side by side. Stack only when the total and its parts are the point.",
+      "examples": {
+        "flag": [
+          "Stacked bars comparing January vs February revenue by channel"
+        ],
+        "pass": [
+          "Side-by-side bars for this year vs last year",
+          "Stacked bar for one month's budget split"
+        ]
+      },
+      "source": "Design principle: one point per visual. Locked chart rules, 2026-10-12."
+    },
+    {
+      "id": "V-stat-sound",
+      "slug": "stat-sound",
+      "name": "Statistically sound",
+      "category": "visual",
+      "severity": "error",
+      "engine": "judge",
+      "applies_to": "visual",
+      "rubric": {
+        "question": "Does each claim match the statistical rigor the data shows?",
+        "anchors": {
+          "0": "Overstated claims; 'significant' or 'clear' with no test or a tiny sample; sample size missing",
+          "1": "Mostly qualified, but one claim needs a caveat, or the sample size is shown without context",
+          "2": "Claims match the data. Sample size clear. Intervals shown where the original has them. Directional vs. proven labeled."
+        }
+      },
+      "message": "Is this chart or claim saying more than the data supports?",
+      "why": "The statistics reviewer checks methodology. Claims must match the sample size and confidence shown, and separate proven from directional.",
+      "fix": "Label results as directional when they aren't proven. Show sample size and confidence intervals if the original has them. Never invent an interval or a p-value: if one is missing, flag it for the writer. Cut significance language the data can't back.",
+      "examples": {
+        "flag": [
+          "Campaign drove 15% lift in conversions (no sample size, no confidence interval shown)",
+          "This is statistically significant (sample size is 12)",
+          "Results show a clear correlation (correlation coefficient 0.3, n=8)"
+        ],
+        "pass": [
+          "Campaign drove 15% lift in conversions (95% CI: 8–22%, n=450)",
+          "This is statistically significant at p<0.05 (sample size 120)",
+          "Directional only: a weak correlation (r=0.3, n=120, not significant)"
+        ]
+      },
+      "source": "Design principles: honesty first, data speaks first. Statistics person persona."
+    },
+    {
+      "id": "V-three-colors-max",
+      "slug": "three-colors-max",
+      "name": "At most three colors",
+      "category": "visual",
+      "severity": "warning",
+      "engine": "judge",
+      "applies_to": "visual",
+      "rubric": {
+        "question": "Does the chart use three colors or fewer?",
+        "anchors": {
+          "0": "4 or more colors competing",
+          "1": "3 colors but no clear accent",
+          "2": "One accent color, the rest gray or one neutral"
+        }
+      },
+      "message": "Does the chart use three colors or fewer?",
+      "why": "Every color asks for attention. With many, nothing stands out.",
+      "fix": "Use one accent for the point and gray for the rest.",
+      "examples": {
+        "flag": [
+          "Bar chart with each campaign a different color"
+        ],
+        "pass": [
+          "Sunday in the accent color, other days gray"
+        ]
+      },
+      "source": "Design principle: clear hierarchy. Locked chart rules, 2026-10-12."
+    },
+    {
+      "id": "V-title-states-point",
+      "slug": "title-states-point",
+      "name": "Title states the point",
+      "category": "visual",
+      "severity": "error",
+      "engine": "judge",
+      "applies_to": "visual",
+      "rubric": {
+        "question": "Does the title say the finding, with its number, not just the topic?",
+        "anchors": {
+          "0": "Topic title ('Performance overview')",
+          "1": "Title hints at the point without the number",
+          "2": "Declarative title with the number: 'Sunday costs $138 per conversion'"
+        }
+      },
+      "message": "Does the title say the finding, with its number, not just the topic?",
+      "why": "A topic title makes the reader find the point. A finding title hands it over.",
+      "fix": "Rewrite the title as the one-sentence finding, with its number.",
+      "examples": {
+        "flag": [
+          "Title 'Spend by channel'",
+          "Title 'Performance overview'"
+        ],
+        "pass": [
+          "Title 'Search drove 60% of new revenue in Q3'"
+        ]
+      },
+      "source": "Design principle: one point per visual. Locked chart rules, 2026-10-12."
+    },
+    {
+      "id": "V-units-in-axis",
+      "slug": "units-in-axis",
+      "name": "Units on the axis, not every point",
+      "category": "visual",
+      "severity": "warning",
+      "engine": "judge",
+      "applies_to": "visual",
+      "rubric": {
+        "question": "Are units stated once on the axis instead of repeated on every label?",
+        "anchors": {
+          "0": "'$' or '%' repeated on every tick and label",
+          "1": "Some repetition",
+          "2": "Unit stated once on the axis or title"
+        }
+      },
+      "message": "Are units stated once on the axis instead of repeated on every label?",
+      "why": "Repeated units are noise the eye has to skip.",
+      "fix": "Put the unit in the axis label and drop it from the ticks.",
+      "examples": {
+        "flag": [
+          "Every tick reads $10K, $20K, $30K and every bar label repeats $"
+        ],
+        "pass": [
+          "Axis 'Spend (USD, thousands)', ticks 10, 20, 30"
+        ]
+      },
+      "source": "Design principle: clarity over decoration. Locked chart rules, 2026-10-12."
+    },
+    {
+      "id": "W-best-period-only",
+      "slug": "best-period-only",
+      "name": "Only the best period shown",
+      "category": "watchout",
+      "severity": "advisory",
+      "engine": "regex",
+      "applies_to": "text",
+      "patterns": [
+        "\\b(?:our\\s+)?(?:best|strongest|record|peak)\\s+(?:week|day|month|period|results|performance)\\b"
+      ],
+      "unless": "\\b(?:vs\\.?|versus|full\\s+(?:quarter|month|year|period)|overall|despite|while\\s+the|of\\s+(?:Q[1-4]|the\\s+(?:quarter|year)))\\b",
+      "message": "Only the best period shown: '{match}'",
+      "why": "Showing only the best stretch hides the rest. Readers can't tell a good week from a good quarter.",
+      "fix": "Show the full period next to the best one, or say it's the best of how many.",
+      "examples": {
+        "flag": [
+          "This was our best week ever.",
+          "Peak performance came in August."
+        ],
+        "pass": [
+          "Best week of Q3 (Aug 15 to 21); the full quarter was down 5%."
+        ]
+      },
+      "source": "Watchout rules for ad reports: flag when a claim could be luck, not signal (2026-10-12)."
+    },
+    {
+      "id": "W-black-box-campaign",
+      "slug": "black-box-campaign",
+      "name": "Black-box campaign with no caveat",
+      "category": "watchout",
+      "severity": "advisory",
+      "engine": "regex",
+      "applies_to": "text",
+      "patterns": [
+        "\\b(?:PMax|Performance\\s+Max|AI\\s+Max|Advantage\\+(?:\\s+(?:shopping|campaigns?))?)\\b"
+      ],
+      "unless": "\\b(?:can't\\s+see|cannot\\s+see|doesn't\\s+show|does\\s+not\\s+show|limited\\s+visibility|no\\s+(?:search\\s+term|placement|channel)\\s+(?:data|breakdown)|channel\\s+report|by\\s+channel|opaque|black\\s+box|not\\s+broken\\s+out)\\b",
+      "message": "No 'what we can't see' for this campaign: '{match}'",
+      "why": "PMax, AI Max and Advantage+ hide much of where the money goes. A result from them needs a line on what isn't visible.",
+      "fix": "Add what the report can't see (channel mix, search terms, placements) or use the channel breakdown if it exists.",
+      "examples": {
+        "flag": [
+          "PMax delivered a 4.2x ROAS this month."
+        ],
+        "pass": [
+          "PMax reported a 4.2x ROAS; we can't see its channel mix this month."
+        ]
+      },
+      "source": "Research rounds 1–3; locked 2026-10-12."
+    },
+    {
+      "id": "W-change-credited-without-alternatives",
+      "slug": "change-credited-without-alternatives",
+      "name": "Our change credited, alternatives ignored",
+      "category": "watchout",
+      "severity": "advisory",
+      "engine": "regex",
+      "applies_to": "text",
+      "patterns": [
+        "\\bwe\\s+(?:increased|raised|lowered|decreased|changed|launched|paused|added|cut|switched|moved)\\b[^.\\n]{0,80}\\b(?:and|so|which|then)\\b[^.\\n]{0,40}\\b(?:conversions?|ROAS|revenue|CPA|sales|leads)\\b[^.\\n]{0,20}\\b(?:up|down|rose|fell|jumped|dropped|doubled|tripled|halved|grew|increased|decreased|improved|declined|spiked|surged|crashed|soared|plunged|lift|lifted|gain|gained)\\b",
+        "\\bwe\\s+(?:increased|raised|lowered|changed|launched|paused|added|cut|switched)\\b[^.\\n]{0,80}\\b(?:led\\s+to|resulted\\s+in|caused|drove|causing)\\b"
+      ],
+      "unless": "\\b(?:may|might|also|though|although|alongside|season\\w*|competitor|other\\s+factors|coincid\\w*|holdout|test\\s+group|control)\\b",
+      "message": "Our change credited, alternatives ignored: '{match}'",
+      "why": "Our change and the result happened together, but seasonality, competitors or budget may explain it. 'We did X and Y rose' isn't proof.",
+      "fix": "Say what else changed in the same window, or call it a correlation until a holdout or test confirms it.",
+      "examples": {
+        "flag": [
+          "We increased bids and conversions rose 30%.",
+          "We paused low-ROAS keywords, which led to a 40% ROAS lift."
+        ],
+        "pass": [
+          "We increased bids; conversions also rose 30%, though seasonality may explain part of it."
+        ]
+      },
+      "source": "Watchout rules for ad reports: flag when a claim could be luck, not signal (2026-10-12)."
+    },
+    {
+      "id": "W-click-spike-no-conversions",
+      "slug": "click-spike-no-conversions",
+      "name": "Click spike with no conversions",
+      "category": "watchout",
+      "severity": "advisory",
+      "engine": "regex",
+      "applies_to": "text",
+      "patterns": [
+        "\\b(?:clicks?|CTR|sessions|traffic)\\b[^.\\n]{0,40}\\b(?:spiked|surged|jumped|doubled|tripled|soared)\\b"
+      ],
+      "unless": "\\b(?:conversions?|leads|orders|sales|revenue)\\b[^.\\n]{0,30}\\b(?:rose|up|grew|increased|doubled|followed)\\b",
+      "message": "Click or CTR spike, check for bots: '{match}'",
+      "why": "Bots made 10 times more clicks than humans in unprotected campaigns (DoubleVerify). A spike with no conversions isn't a win.",
+      "fix": "Check conversions, landing-page views and placements for the same window before reporting the spike as good news.",
+      "examples": {
+        "flag": [
+          "CTR spiked to 4.8% on Display this week."
+        ],
+        "pass": [
+          "Clicks doubled and conversions rose 90% with them."
+        ]
+      },
+      "source": "Research rounds 1–3; locked 2026-10-12."
+    },
+    {
+      "id": "W-conversions-vs-all-conversions",
+      "slug": "conversions-vs-all-conversions",
+      "name": "Conversions and all conversions mixed",
+      "category": "watchout",
+      "severity": "advisory",
+      "engine": "regex",
+      "applies_to": "text",
+      "patterns": [
+        "\\ball\\s+conversions\\b"
+      ],
+      "message": "Check which conversion column is used: '{match}'",
+      "why": "'All conversions' includes secondary actions and cross-device estimates. Mixed with 'conversions', the math doesn't tie.",
+      "fix": "Use one column throughout and say which.",
+      "examples": {
+        "flag": [
+          "CPA was $42 based on all conversions."
+        ],
+        "pass": [
+          "CPA was $42 based on primary conversions."
+        ]
+      },
+      "source": "Research rounds 1–3; locked 2026-10-12."
+    },
+    {
+      "id": "W-lever-vs-bid-strategy",
+      "slug": "lever-vs-bid-strategy",
+      "name": "Lever that doesn't fit the bid strategy",
+      "category": "watchout",
+      "severity": "advisory",
+      "engine": "regex",
+      "applies_to": "text",
+      "patterns": [
+        "\\b(?:t?CPA|target\\s+CPA)\\b[^.\\n]{0,60}\\b(?:t?ROAS|target\\s+ROAS)\\s+campaigns?\\b",
+        "\\b(?:t?ROAS|target\\s+ROAS)\\b[^.\\n]{0,60}\\b(?:t?CPA|target\\s+CPA)\\s+campaigns?\\b",
+        "\\b(?:keyword|manual|max\\s+CPC)\\s+bids?\\b[^.\\n]{0,60}\\b(?:smart\\s+bidding|maximi[sz]e\\s+conversions|t?ROAS|t?CPA)\\b"
+      ],
+      "message": "This lever may not exist under that bid strategy: '{match}'",
+      "why": "AI often recommends tCPA changes on tROAS campaigns, or keyword bids under Smart Bidding. The setting doesn't exist there.",
+      "fix": "Check the campaign's bid strategy and only keep levers it actually uses.",
+      "examples": {
+        "flag": [
+          "Lower the tCPA target on the tROAS campaigns.",
+          "Raise keyword bids on the Maximize Conversions campaigns."
+        ],
+        "pass": [
+          "Raise the tROAS target from 400% to 450% on Search - Brand."
+        ]
+      },
+      "source": "Research rounds 1–3; locked 2026-10-12."
+    },
+    {
+      "id": "W-metric-without-baseline",
+      "slug": "metric-without-baseline",
+      "name": "Metric with no baseline or target",
+      "category": "watchout",
+      "severity": "advisory",
+      "engine": "regex",
+      "applies_to": "text",
+      "patterns": [
+        "\\b(?:ROAS|CPA|CPL|CAC|cost\\s+per\\s+(?:lead|conversion|acquisition))\\s+(?:is|was|of|came\\s+in\\s+at|improved\\s+to|reached|hit)\\s+[$€£]?\\d[\\d,.]*\\s?x?"
+      ],
+      "unless": "\\b(?:vs\\.?|versus|against|target|goal|prior|previous|last\\s+(?:week|month|year|quarter)|baseline|benchmark|from\\s+[$€£]?\\d|compared)\\b",
+      "message": "Metric with no baseline or target: '{match}'",
+      "why": "'ROAS is 2.5' can't be judged. Good or bad depends on the target or the prior period.",
+      "fix": "Add the comparison the original has (target, prior period). If it has none, flag that the number can't be judged.",
+      "examples": {
+        "flag": [
+          "ROAS is 2.5 this month.",
+          "CPL improved to $12."
+        ],
+        "pass": [
+          "ROAS is 2.5 vs 2.1 last month.",
+          "CPL of $12 against a $15 target."
+        ]
+      },
+      "source": "Watchout rules for ad reports: flag when a claim could be luck, not signal (2026-10-12)."
+    },
+    {
+      "id": "W-micros-cost",
+      "slug": "micros-cost",
+      "name": "Cost that looks like micros",
+      "category": "watchout",
+      "severity": "advisory",
+      "engine": "regex",
+      "applies_to": "text",
+      "patterns": [
+        "\\b(?:cost|spend|spent|cpc|cpa)\\b[^.\\n]{0,25}?\\$?\\s?\\d{1,3}(?:,\\d{3}){3,}\\b",
+        "\\bcost_micros\\b"
+      ],
+      "message": "This cost may be in micros: '{match}'",
+      "why": "The Google Ads API reports cost in micros (1,000,000 = $1). An unconverted value looks a million times too big.",
+      "fix": "Check the source. If it's micros, divide by 1,000,000 before the number goes anywhere.",
+      "examples": {
+        "flag": [
+          "Total cost was 48,213,000,000 for the week."
+        ],
+        "pass": [
+          "Total cost was $48,213 for the week."
+        ]
+      },
+      "source": "Research rounds 1–3; locked 2026-10-12."
+    },
+    {
+      "id": "W-one-day-claim",
+      "slug": "one-day-claim",
+      "name": "Claim from a single day",
+      "category": "watchout",
+      "severity": "advisory",
+      "engine": "regex",
+      "applies_to": "text",
+      "patterns": [
+        "\\b(?:yesterday|overnight|this\\s+morning|in\\s+(?:a\\s+single|one)\\s+day|in\\s+24\\s+hours|on\\s+(?:monday|tuesday|wednesday|thursday|friday|saturday|sunday)\\s+alone)\\b[^.\\n]{0,60}\\b(?:up|down|rose|fell|jumped|dropped|doubled|tripled|halved|grew|increased|decreased|improved|declined|spiked|surged|crashed|soared|plunged|lift|lifted|gain|gained)\\b",
+        "\\b(?:up|down|rose|fell|jumped|dropped|doubled|tripled|halved|grew|increased|decreased|improved|declined|spiked|surged|crashed|soared|plunged|lift|lifted|gain|gained)\\b[^.\\n]{0,40}\\b(?:yesterday|overnight|this\\s+morning|in\\s+(?:a\\s+single|one)\\s+day|in\\s+24\\s+hours)\\b"
+      ],
+      "unless": "\\b(?:preliminary|early|one\\s+day\\s+is\\s+too|too\\s+early|settling|still\\s+coming\\s+in)\\b",
+      "message": "Claim from a single day: '{match}'",
+      "why": "One day is noise, and the most recent days are still collecting conversions.",
+      "fix": "Judge on 7 or more complete days, or label it a one-day blip.",
+      "examples": {
+        "flag": [
+          "Overnight we saw a 40% lift in conversions.",
+          "CPA dropped 30% yesterday."
+        ],
+        "pass": [
+          "Oct 1 to 7: conversions rose 40%.",
+          "Preliminary: CPA dropped 30% yesterday; one day is too early to call."
+        ]
+      },
+      "source": "Watchout rules for ad reports: flag when a claim could be luck, not signal (2026-10-12)."
+    },
+    {
+      "id": "W-platform-ai-summary",
+      "slug": "platform-ai-summary",
+      "name": "Platform AI summary repeated",
+      "category": "watchout",
+      "severity": "advisory",
+      "engine": "regex",
+      "applies_to": "text",
+      "patterns": [
+        "\\b(?:Ads\\s+Advisor|Analytics\\s+Advisor|Ask\\s+Advisor|Gemini\\s+in\\s+Google\\s+Ads|Meta\\s+AI|Meta\\s+business\\s+assistant|Muse)\\b[^.\\n]{0,60}\\b(?:says|said|found|recommends|recommended|suggests|identified|shows)\\b"
+      ],
+      "message": "Claim taken from a platform's own AI: '{match}'",
+      "why": "The platform's AI summary is written by the company that sells the ads. Its claims need checking before they're repeated.",
+      "fix": "Check the claim against the account data or backend before passing it on, or attribute it plainly.",
+      "examples": {
+        "flag": [
+          "Ads Advisor found that Sunday bids are too low."
+        ],
+        "pass": [
+          "Sunday CPA was $138 against $101 on other days."
+        ]
+      },
+      "source": "Research rounds 1–3; locked 2026-10-12."
+    },
+    {
+      "id": "W-platform-roas-as-cause",
+      "slug": "platform-roas-as-cause",
+      "name": "Platform ROAS stated as cause",
+      "category": "watchout",
+      "severity": "advisory",
+      "engine": "regex",
+      "applies_to": "text",
+      "patterns": [
+        "\\b(?:drove|driving|generated|delivered|caused|produced)\\b[^.\\n]{0,40}\\b(?:ROAS|revenue|conversions|sales)\\b",
+        "\\bROAS\\b[^.\\n]{0,40}\\b(?:proves?|shows?\\s+that|confirms?)\\b"
+      ],
+      "unless": "\\b(?:platform[- ]reported|as reported by|attributed|incremental|holdout|lift\\s+test|backend|shopify|crm|blended|MER)\\b",
+      "message": "Attribution stated as cause: '{match}'",
+      "why": "Platform ROAS is the platform grading its own homework. 'Drove' claims causation the attribution model can't prove.",
+      "fix": "Say 'platform-reported' or 'attributed', or check against backend revenue or a holdout.",
+      "examples": {
+        "flag": [
+          "The PMax campaign drove $84k in revenue."
+        ],
+        "pass": [
+          "The PMax campaign was attributed $84k in revenue (platform-reported)."
+        ]
+      },
+      "source": "Research rounds 1–3; locked 2026-10-12."
+    },
+    {
+      "id": "W-short-trend",
+      "slug": "short-trend",
+      "name": "Trend called on too few days",
+      "category": "watchout",
+      "severity": "advisory",
+      "engine": "regex",
+      "applies_to": "text",
+      "patterns": [
+        "\\b(?:over|in|across|during)\\s+the\\s+(?:last|past)\\s+(?:[1-6]|two|three|four|five|six)\\s+days?\\b[^.\\n]{0,80}\\b(?:trend|trending|consistently|steadily|declin\\w*|improv\\w*)\\b",
+        "\\b(?:trend|trending)\\b[^.\\n]{0,60}\\b(?:last|past)\\s+(?:[1-6]|two|three|four|five|six)\\s+days\\b",
+        "\\b(?:for|over)\\s+(?:[1-6]|two|three|four|five|six)\\s+(?:consecutive|straight|days\\s+in\\s+a\\s+row)\\s*(?:days)?\\b"
+      ],
+      "message": "Trend on fewer than 7 days: '{match}'",
+      "why": "Three days is noise, and the most recent days are still collecting conversions.",
+      "fix": "Call a trend only on 7 or more complete days, or say the data is too new to judge.",
+      "examples": {
+        "flag": [
+          "Over the last 3 days, CPA has been trending down.",
+          "Mobile CPA has increased for 3 consecutive days, indicating a downward trend."
+        ],
+        "pass": [
+          "Over the last 28 days, CPA fell 12%."
+        ]
+      },
+      "source": "Research rounds 1–3; locked 2026-10-12."
+    },
+    {
+      "id": "W-small-sample-size",
+      "slug": "small-sample-size",
+      "name": "Change claimed on a tiny sample",
+      "category": "watchout",
+      "severity": "advisory",
+      "engine": "regex",
+      "applies_to": "text",
+      "patterns": [
+        "\\b(?:up|down|rose|fell|jumped|dropped|doubled|tripled|halved|grew|increased|decreased|improved|declined|spiked|surged|crashed|soared|plunged|lift|lifted|gain|gained)\\b[^.\\n]{0,60}?\\b(?:n\\s?=\\s?|from\\s+|on\\s+|only\\s+)?[1-9]\\s+(?:conversions?|sales|orders|leads|purchases|clicks|signups|calls)\\b",
+        "\\bn\\s?=\\s?[1-9]\\b",
+        "\\b[1-9]\\s+(?:conversions?|sales|orders|leads|purchases)\\b[^.\\n]{0,40}\\b(?:up|down|rose|fell|jumped|dropped|doubled|tripled|halved|grew|increased|decreased|improved|declined|spiked|surged|crashed|soared|plunged|lift|lifted|gain|gained)\\b"
+      ],
+      "unless": "\\b(?:early|preliminary|too\\s+(?:few|small|early)|directional|small\\s+sample)\\b",
+      "message": "Change claimed on a tiny sample: '{match}'",
+      "why": "A rate built on fewer than 10 events swings on luck. 'Up 150%' on 4 conversions is noise.",
+      "fix": "Report the raw counts ('4 conversions vs 2') or wait for more data. Mark it 'early data' if it must be mentioned.",
+      "examples": {
+        "flag": [
+          "Conversions were up 150% (n=4).",
+          "Tablet sales doubled to 6 sales this week."
+        ],
+        "pass": [
+          "Conversions were up 15% on 450 conversions.",
+          "Early data: 8 conversions so far, too few to judge."
+        ]
+      },
+      "source": "Watchout rules for ad reports: flag when a claim could be luck, not signal (2026-10-12)."
+    },
+    {
+      "id": "W-spike-unexplained",
+      "slug": "spike-unexplained",
+      "name": "Spike or drop with no reason",
+      "category": "watchout",
+      "severity": "advisory",
+      "engine": "regex",
+      "applies_to": "text",
+      "patterns": [
+        "\\b(?:spend|conversions?|clicks|CPA|CPC|ROAS|revenue|impressions|traffic)\\b[^.\\n]{0,30}\\b(?:spiked|surged|jumped|crashed|plunged|doubled|tripled|halved|collapsed)\\b"
+      ],
+      "unless": "\\b(?:because|due\\s+to|after|when|launch|promo|holiday|black\\s+friday|outage|paused|budget|sale|test|competitor|\\()",
+      "message": "Spike or drop with no reason: '{match}'",
+      "why": "An unexplained spike invites the reader to make up a reason.",
+      "fix": "Name the cause if the original knows it (launch, holiday, outage, budget change). If not, flag it as unexplained.",
+      "examples": {
+        "flag": [
+          "Spend spiked 200% on Oct 15.",
+          "Conversions crashed on Friday."
+        ],
+        "pass": [
+          "Spend spiked 200% on Oct 15 because of Black Friday prep.",
+          "Conversions crashed on Friday after the campaign was paused."
+        ]
+      },
+      "source": "Watchout rules for ad reports: flag when a claim could be luck, not signal (2026-10-12)."
+    },
+    {
+      "id": "W-tiny-spend-waste",
+      "slug": "tiny-spend-waste",
+      "name": "Tiny spend called waste",
+      "category": "watchout",
+      "severity": "advisory",
+      "engine": "regex",
+      "applies_to": "text",
+      "patterns": [
+        "\\b(?:wasted?|wasting|wasteful|waste\\s+of)\\b[^.\\n]{0,60}\\$\\s?\\d{1,2}(?:\\.\\d+)?\\b(?!\\s?[km])",
+        "\\$\\s?\\d{1,2}(?:\\.\\d+)?\\b(?!\\s?[km])[^.\\n]{0,60}\\b(?:wasted?|wasting|without\\s+convert\\w*)\\b",
+        "[$€£]\\s?\\d{1,2}(?:\\.\\d+)?\\b(?!\\s?[km])\\s+(?:with|and)\\s+(?:0|zero|no)\\s+conversions\\b"
+      ],
+      "message": "Small spend flagged as waste: '{match}'",
+      "why": "A $10 line item in a $100k account isn't a finding. Flagging it costs the reader attention and the writer credibility.",
+      "fix": "Drop items under about 5% of spend unless they caused a total-level change.",
+      "examples": {
+        "flag": [
+          "Tablet traffic wasted $12 without converting.",
+          "Tablet devices spent $12.40 with 0 conversions in the last 7 days."
+        ],
+        "pass": [
+          "Tablet spend was $4,800 with 2 conversions."
+        ]
+      },
+      "source": "Research rounds 1–3; locked 2026-10-12."
+    },
+    {
+      "id": "W-volatile-rate-claim",
+      "slug": "volatile-rate-claim",
+      "name": "Volatile rate called a win or loss",
+      "category": "watchout",
+      "severity": "advisory",
+      "engine": "regex",
+      "applies_to": "text",
+      "patterns": [
+        "\\b(?:conversion\\s+rate|CVR|CTR|click[- ]through\\s+rate|CPL|cost\\s+per\\s+lead)\\b[^.\\n]{0,30}\\b(?:jumped|spiked|surged|soared|crashed|plunged|improved|doubled|halved)\\b"
+      ],
+      "unless": "\\b(?:directional|early|CI\\b|confidence|interval|±|n\\s?=\\s?\\d{2,}|\\d{2,}\\s+(?:conversions|clicks|leads))",
+      "message": "Volatile rate called a win or loss: '{match}'",
+      "why": "Rates like conversion rate and CTR bounce week to week. A one-week jump often reverses.",
+      "fix": "Show the base it rests on (clicks, conversions) or call it directional.",
+      "examples": {
+        "flag": [
+          "Conversion rate jumped 25% this week.",
+          "CTR soared to 5.2%."
+        ],
+        "pass": [
+          "Conversion rate rose to 3.2% on 1,200 clicks.",
+          "CTR improved to 5.2%, an early signal."
+        ]
+      },
+      "source": "Watchout rules for ad reports: flag when a claim could be luck, not signal (2026-10-12)."
+    }
+  ]
+}

@@ -1,0 +1,22 @@
+id: A-success-metric-stated
+slug: success-metric-stated
+name: Success is defined
+category: actions
+severity: warning
+engine: judge
+applies_to: text
+rubric:
+  question: Does each action say how we'll know it worked?
+  anchors:
+    0: No result or threshold to judge the action by
+    1: A metric is named but no threshold or date
+    2: 'A threshold and a date: ''ROAS at 1.2 or above by Oct 31'''
+message: Does each action say how we'll know it worked?
+why: Without a bar to clear, every result can be called a success.
+fix: 'Add the threshold and date from the original. If the original has none, flag it. noro never invents what the original lacks: if it''s missing, flag it for the writer.'
+examples:
+  flag:
+  - Increase the daily budget.
+  pass:
+  - Raise the daily budget to $100; keep it if ROAS holds at 1.2 or above through Oct 31.
+source: 'Action rules for ad reports: recommendations clear, tied to data, executable (locked 2026-10-12).'

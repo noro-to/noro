@@ -1,0 +1,29 @@
+{
+  "id": "11-day-of-week-dense",
+  "format_in": "report section with chart (visual + text)",
+  "format_out": "one-page visual",
+  "platform": "google_ads",
+  "audience": "client",
+  "slop_types": [
+    "too dense: two periods for seven days when the point is one day",
+    "side column of conversions per day the text never uses",
+    "the headline repeated three times (intro, chart title, subtitle)",
+    "asides that don't change the decision (Thursday's old gap, weekend share)",
+    "unfilled AI scaffold placeholders left in the report"
+  ],
+  "planted_traps": [
+    {"type": "hypothesis-upgraded", "where": "after-the-click cause", "why": "the original says it is a hypothesis; a rewrite must not state it as fact"},
+    {"type": "scaffold-left-in", "where": "the two bracketed lines at the end", "why": "empty sections from an AI outline must be cut, not rewritten"}
+  ],
+  "expected_watchouts": [],
+  "numbers": ["$95", "$109", "$138", "$101", "$127", "16.4", "15.1", "16.9", "14.2", "13.8", "12.9", "9.6", "9.8%", "14.1%", "$13.52", "22%", "2026"],
+  "derived_in_gold": [],
+  "cut_list": [
+    "January–April comparison (the decision is about now)",
+    "conversions-per-day column",
+    "Thursday's closed January–April gap",
+    "weekend share of spend and conversions (22% / 22%)",
+    "two empty placeholder sections"
+  ],
+  "notes": "Recreated from a real AI-written section the owner flagged as too dense. All numbers changed. The gold chart starts its bars at $0, following the honest-axes rule."
+}

@@ -1,0 +1,36 @@
+{
+  "id": "02-slack-metric-bombing",
+  "format_in": "internal Slack update (written)",
+  "format_out": "Slack/Teams",
+  "platform": "google_ads",
+  "audience": "internal",
+  "slop_types": [
+    "metric bombing: 25 metrics in five sections, with no point stated",
+    "redundant metrics (interaction rate repeats CTR on Search)",
+    "emoji as section headers and bold-label bullets",
+    "primary KPI (demo requests) buried in the middle of the list",
+    "puffery closer ('really strong week', 'positive momentum across the board', 'competitive landscape')",
+    "offer to 'deep dive' instead of a point"
+  ],
+  "planted_traps": [
+    {"type": "micro-conversions-as-conversions", "where": "All conversions: 1,187", "why": "it counts pricing-page views, video plays and engaged visits; a rewrite must not present it as leads or put it next to demos as if comparable"},
+    {"type": "trend-from-one-week", "where": "'Impressions and impression share are trending up'", "why": "one week-over-week change (+1.9 pp) is not a trend, and lost IS (rank) at 49.2% says more about visibility than the gain does"},
+    {"type": "outlier-buried", "where": "Competitor – Conquest: 3 demos on $4,980 spend", "why": "the one line that might change a decision sits last in a list and is excused as 'still ramping'"}
+  ],
+  "expected_watchouts": [
+    {"type": "unsupported-benefit", "where": "Conquest 'is building valuable awareness against the big players'", "why": "no awareness metric is reported; the only measured result is 3 demos on $4,980"},
+    {"type": "trend-from-one-week", "where": "'Impressions and impression share are trending up'", "why": "a single week-over-week change is called a trend"}
+  ],
+  "numbers": ["$26,370", "4.2%", "412,880", "9.6%", "5,214", "3.1%", "1.26%", "-0.08 pp", "$5.06", "1.0%", "$412", "-5.6%", "1.26%", "64", "10.3%", "1,187", "312", "1.23%", "41", "22", "-8.3%", "38.4%", "+1.9 pp", "27.1%", "11.6%", "49.2%", "12.4%", "6,902", "4,118", "59.7%", "1m 12s", "5,370", "21", "$96", "26", "$388", "3", "$4,980", "14", "$663"],
+  "derived_in_gold": [],
+  "cut_list": [
+    "impressions, clicks, CTR, CPC and interaction rate",
+    "impression-share block (search, top, abs. top, lost to rank, lost to budget)",
+    "GA4 site block (sessions, engaged sessions, engagement time, new users)",
+    "view-through conversions and conversion rate",
+    "free-trial starts (22, -8.3%): a change of a couple of trials",
+    "'strong week' and 'trending up' closer",
+    "the 'valuable awareness' defence of Conquest"
+  ],
+  "notes": "Synthetic B2B SaaS (route-planning software). Numbers tie out: cost per demo = $26,370 / 64; campaign demos sum to 64 and campaign spend sums to $26,370 (PMax 14 x $663 = $9,282, within rounding). The gold keeps the KPI, where demos came from, the Conquest outlier as a fact without a verdict, and a warning not to read all conversions as leads."
+}

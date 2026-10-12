@@ -1,0 +1,26 @@
+id: T-colon-reveal
+slug: colon-reveal
+name: Colon reveal
+category: tells
+severity: warning
+engine: regex
+applies_to: text
+patterns:
+  - '\b(?:the\s+)?(?:best|worst|real|good|bad|big|biggest|key|short|surprising|interesting|important)\s+(?:part|news|story|takeaway|thing|insight|answer|win|lesson|surprise|twist)\s*:'
+  - '\bhere[''’]s\s+(?:the\s+(?:thing|kicker|catch|deal|twist|truth|story|takeaway)|what\s+(?:happened|changed|matters|we\s+found|stood\s+out)|why|how)\s*:'
+  - '\bthe\s+(?:kicker|catch|twist|upshot|verdict|bottom\s+line|takeaway|punchline|secret)\s*:'
+  - '\b(?:one|1)\s+(?:word|thing)\s*:'
+message: "Colon reveal: '{match}'"
+why: "'The best part: it learns' builds suspense in a report nobody wants suspense in. Plain labels like 'Why:' and 'Next:' are fine; drumroll labels aren't."
+fix: "Drop the setup and state the fact: 'CPA fell 12% while spend grew 8%.'"
+examples:
+  flag:
+    - "The best part: CPA fell while spend grew."
+    - "Here's what happened: Sunday got expensive."
+    - "The bottom line: ROAS beat target."
+    - "The kicker: none of it was incremental."
+  pass:
+    - "Why: CPC held at $13.52, but Sunday's conversion rate is 9.8%."
+    - "Next: ask the client how Sunday calls are handled."
+    - "Since May, Sunday costs $138 per conversion. Other days: $101."
+source: "11-ai-writing-tells.md (colon reveal; ban list #3)"

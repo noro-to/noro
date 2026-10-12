@@ -1,0 +1,24 @@
+id: V-pie-three-slices
+slug: pie-three-slices
+name: Pie charts have at most three slices
+category: visual
+severity: warning
+engine: judge
+applies_to: visual
+message: If there's a pie or donut, does it have three slices or fewer?
+why: People can't compare angles. Beyond three slices, a sorted bar chart reads faster and truer.
+fix: Use a sorted horizontal bar chart. Keep a pie only for a part of a whole with three or fewer parts.
+rubric:
+  question: If there's a pie or donut, does it have three slices or fewer?
+  anchors:
+    0: Pie or donut with 6 or more slices
+    1: Pie with 4 or 5 slices
+    2: No pie, or a pie with 1 to 3 slices
+examples:
+  flag:
+  - Donut of spend across 9 campaigns
+  - Pie with 5 channel slices
+  pass:
+  - Sorted bar chart of spend across 9 campaigns
+  - 'Pie with 2 slices: brand vs non-brand spend'
+source: 'Design principle: clarity over decoration. Locked chart rules, 2026-10-12.'

@@ -1,0 +1,22 @@
+id: V-contrast-aa
+slug: contrast-aa
+name: Readable contrast
+category: visual
+severity: warning
+engine: judge
+applies_to: visual
+message: Does all text meet WCAG AA contrast against its background?
+why: Faint labels get skipped, and skipped labels mean misread charts.
+fix: Darken text to at least 4.5:1 contrast. Don't put text on colored fills.
+rubric:
+  question: Does all text meet WCAG AA contrast against its background?
+  anchors:
+    0: Light gray text on white, or text on busy fills
+    1: Mostly fine, a few faint labels
+    2: All text meets AA (4.5:1 for small text)
+examples:
+  flag:
+  - Pale gray axis labels on white
+  pass:
+  - Dark gray labels, black title
+source: 'Design principle: minimal friction. Locked chart rules, 2026-10-12.'

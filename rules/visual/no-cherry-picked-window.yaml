@@ -1,0 +1,22 @@
+id: V-no-cherry-picked-window
+slug: no-cherry-picked-window
+name: No cherry-picked window
+category: visual
+severity: error
+engine: judge
+applies_to: visual
+message: Does the date window show the trend fairly, not start or stop where it flatters?
+why: Choose the window and you choose the story. Readers can't see what was left out.
+fix: Use a standard window, or say why this one.
+rubric:
+  question: Does the date window show the trend fairly, not start or stop where it flatters?
+  anchors:
+    0: Window starts at a low point or ends at a peak to exaggerate
+    1: Window is short with no reason given
+    2: Window is standard (week, month, quarter) or justified
+examples:
+  flag:
+  - ROAS chart starting the week after an outage
+  pass:
+  - ROAS for the full quarter, the outage week labeled
+source: 'Design principle: honesty first. Locked chart rules, 2026-10-12.'

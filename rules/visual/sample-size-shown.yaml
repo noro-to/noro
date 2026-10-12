@@ -1,0 +1,22 @@
+id: V-sample-size-shown
+slug: sample-size-shown
+name: Sample size shown when small
+category: visual
+severity: warning
+engine: judge
+applies_to: visual
+message: When a value rests on fewer than 30 observations, is n shown?
+why: A 50% conversion rate on 4 clicks is noise. Without n it looks like a finding.
+fix: Show n next to the value, or group small segments.
+rubric:
+  question: When a value rests on fewer than 30 observations, is n shown?
+  anchors:
+    0: Rates on tiny samples with no n
+    1: n shown somewhere but not near the value
+    2: n shown next to any value under 30 observations
+examples:
+  flag:
+  - Tablet CVR 50% (from 4 clicks, not shown)
+  pass:
+  - Tablet CVR 50% (n = 4, too small to judge)
+source: 'Design principle: honesty first. Locked chart rules, 2026-10-12.'

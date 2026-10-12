@@ -1,0 +1,23 @@
+id: P-significant-without-number
+slug: significant-without-number
+name: '"Significant" with no number'
+category: specificity
+severity: warning
+engine: regex
+applies_to: text
+patterns:
+  - '\b(?:significant(?:ly)?|substantial(?:ly)?|considerabl[ey]|dramatic(?:ally)?|sizable|sizeable)\b'
+unless: '\d'
+message: "'{match}' with no number in the sentence"
+why: "To an analyst, 'significant' means a test passed. To a client it means 'big'. With no number, neither reader knows how big."
+fix: "Say the number: 'CPA rose 39% to $61.' Use 'significant' only for a test result, with its threshold: 'significant at 95% on 2,400 conversions'."
+examples:
+  flag:
+    - "CPA increased significantly this month."
+    - "Sunday saw a substantial drop in conversion rate."
+    - "There was a dramatic shift in spend toward PMax."
+  pass:
+    - "CPA rose 39% to $61."
+    - "The lift is significant at 95% confidence on 2,400 conversions."
+    - "Sunday's conversion rate fell from 14.1% to 9.8%."
+source: "11-ai-writing-tells.md ban list #2; earlier draft rule V3"

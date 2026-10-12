@@ -1,0 +1,23 @@
+id: A-actions-tied-to-findings
+slug: actions-tied-to-findings
+name: Every action ties to a finding
+category: actions
+severity: error
+engine: judge
+applies_to: text
+rubric:
+  question: Does each action follow from a finding stated in the report?
+  anchors:
+    0: Actions float with no link to any finding
+    1: Some actions tie to findings, others are generic
+    2: Each action follows from a specific finding
+message: Does each action follow from a finding stated in the report?
+why: An action with no finding behind it reads as boilerplate, and the reader can't judge whether to do it.
+fix: 'Put each action next to the finding it answers. Cut actions with no finding behind them. noro never invents what the original lacks: if it''s missing, flag it for the writer.'
+examples:
+  flag:
+  - 'Search ROAS fell 20%. Next: test new ad copy on Display.'
+  - 'Recommendation: review performance daily.'
+  pass:
+  - 'Search ROAS fell 20% on broad match. Next: pause the 12 broad-match keywords below 1.0 ROAS.'
+source: 'Action rules for ad reports: recommendations clear, tied to data, executable (locked 2026-10-12).'

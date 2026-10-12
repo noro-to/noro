@@ -1,0 +1,22 @@
+id: V-baseline-visible
+slug: baseline-visible
+name: Baseline or prior period visible
+category: visual
+severity: warning
+engine: judge
+applies_to: visual
+message: Is the baseline the claim depends on visible on the chart?
+why: '''Up 40%'' means nothing if the reader can''t see from what.'
+fix: Show the prior period or baseline as a reference line or a muted bar.
+rubric:
+  question: Is the baseline the claim depends on visible on the chart?
+  anchors:
+    0: A change is claimed but the before isn't shown
+    1: Before shown only in text
+    2: Before and after both visible
+examples:
+  flag:
+  - Bar for October only, title 'Conversions up 40%'
+  pass:
+  - September muted, October in the accent color
+source: 'Design principle: context always included. Locked chart rules, 2026-10-12.'

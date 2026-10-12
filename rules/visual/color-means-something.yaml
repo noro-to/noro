@@ -1,0 +1,23 @@
+id: V-color-means-something
+slug: color-means-something
+name: Color carries meaning
+category: visual
+severity: warning
+engine: judge
+applies_to: visual
+message: Does each color mean something, used the same way across every chart?
+why: If spend is blue in one chart and orange in the next, the reader has to relearn every chart.
+fix: Fix one color per metric for the whole report. Use red and green only for bad and good.
+rubric:
+  question: Does each color mean something, used the same way across every chart?
+  anchors:
+    0: Colors are decorative or change meaning between charts
+    1: Mostly consistent
+    2: Same metric same color everywhere; red only for loss, green only for gain
+examples:
+  flag:
+  - Spend blue in chart 1, orange in chart 2
+  - Red used for the best campaign
+  pass:
+  - Spend blue in every chart; losses red
+source: 'Design principle: consistency as trust. Locked chart rules, 2026-10-12.'

@@ -1,0 +1,18 @@
+id: W-platform-ai-summary
+slug: platform-ai-summary
+name: Platform AI summary repeated
+category: watchout
+severity: advisory
+engine: regex
+applies_to: text
+patterns:
+- \b(?:Ads\s+Advisor|Analytics\s+Advisor|Ask\s+Advisor|Gemini\s+in\s+Google\s+Ads|Meta\s+AI|Meta\s+business\s+assistant|Muse)\b[^.\n]{0,60}\b(?:says|said|found|recommends|recommended|suggests|identified|shows)\b
+message: 'Claim taken from a platform''s own AI: ''{match}'''
+why: The platform's AI summary is written by the company that sells the ads. Its claims need checking before they're repeated.
+fix: Check the claim against the account data or backend before passing it on, or attribute it plainly.
+examples:
+  flag:
+  - Ads Advisor found that Sunday bids are too low.
+  pass:
+  - Sunday CPA was $138 against $101 on other days.
+source: Research rounds 1–3; locked 2026-10-12.

@@ -1,0 +1,22 @@
+id: V-date-range-listed
+slug: date-range-listed
+name: Date range always listed
+category: visual
+severity: error
+engine: judge
+applies_to: visual
+message: Does the chart say exactly which dates it covers?
+why: Every number depends on its window. Without it, the chart can't be checked.
+fix: 'Add the exact range: ''May 1 to Aug 31, 2026''.'
+rubric:
+  question: Does the chart say exactly which dates it covers?
+  anchors:
+    0: No dates anywhere
+    1: Vague ('last month', 'recently')
+    2: Exact range in the title, subtitle or caption
+examples:
+  flag:
+  - Title 'CPA by day of week' with no dates
+  pass:
+  - Subtitle 'Cost per conversion, May to August 2026'
+source: 'Design principle: context always included. Locked chart rules, 2026-10-12.'

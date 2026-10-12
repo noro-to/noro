@@ -1,0 +1,26 @@
+id: V-brevity-hierarchy
+slug: brevity-hierarchy
+name: Brevity and hierarchy
+category: visual
+severity: warning
+engine: judge
+applies_to: visual
+message: "Can the reader get the point in 10 seconds?"
+why: "The ADHD reviewer needs extreme brevity: one insight per visual, no walls of text, a hierarchy that makes the point obvious."
+fix: "Cut caption text. Keep one insight per chart. Make the title the point, put one accent color on the key data, gray the rest, remove decoration."
+rubric:
+  question: "Is the hierarchy clear, and can the reader get the point in 10 seconds?"
+  anchors:
+    0: "Wall of text; several competing insights; flat hierarchy; title doesn't answer 'so what'"
+    1: "One main insight, but secondary details distract or the caption runs long"
+    2: "Title answers 'so what' in one sentence. One insight. Key data in the accent color, the rest gray. Caption under 20 words."
+examples:
+  flag:
+    - "Long caption explaining methodology, caveats, and three different insights; title is generic 'Performance by Channel'"
+    - "Five different colors, gridlines, legend with 8 items, title doesn't say what this means"
+    - "Chart with 15 bars and a 3-line explanation of what changed and why"
+  pass:
+    - "Title: 'Search drove 60% of new revenue'. Search in the accent color, the rest gray. Caption: 'Q3 vs Q2, n=8K users'."
+    - "Bar chart, one accent color on the highest bar. Title: 'Mobile spend increased 45%'. No gridlines, no legend."
+    - "One metric over time as a smooth line. Title: 'Conversion rate rose through August'. One color."
+source: "Design principle: minimal friction. ADHD reader persona."
