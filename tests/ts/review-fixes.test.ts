@@ -296,3 +296,12 @@ describe('D8f: errors about an unreadable export show short header names only, n
     await expect(factsFor(f)).rejects.not.toThrow(/TOPSECRET/);
   });
 });
+
+describe('D8g: the plugin MCP entry needs the npm package, and the docs say so', () => {
+  it('plugin.json runs npx @noro-to/noro mcp; agents.md explains it until publish', () => {
+    const plugin = JSON.parse(readFileSync(join(ROOT, '.claude-plugin/plugin.json'), 'utf8'));
+    expect(plugin.mcpServers.noro).toEqual({ command: 'npx', args: ['-y', '@noro-to/noro', 'mcp'] });
+    const agents = readFileSync(join(ROOT, 'docs/install/agents.md'), 'utf8');
+    expect(agents).toMatch(/registers the noro MCP server as `npx -y @noro-to\/noro mcp`[\s\S]{0,200}needs `@noro-to\/noro` on npm/);
+  });
+});

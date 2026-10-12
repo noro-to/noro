@@ -35,6 +35,8 @@ In Claude Code:
 
 From a shell, the same is `claude plugin marketplace add noro-to/noro` and `claude plugin install noro@noro`. The plugin adds the `noro` skill. Ask for a report in plain words, or run `/noro:noro`.
 
+The plugin also registers the noro MCP server as `npx -y @noro-to/noro mcp` (in `.claude-plugin/plugin.json`). That command needs `@noro-to/noro` on npm. Until the package is published, the plugin's MCP server won't start: the skill still works with noro installed from GitHub (`npm i -g github:noro-to/noro`), and you can add the MCP server yourself with `noro mcp` as the command ([MCP](#claude-code)).
+
 ## Codex
 
 ```bash
