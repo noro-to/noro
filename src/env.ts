@@ -10,9 +10,10 @@
 // Secrets never leave this module in clear: callers that show a key show its
 // fingerprint() only.
 
-import { chmodSync, copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { randomBytes } from 'node:crypto';
+import { chmodSync, existsSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
-import { dirname, join } from 'node:path';
+import { basename, dirname, join } from 'node:path';
 
 /** ~/.config/noro/.env under the given home. */
 export function userEnvPath(home: string = homeDir()): string {
@@ -182,6 +183,23 @@ export interface WriteEnvResult {
   changed: string[];
 }
 
+/**
+ * Write a file only its owner can read, with no moment where the secrets sit in a wider mode:
+ * a new temp file created with mode 600 in the same folder, then renamed over the target.
+ * (writeFileSync on an existing file would keep its old mode until a chmod afterwards.)
+ */
+export function writePrivate(file: string, data: string): void {
+  const tmp = join(dirname(file), `.${basename(file)}.${process.pid}.${randomBytes(4).toString('hex')}.tmp`);
+  try {
+    writeFileSync(tmp, data, { mode: 0o600, flag: 'wx' });
+    chmodSync(tmp, 0o600);
+    renameSync(tmp, file);
+  } catch (err) {
+    rmSync(tmp, { force: true });
+    throw err;
+  }
+}
+
 /** Merge `updates` into a .env file: back the old one up to <file>.bak, write with mode 600. */
 export function writeEnvFile(file: string, updates: Record<string, string | null>): WriteEnvResult {
   const dir = dirname(file);
@@ -194,11 +212,9 @@ export function writeEnvFile(file: string, updates: Record<string, string | null
   let backup: string | undefined;
   if (existsSync(file)) {
     backup = `${file}.bak`;
-    copyFileSync(file, backup);
-    chmodSync(backup, 0o600);
+    writePrivate(backup, before);
   }
-  writeFileSync(file, mergeEnv(before, updates), { mode: 0o600 });
-  chmodSync(file, 0o600); // writeFileSync keeps the mode of an existing file
+  writePrivate(file, mergeEnv(before, updates));
   return { path: file, ...(backup ? { backup } : {}), changed };
 }
 

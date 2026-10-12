@@ -31,7 +31,7 @@ When an AI agent runs noro (plugin, skill or `noro mcp`), the agent receives the
 
 ## What noro stores locally
 
-- `.noro/runs/*.sqlite` in the folder you run noro from: per-run checkpoints with your ingested data, facts, model requests and outputs. Delete `.noro/` to remove them.
+- `.noro/runs/*.sqlite` in the folder you run noro from: per-run checkpoints with your ingested data (client data), facts, model requests and outputs. noro creates `.noro/` and `.noro/runs/` readable only by you (mode 700) and each checkpoint file mode 600. Delete `.noro/` to remove them. Don't commit `.noro/runs/` or upload it as a CI artifact; the scheduled-run template caches it and attaches only the report ([docs/install/scheduled.md](docs/install/scheduled.md)).
 - `.env` (current folder) or `~/.config/noro/.env`: your keys, in plain text. Each key is sent only to its own provider. Keep these files out of version control (`.env` and `.noro/` are in `.gitignore`).
 
 ## Reporting

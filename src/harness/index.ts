@@ -32,8 +32,8 @@
 // unless `acceptWarnings` is set or `confirmWarnings` says yes.
 
 import { createHash } from 'node:crypto';
-import { mkdirSync, readFileSync } from 'node:fs';
-import { extname, join, resolve } from 'node:path';
+import { chmodSync, closeSync, existsSync, mkdirSync, openSync, readFileSync, statSync } from 'node:fs';
+import { basename, dirname, extname, join, resolve } from 'node:path';
 import { BACKGROUND_CONTEXT } from '@earendil-works/chord/context';
 import { createModels } from '@earendil-works/pi-ai/models';
 import { createRegistry, defineExtension, defineTask, Harness } from '@earendil-works/pi-durable';
@@ -177,6 +177,31 @@ interface TaskInput {
 const TASK_KIND = 'noro.pipeline';
 const words = (t: string) => t.split(/\s+/).filter(Boolean).length;
 const lean = (c: CheckReport): CheckReport => ({ ...c, engine: null });
+
+/**
+ * A run's checkpoints hold client data (ingested rows, facts, model requests and outputs), so the
+ * state folders are 700 and the SQLite file is created 600 before SQLite opens it. (An empty file
+ * is a new database to SQLite, and its -wal and -shm files take the database file's mode.)
+ * Folders and files from an older noro are tightened too, when we own them: runs/ always, the
+ * state folder only when it is a .noro folder (NORO_STATE_DIR may point at a shared folder).
+ */
+export function preparePrivateDb(stateDir: string, dbPath: string): void {
+  const runs = dirname(dbPath);
+  mkdirSync(runs, { recursive: true, mode: 0o700 });
+  tighten(runs, 0o700);
+  if (basename(stateDir) === '.noro') tighten(stateDir, 0o700);
+  if (!existsSync(dbPath)) closeSync(openSync(dbPath, 'a', 0o600));
+  for (const f of [dbPath, `${dbPath}-wal`, `${dbPath}-shm`]) if (existsSync(f)) tighten(f, 0o600);
+}
+
+function tighten(path: string, mode: number): void {
+  if (process.platform === 'win32') return;
+  try {
+    if ((statSync(path).mode & 0o777) !== mode) chmodSync(path, mode);
+  } catch {
+    // Not ours to change (a shared or mounted folder): leave it.
+  }
+}
 
 /** Where a run's checkpoints live: <stateDir>/runs/<runKey>.sqlite. */
 export function runDbPath(stateDir: string, runKey: string): string {
@@ -481,8 +506,9 @@ export async function runNoro(input: RunNoroInput): Promise<NoroReport> {
   const ctx = BACKGROUND_CONTEXT;
   // One SQLite file per run key. Pi Durable's scheduler resumes every pending task in a storage, so
   // keeping each input's run in its own file means opening one run never wakes another.
-  mkdirSync(join(stateDir, 'runs'), { recursive: true });
-  const harness = await Harness.open(await openNodeSqliteStorage(runDbPath(stateDir, runKey)), { models: createModels(), registry }, ctx);
+  const dbPath = runDbPath(stateDir, runKey);
+  preparePrivateDb(stateDir, dbPath);
+  const harness = await Harness.open(await openNodeSqliteStorage(dbPath), { models: createModels(), registry }, ctx);
   let closed = false;
   const close = async () => {
     if (!closed) {

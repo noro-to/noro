@@ -153,3 +153,51 @@ describe('D7: --model values', () => {
     expect(r.stderr).toContain('noro: write with canned test models (NORO_MOCK_MODELS=1)');
   });
 });
+
+describe('D8a/b: secrets and run state are private from the first byte', () => {
+  it.skipIf(process.platform === 'win32')('writePrivate replaces a world-readable .env with a new mode-600 file (never rewritten in place)', async () => {
+    const { writeEnvFile } = await import('../../src/env.js');
+    const { readdirSync, statSync, chmodSync } = await import('node:fs');
+    const dir = tmp();
+    const file = join(dir, '.env');
+    writeFileSync(file, 'OPENROUTER_API_KEY=old\n');
+    chmodSync(file, 0o644);
+    const before = statSync(file).ino;
+    const r = writeEnvFile(file, { OPENROUTER_API_KEY: 'sk-or-v1-new' });
+    expect(statSync(file).ino).not.toBe(before); // a fresh file, created 600, renamed into place
+    expect(statSync(file).mode & 0o777).toBe(0o600);
+    expect(statSync(r.backup!).mode & 0o777).toBe(0o600);
+    expect(readFileSync(file, 'utf8')).toContain('sk-or-v1-new');
+    expect(readdirSync(dir).sort()).toEqual(['.env', '.env.bak']); // no temp file left
+  });
+
+  it.skipIf(process.platform === 'win32')('a run creates .noro and .noro/runs as 700 and its checkpoint file as 600', async () => {
+    const { statSync, readdirSync } = await import('node:fs');
+    const { runNoro } = await import('../../src/harness/index.js');
+    const { createMockChat, createMockJev } = await import('../../src/harness/mock.js');
+    const { loadConfig } = await import('../../src/config.js');
+    const cwd = tmp();
+    const stateDir = join(cwd, '.noro');
+    const old = process.umask(0o022);
+    try {
+      await runNoro({ file: FIXTURE, cwd, stateDir, config: { ...loadConfig({}), apiKey: undefined }, clients: { chat: createMockChat(), jev: createMockJev() }, decide: async (f) => ({ flagId: f.id, action: 'keep' }) });
+    } finally {
+      process.umask(old);
+    }
+    expect(statSync(stateDir).mode & 0o777).toBe(0o700);
+    expect(statSync(join(stateDir, 'runs')).mode & 0o777).toBe(0o700);
+    const dbs = readdirSync(join(stateDir, 'runs'));
+    expect(dbs.some((f) => f.endsWith('.sqlite'))).toBe(true);
+    for (const f of dbs) expect(statSync(join(stateDir, 'runs', f)).mode & 0o777, f).toBe(0o600);
+  });
+
+  it('the weekly workflow template caches .noro/runs and uploads only the report', () => {
+    for (const f of ['examples/noro-weekly.yml', 'docs/install/scheduled.md']) {
+      const text = readFileSync(join(ROOT, f), 'utf8');
+      const upload = text.slice(text.indexOf('actions/upload-artifact'));
+      expect(upload, f).toMatch(/path: report\.md\n/);
+      expect(upload.slice(0, upload.indexOf('report.md') + 10), f).not.toContain('.noro');
+      expect(text, f).toMatch(/actions\/cache@v\d+\n\s+with:\n\s+path: \.noro\/runs/);
+    }
+  });
+});

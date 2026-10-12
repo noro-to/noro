@@ -48,14 +48,12 @@ jobs:
         if: always()
         with:
           name: noro-report
-          path: |
-            report.md
-            .noro/runs/
+          path: report.md
 ```
 
-- **Cache.** `.noro/runs` holds one checkpoint file per run. Caching it means a re-run of a failed job resumes where it stopped instead of paying for the model calls again.
+- **Cache.** `.noro/runs` holds one checkpoint file per run. Caching it means a re-run of a failed job resumes where it stopped instead of paying for the model calls again. The checkpoints hold client data (ingested export rows, facts, model requests and outputs), so they are cached and never uploaded as an artifact. Anyone who can run workflows in the repo can restore the cache, so use a private repo.
 - **Concurrency.** The `noro` group stops two runs from writing the same checkpoint.
-- **Artifact.** The report, plus the checkpoint for a failed run, is attached to every job.
+- **Artifact.** Only the report is attached to each job. Don't add `.noro/` to the artifact: artifacts can be downloaded by anyone with read access to the repo, and on a public repo that is everyone.
 - **Secrets.** Add one secret per variable your provider needs, for example `ANTHROPIC_API_KEY`, and pass it in `env`. Set `NORO_MODEL` there too if you don't use the default.
 - **Committed config.** Commit `.noro/adapters/` and `.noro/personas/` if you use them. They are settings, not cache.
 

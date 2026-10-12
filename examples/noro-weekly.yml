@@ -4,7 +4,9 @@
 # 2. Add OPENROUTER_API_KEY under Settings > Secrets and variables > Actions.
 # 3. Commit an export at exports/latest.csv, or add a step that downloads this week's export.
 #
-# The report is attached to each run as the "noro-report" artifact.
+# The report is attached to each run as the "noro-report" artifact. .noro/runs is
+# cached (never uploaded as an artifact): it holds client data, so keep this in a
+# private repo.
 # Docs: https://github.com/noro-to/noro/blob/main/docs/install/scheduled.md
 name: noro weekly
 
@@ -32,6 +34,7 @@ jobs:
           node-version: "24"
 
       # One checkpoint file per run: a re-run of a failed job resumes instead of paying again.
+      # The checkpoints hold client data (ingested rows, facts, model outputs): cache only.
       - uses: actions/cache@v6
         with:
           path: .noro/runs
@@ -54,6 +57,4 @@ jobs:
         if: always()
         with:
           name: noro-report
-          path: |
-            report.md
-            .noro/runs/
+          path: report.md
