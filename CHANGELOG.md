@@ -34,6 +34,7 @@ The skill only ran inside Claude.ai and Claude Code, and it could only rewrite a
 - Rewords at deliver go through the same check as model output.
 - Ingest warnings reach the report (`warnings` in `--json`, stderr otherwise). A plain cost column that looks like micros stops the run before any model call unless you pass `--accept-warnings` or confirm.
 - An unknown `--format` is a usage error (exit 1). A report whose writer keeps breaking the digit rule exits 2. Mock runs never resume under real models. `<cwd>/.noro/adapters` loads when `cwd` is not the process directory. The footer says "1 note".
+- The engine call splits the Python command the same way the lookup does, so `py -3` on Windows and `NORO_PYTHON="python3 -I"` run the check step.
 - A change cited right after "rose" or "fell" renders without its redundant sign ("rose 38%").
 - Revision mode: a number word the pasted original already used ("the two", "six months", "nine campaigns") may stay in the rewrite, since no code computed it. A number word the original didn't use is still refused, a bare scale word ("million") never passes, and generate mode stays strict.
 

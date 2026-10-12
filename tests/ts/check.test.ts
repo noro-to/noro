@@ -1,5 +1,8 @@
+import { chmodSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { check, EngineError, factsToLedger, grade } from '../../src/check/index.js';
+import { check, ENGINE_PATH, EngineError, factsToLedger, grade, splitPythonCommand } from '../../src/check/index.js';
 import { computeFacts } from '../../src/compute/index.js';
 import type { Dataset, FactsTable, Row } from '../../src/schema.js';
 
@@ -148,5 +151,35 @@ describe('grade', () => {
   it('a missing python throws EngineError', async () => {
     const err = await grade('x', { python: '/nonexistent/python3' }).catch((e: unknown) => e) as EngineError;
     expect(err).toBeInstanceOf(EngineError);
+  });
+});
+
+describe('multi-word Python commands (py -3, NORO_PYTHON="python3 -I")', () => {
+  it('splits the command into the binary and its leading arguments', () => {
+    expect(splitPythonCommand('python3')).toEqual({ cmd: 'python3', pre: [] });
+    expect(splitPythonCommand('py -3')).toEqual({ cmd: 'py', pre: ['-3'] });
+    expect(splitPythonCommand('  python3   -I ')).toEqual({ cmd: 'python3', pre: ['-I'] });
+  });
+
+  it('runs the engine through "python3 -I"', async () => {
+    const g = (await grade('Overall, a mixed picture.', { python: 'python3 -I' })) as any;
+    expect(typeof g.score).toBe('number');
+  });
+
+  it.skipIf(process.platform === 'win32')('passes the leading arguments before the engine path', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'noro-fakepy-'));
+    try {
+      const log = join(dir, 'args.txt');
+      const fake = join(dir, 'fakepy');
+      // Like `py -3`: records its arguments, drops the version flag and runs python3.
+      writeFileSync(fake, `#!/bin/sh\nprintf '%s\\n' "$@" > "${log}"\n[ "$1" = "-3" ] || exit 9\nshift\nexec python3 "$@"\n`);
+      chmodSync(fake, 0o755);
+      const g = (await grade('Overall, a mixed picture.', { python: `${fake} -3` })) as any;
+      expect(typeof g.score).toBe('number');
+      const args = readFileSync(log, 'utf8').trim().split('\n');
+      expect(args.slice(0, 3)).toEqual(['-3', ENGINE_PATH, 'grade']);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
 });

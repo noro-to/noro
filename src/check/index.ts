@@ -104,11 +104,22 @@ interface EngineRun {
   stderr: string;
 }
 
+/**
+ * Split a Python command string into the binary and its leading arguments.
+ * Config.python may hold several words ("py -3", "python3 -I"), so it can't go
+ * to spawn() as one binary name.
+ */
+export function splitPythonCommand(python: string): { cmd: string; pre: string[] } {
+  const [cmd, ...pre] = python.trim().split(/\s+/);
+  return { cmd: cmd || 'python3', pre };
+}
+
 /** Run engine/noro.py with args. Exit 0 and 2 are results; exit 1 (or anything else) throws EngineError. */
 export function runEngine(args: string[], python?: string): Promise<EngineRun> {
   const py = python || loadConfig().python;
+  const { cmd, pre } = splitPythonCommand(py);
   return new Promise((resolve, reject) => {
-    const child = spawn(py, [ENGINE_PATH, ...args], { stdio: ['ignore', 'pipe', 'pipe'] });
+    const child = spawn(cmd, [...pre, ENGINE_PATH, ...args], { stdio: ['ignore', 'pipe', 'pipe'], windowsHide: true });
     let stdout = '';
     let stderr = '';
     child.stdout.setEncoding('utf8').on('data', (d: string) => (stdout += d));
