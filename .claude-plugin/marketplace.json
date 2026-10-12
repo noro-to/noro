@@ -1,16 +1,14 @@
 {
   "name": "noro",
-  "description": "noro: no more AI report slop. Shorter ad-performance reports with every number checked.",
-  "owner": {
-    "name": "noro contributors",
-    "url": "https://noro.to"
-  },
+  "description": "noro: paid-media reports where every number is traced.",
+  "owner": { "name": "noro contributors", "url": "https://github.com/noro-to" },
   "plugins": [
     {
       "name": "noro",
       "source": "./",
-      "description": "Rewrites an ad-performance report you already have into a shorter, plain version. Every number is checked by a script, AI slop is cut, and doubtful claims are flagged.",
-      "category": "marketing"
+      "description": "Turn ad-platform exports into short paid-media reports where every number is computed by code and traced. Adds the noro skill (/noro:noro) and the noro MCP server.",
+      "category": "productivity",
+      "tags": ["paid-media", "reporting", "mcp"]
     }
   ]
 }

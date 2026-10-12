@@ -1,0 +1,64 @@
+# Google Ads: report downloaded from the Google Ads UI (Reports → Download → CSV)
+# or a Report Editor / scripts export. Header names follow the English UI.
+#
+# Quirks handled here:
+# - The UI puts a two-line preamble (report name, date range) above the header row.
+# - Totals at the bottom: "Total: Account", "Total: Campaigns", "Total: Search", ...
+# - Cost can arrive as "Cost" (major units) or "Cost (micros)" (API / scripts:
+#   1,000,000 = 1 unit of currency). Micros columns are divided by 1,000,000.
+# - "Conversions" is the primary conversion column and maps to `conversions`.
+#   "All conv." also counts secondary actions and cross-device estimates, so it
+#   is kept apart under extra.allConversions. Never mix the two.
+id: google-ads
+platform: Google Ads
+
+detect:
+  # Every header here must be present (case-insensitive) for a match.
+  required: [Campaign, Clicks]
+  # Each one present adds to the match score. Used to break ties.
+  distinctive: [Impr., Conv. value, All conv., Cost (micros), Currency code, Ad group, Avg. CPC, Conv. rate]
+
+# Schema field → raw header(s). The first header present in the file wins.
+columns:
+  date: [Day, Date]
+  period: [Week, Month, Quarter, Year]
+  account: [Account name, Account]
+  campaign: [Campaign]
+  adGroup: [Ad group]
+  spend: [Cost, Cost (micros)]
+  impressions: [Impr., Impressions]
+  clicks: [Clicks]
+  conversions: [Conversions]
+  conversionValue: [Conv. value, Conversion value, Conv. value (micros)]
+
+# Platform-specific columns kept under Row.extra.<name>.
+extra:
+  allConversions: [All conv., All conversions]
+  allConversionValue: [All conv. value]
+  currencyCode: [Currency code]
+  campaignType: [Campaign type]
+
+# Raw headers whose values are in micros (divided by 1,000,000 on ingest).
+micros: [Cost (micros), Conv. value (micros)]
+
+currency:
+  column: [Currency code, Currency]
+  default: USD
+
+numbers:
+  thousands: ","
+  decimal: "."
+  # Cell values read as 0. Google Ads shows "--" where a value is undefined.
+  zero: ["--", " --", ""]
+
+dates:
+  # Order for ambiguous slash dates like 03/04/2026.
+  order: mdy
+
+skipRows:
+  - firstColumn: true
+    match: '^\s*Total\b'
+    reason: total row
+  - field: campaign
+    match: '^\s*Total:'
+    reason: total row

@@ -1,0 +1,60 @@
+# noro weekly report: a GitHub Actions template for your own repo.
+#
+# 1. Copy this file to .github/workflows/noro-weekly.yml in your repo.
+# 2. Add OPENROUTER_API_KEY under Settings > Secrets and variables > Actions.
+# 3. Commit an export at exports/latest.csv, or add a step that downloads this week's export.
+#
+# The report is attached to each run as the "noro-report" artifact. .noro/runs is
+# cached (never uploaded as an artifact): it holds client data, so keep this in a
+# private repo.
+# Docs: https://github.com/noro-to/noro/blob/main/docs/install/scheduled.md
+name: noro weekly
+
+on:
+  schedule:
+    - cron: "17 7 * * 1"   # Mondays 07:17 UTC. Monthly: "17 7 1 * *"
+  workflow_dispatch:
+
+# A run's checkpoint file has one owner: never run two at once.
+concurrency:
+  group: noro
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  report:
+    runs-on: ubuntu-latest   # python3 is preinstalled
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+
+      # One checkpoint file per run: a re-run of a failed job resumes instead of paying again.
+      # The checkpoints hold client data (ingested rows, facts, model outputs): cache only.
+      - uses: actions/cache@v6
+        with:
+          path: .noro/runs
+          key: noro-runs-${{ github.run_id }}
+          restore-keys: noro-runs-
+
+      # Bring this week's export, for example:
+      # - run: curl -fsSL "$EXPORT_URL" -o exports/latest.csv
+      #   env:
+      #     EXPORT_URL: ${{ secrets.EXPORT_URL }}
+
+      - run: npx -y @noro-to/noro@0.2 this exports/latest.csv --yes --format email > report.md
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          # Another provider: add its key as a secret and set the model, for example
+          # ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          # NORO_MODEL: anthropic:claude-opus-5-5
+
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: noro-report
+          path: report.md

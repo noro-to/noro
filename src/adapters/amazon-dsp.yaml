@@ -1,0 +1,52 @@
+# Amazon DSP: report downloaded from the DSP console (Reports → Download),
+# daily time unit, order and line item dimensions.
+#
+# Quirks handled here:
+# - Money columns are formatted ("$1,234.56").
+# - Dates are US style (MM/DD/YYYY).
+# - "Total purchases" / "Total sales" include halo (all products of the
+#   brand); the promoted-product-only columns are kept under extra.
+id: amazon-dsp
+platform: Amazon DSP
+
+detect:
+  required: [Order, Line item]
+  distinctive: [Advertiser, Total cost, Click-throughs, Total purchases, Total sales, Total ROAS, eCPM, Order ID, Line item ID]
+
+columns:
+  date: [Date]
+  period: [Week, Month]
+  account: [Advertiser]
+  campaign: [Order]
+  adGroup: [Line item]
+  spend: [Total cost, Total cost (micros)]
+  impressions: [Impressions]
+  clicks: [Click-throughs]
+  conversions: [Total purchases, Purchases]
+  conversionValue: [Total sales, Sales]
+
+extra:
+  orderId: [Order ID]
+  lineItemId: [Line item ID]
+  productPurchases: [Purchases (promoted product)]
+  productSales: [Sales (promoted product)]
+  totalRoas: [Total ROAS]
+
+micros: [Total cost (micros)]
+
+currency:
+  column: [Currency]
+  default: USD
+
+numbers:
+  thousands: ","
+  decimal: "."
+  zero: ["", "--", "-", "N/A"]
+
+dates:
+  order: mdy
+
+skipRows:
+  - firstColumn: true
+    match: '^\s*Total\b'
+    reason: total row

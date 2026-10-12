@@ -1,0 +1,45 @@
+name: Add a platform adapter
+description: Ask for (or offer) a mapping file for an ad platform noro doesn't read yet.
+title: "Adapter: <platform>"
+labels: ["adapter"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        An adapter is one YAML file in `src/adapters/` that maps a platform's export columns to noro's standard schema ([docs/schema.md](../blob/main/docs/schema.md)).
+        **Use synthetic data only. Don't paste real client data.** No real exports, reports, client names or API keys.
+        Change every account, campaign and number before you paste anything.
+  - type: input
+    id: platform
+    attributes:
+      label: Platform
+      description: The ad platform and the report or export type, for example "TikTok Ads Manager, campaign report, daily".
+    validations:
+      required: true
+  - type: textarea
+    id: header
+    attributes:
+      label: Sample header row
+      description: The export's header row exactly as it appears, including any lines above it.
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: sample
+    attributes:
+      label: Synthetic sample rows
+      description: Three to ten rows with invented names and numbers, including any total or summary rows the export adds.
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: quirks
+    attributes:
+      label: Metric quirks
+      description: Anything that changes the numbers. Micros, currency columns, primary vs all conversions, attribution windows, view-through conversions, blank cells written as "--".
+  - type: checkboxes
+    id: pr
+    attributes:
+      label: Pull request
+      options:
+        - label: I'd like to open the pull request myself (see "Add a platform adapter" in CONTRIBUTING.md).

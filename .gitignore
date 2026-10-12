@@ -1,2 +1,7 @@
 dist/
 __pycache__/
+node_modules/
+.noro/
+.env
+*.log
+tests/ts/_tmp/

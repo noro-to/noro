@@ -1,126 +1,114 @@
 # Getting started with noro
 
-Run **noro this** on any ad report, written or visual. Answer the intake questions once, and noro reuses those settings every time after.
+This guide takes you from nothing to your first report in about ten minutes. You'll use a terminal, but you only need to copy and paste. For every other way to run noro (Docker, AI tools, schedules, other models), see [install/](install/README.md).
 
-noro gives you back a shorter, plain version with every number checked. This guide gets it running in about five minutes. You don't need to know how to code.
+## What you need
 
-There are two ways to use noro. Pick the one that matches where you use Claude:
+- **Node 22.19 or newer** (Node 24 recommended). Check with `node --version`. Install it from [nodejs.org](https://nodejs.org).
+- **Python 3.9 or newer.** Check with `python3 --version` (on Windows, `py -3 --version`). The rules engine uses only the standard library.
+- **A writing model.** The simplest is an OpenRouter key: sign in at [openrouter.ai](https://openrouter.ai), add credits, and create a key under Keys. It starts with `sk-or-`. An Anthropic, OpenAI or Gemini key, a cloud account, a local model, or your own logged-in Claude Code also work (step 3).
 
-- **Claude.ai**: the Claude website or the Claude desktop app. Most people want this one.
-- **Claude Code**: Claude in a terminal, the desktop app's Code tab, or VS Code.
+noro checks Node and Python before it makes any paid call.
 
-## Option A: Claude.ai
+## 1. Install noro
 
-**What you need:** a Pro, Max, Team or Enterprise plan. On Enterprise, an Owner has to turn on code execution and Skills for the organization first (Admin settings → Capabilities).
-
-### 1. Download noro
-
-Go to [github.com/noro-to/noro/releases/latest](https://github.com/noro-to/noro/releases/latest). Under **Assets**, click `noro.zip`.
-
-Keep it as a zip file. If your Mac unzipped it into a folder called `noro`, right-click that folder and choose **Compress "noro"** to get `noro.zip` back.
-
-[screenshot: the release page with noro.zip under Assets]
-
-### 2. Turn on code execution
-
-noro runs a small script to check numbers, so Claude needs to be allowed to run code.
-
-1. Click your initials in the bottom-left corner, then **Settings**.
-2. Open **Capabilities**.
-3. Turn on **Code execution and file creation**.
-
-[screenshot: Settings → Capabilities with "Code execution and file creation" switched on]
-
-### 3. Upload noro
-
-On the same Capabilities page, find the **Skills** section and click **Upload skill**. Choose `noro.zip`. noro now shows in your Skills list. Make sure its switch is on.
-
-[screenshot: the Skills section with noro listed and switched on]
-
-### 4. Try it
-
-Start a new chat. Paste a report, or attach it (a doc, PDF, slides or a dashboard screenshot all work), and type **noro this**.
-
-The first time, noro asks a few questions (see [Your first run](#your-first-run)). At the end it gives you a short settings block. Paste that block into your Project instructions, or ask Claude to remember it, and noro will skip those questions next time.
-
-[screenshot: a chat with a pasted report and the message "noro this"]
-
-## Option B: Claude Code
-
-**What you need:** Claude Code installed and signed in. If you don't have it yet, follow Anthropic's [quickstart](https://code.claude.com/docs/en/quickstart). New to terminals? Start with the [terminal guide](https://code.claude.com/docs/en/terminal-guide).
-
-### 1. Open Claude Code
-
-Open a terminal, go to the folder you work in, and type `claude`.
-
-### 2. Add noro and install it
-
-Type these two lines one at a time, pressing Enter after each:
-
-```text
-/plugin marketplace add noro-to/noro
-/plugin install noro@noro
+```bash
+npm i -g @noro-to/noro
+noro --help
 ```
 
-After the first line you should see `Successfully added marketplace: noro`. The second line opens noro's details. Choose **Install for you (user scope)** so noro works in every folder.
+The package is `@noro-to/noro` and the command is `noro`. The unscoped `noro` on npm is a different project, so keep the `@noro-to/` scope whenever you use `npm` or `npx`. Before the first npm release, use `npm i -g github:noro-to/noro`.
 
-[screenshot: the plugin panel showing noro with the three install choices]
+## 2. Set up with `noro init`
 
-If Claude Code then says `Run /reload-plugins to apply`, type `/reload-plugins`.
+Make a folder for your reports and run the setup there:
 
-Installed this way, noro also works in the desktop app's Code tab and in VS Code on the same computer. Cloud sessions at claude.ai/code don't load it.
+```bash
+mkdir -p ~/reports && cd ~/reports
+noro init
+```
 
-### 3. Try it
+`noro init` looks for keys you already have, Claude Code or Codex on your PATH, and Ollama or LM Studio running locally. It offers presets, asks for any missing key with hidden input, and writes `.env` in this folder (or `~/.config/noro/.env` with `--global`, for runs started from any folder). It ends by running `noro doctor`, which checks everything for free.
 
-Put the report in your folder (as `.txt`, `.md`, a doc, a PDF or a screenshot), then type **noro this** and name the file. If `/noro` is already taken by something else, use `/noro:noro`.
+Prefer to write `.env` yourself? This is all you need for the default setup:
 
-noro saves your first-run answers in `.noro/settings.yml` inside that folder.
+```bash
+# .env
+OPENROUTER_API_KEY=sk-or-...
+```
 
-[screenshot: Claude Code with "noro this weekly-report.md" typed in]
+Keep `.env` out of version control and don't paste your key anywhere else.
 
-## Your first run
+## 3. Pick who writes
 
-**Every run**, noro asks one thing: which format you want back.
+By default the writing steps (draft, panel, revision) run on `anthropic/claude-opus-5.5` through OpenRouter, billed per token. To change it, set `NORO_MODEL=<provider>:<model-id>` in `.env`, for example `anthropic:claude-opus-5-5` or `ollama:qwen3.8:27b`. Every provider is in [install/providers.md](install/providers.md).
 
-- Slack or Teams message
-- Email
-- One-page doc
-- Slide notes
-- One-page visual
-- Same as the input
+To write on your own Claude plan instead, install [Claude Code](https://claude.com/claude-code), run `claude` once and log in, then set:
 
-**On the first run only**, it also asks:
+```bash
+# .env
+NORO_MODEL=claude-cli:claude-opus-5-5   # your own Claude Code writes
+OPENROUTER_API_KEY=sk-or-...            # jev still classifies through OpenRouter
+```
 
-- **Audience:** who reads it. Client, exec or CFO, or your internal team.
-- **Reviewers:** who checks the draft before you see it. Pick any of media buyer, salesperson, cross-functional partner, statistics person and ADHD reader, or describe your own.
-- **Watchouts:** on or off. When on, noro flags claims in your report that may not hold up, such as calling a trend on recent days whose conversions are still coming in. It flags them and leaves the decision to you.
-- **Voice:**
-  - detail: headline, standard or full
-  - succinctness: tight or balanced
-  - formality: casual, professional or formal
+To run one report on OpenRouter without changing `.env`:
 
-## What noro will ask you to confirm
+```bash
+noro this report.csv --model openrouter:anthropic/claude-opus-5.5
+```
 
-- **Numbers read from a screenshot.** noro lists what it read and waits for your OK before rewriting.
-- **New numbers.** If the rewrite needs a number the original didn't have, like a percent change, a script works it out, shows you the math, and you confirm it.
+The subscription option is for your own use on your own machine; [install/subscriptions.md](install/subscriptions.md) explains why.
 
-## What noro never does
+## 4. Run it on a sample
 
-- Add a claim that wasn't in your report
-- Use a number you haven't confirmed
-- Make the report longer
-- Change a claim without telling you
-- Put the word "noro" in your report
+Grab a synthetic export from the repo and run it:
 
-## Changing your answers
+```bash
+curl -fsSLO https://raw.githubusercontent.com/noro-to/noro/main/fixtures/exports/google-ads.csv
+noro this google-ads.csv
+```
 
-- **Claude.ai:** say "change my noro settings", or edit the settings block in your Project instructions or memory.
-- **Claude Code:** say "change my noro settings", edit `.noro/settings.yml`, or delete it and noro asks again on the next run.
+You'll see each step as it runs: ingest, compute, classify, draft, check, panel, deliver. noro also says which classifier it picked. Then it shows each flag it has for you, one at a time:
+
+- **keep**: leave the sentence as it is
+- **cut**: remove the whole sentence the flag is about
+- **reword**: type a new sentence; it replaces that whole sentence. Use the numbers already in the report; noro refuses any it can't trace.
+
+A flag on a single word (a jargon term like "CPA") still acts on its whole sentence, and the flag says which sentence that is.
+
+The report prints at the end, with a footer like `Checked: 9 numbers traced. Panel: 2 notes, 1 applied.`
+
+## 5. Run it on your own data
+
+Export a campaign report with daily rows from Google Ads, Meta Ads Manager or Amazon DSP, covering at least two weeks so noro can compare them. Then:
+
+```bash
+noro this ~/Downloads/your-export.csv
+```
+
+From another platform? noro guesses which column is spend, clicks and so on, and asks you to confirm before it uses them.
+
+Already have a written report? Give noro the text:
+
+```bash
+noro this weekly-update.md --format email
+```
+
+Formats: `slack`, `email`, `one-page` (the default) and `slide-notes`. `noro facts <file>` prints just the facts table, with no model and no key.
+
+## If a run stops partway
+
+Run the same command again from the same folder. noro keeps a checkpoint after every step in `.noro/` and carries on from the last one.
 
 ## If something goes wrong
 
-- **Claude.ai ignores "noro this":** check that noro and **Code execution and file creation** are both switched on in Settings → Capabilities, then start a new chat.
-- **The upload fails:** upload the `.zip` file, not a folder. The zip must have a `noro` folder inside it, which the release download already does.
-- **Claude Code can't find noro:** type `/plugin`, open the **Errors** tab, and check the message there.
+Run `noro doctor` first. It checks Node, Python, your keys (shown only as a short fingerprint), your writing model and your classifier, all for free.
 
-Still stuck? Open an issue at [github.com/noro-to/noro/issues](https://github.com/noro-to/noro/issues).
+- **A missing key:** check `.env` is in the folder you run `noro` from, or put the key in `~/.config/noro/.env`.
+- **"noro needs Python 3.9+":** install Python 3, or point `NORO_PYTHON` at it (on Windows, `NORO_PYTHON=py -3`).
+- **"NORO_PYTHON=... doesn't run Python 3.9+":** fix the command in `NORO_PYTHON`, or unset it so noro looks for `python3`.
+- **"Claude Code is not logged in" or "not a Claude subscription":** run `claude`, log in with your Claude account, and check `claude auth status` shows `claude.ai`.
+- **Exit code 2:** the report couldn't pass the number check after one automatic fix. Rerun it, or open an issue with a synthetic copy of the export.
+- **"Unknown export ...: no adapter matches its header row":** run in a terminal so noro can ask you to confirm its guessed columns. The message lists what it guessed and up to ten of the file's header names.
+
+Still stuck? Open an issue at [github.com/noro-to/noro/issues](https://github.com/noro-to/noro/issues). Use synthetic data only. Don't paste real client data.

@@ -1,0 +1,61 @@
+Campaign report
+"September 29, 2026 - October 12, 2026"
+Day,Account name,Campaign,Campaign type,Currency code,Cost,Impr.,Clicks,Conversions,All conv.,Conv. value
+2026-09-29,Acme Outdoor,PR-03 Brand,Search,USD,300000000,"2,000",400,25.00,32.50,"2,000.00"
+2026-09-29,Acme Outdoor,PR-07 Prospecting,Performance Max,USD,960000000,"19,200",576,32.00,41.60,"3,040.00"
+2026-09-29,Acme Outdoor,NB-11 Generic,Search,USD,552860000,"7,372",295,12.00,15.60,"1,440.00"
+2026-09-29,Acme Outdoor,DG-05 Demand Gen,Demand Gen,USD,48000000,"2,572",34,1.00,1.30,150.00
+2026-09-30,Acme Outdoor,PR-03 Brand,Search,USD,324000000,"2,160",432,27.00,35.10,"2,160.00"
+2026-09-30,Acme Outdoor,PR-07 Prospecting,Performance Max,USD,874290000,"17,486",525,29.00,37.70,"2,755.00"
+2026-09-30,Acme Outdoor,NB-11 Generic,Search,USD,514280000,"6,857",274,12.00,15.60,"1,440.00"
+2026-09-30,Acme Outdoor,DG-05 Demand Gen,Demand Gen,USD,240000000,"12,857",172,3.00,3.90,450.00
+2026-10-01,Acme Outdoor,PR-03 Brand,Search,USD,336000000,"2,240",448,28.00,36.40,"2,240.00"
+2026-10-01,Acme Outdoor,PR-07 Prospecting,Performance Max,USD,737140000,"14,743",442,25.00,32.50,"2,375.00"
+2026-10-01,Acme Outdoor,NB-11 Generic,Search,USD,720000000,"9,600",384,16.00,20.80,"1,920.00"
+2026-10-01,Acme Outdoor,DG-05 Demand Gen,Demand Gen,USD,36000000,"1,929",26,0.00,0.00,0.00
+2026-10-02,Acme Outdoor,PR-03 Brand,Search,USD,306000000,"2,040",408,26.00,33.80,"2,080.00"
+2026-10-02,Acme Outdoor,PR-07 Prospecting,Performance Max,USD,685720000,"13,714",412,23.00,29.90,"2,185.00"
+2026-10-02,Acme Outdoor,NB-11 Generic,Search,USD,642860000,"8,571",343,14.00,18.20,"1,680.00"
+2026-10-02,Acme Outdoor,DG-05 Demand Gen,Demand Gen,USD,216000000,"11,571",154,3.00,3.90,450.00
+2026-10-03,Acme Outdoor,PR-03 Brand,Search,USD,258000000,"1,720",344,21.00,27.30,"1,680.00"
+2026-10-03,Acme Outdoor,PR-07 Prospecting,Performance Max,USD,960000000,"19,200",576,32.00,41.60,"3,040.00"
+2026-10-03,Acme Outdoor,NB-11 Generic,Search,USD,694290000,"9,257",370,15.00,19.50,"1,800.00"
+2026-10-03,Acme Outdoor,DG-05 Demand Gen,Demand Gen,USD,60000000,"3,214",43,1.00,1.30,150.00
+2026-10-04,Acme Outdoor,PR-03 Brand,Search,USD,240000000,"1,600",320,20.00,26.00,"1,600.00"
+2026-10-04,Acme Outdoor,PR-07 Prospecting,Performance Max,USD,857140000,"17,143",514,28.00,36.40,"2,660.00"
+2026-10-04,Acme Outdoor,NB-11 Generic,Search,USD,720000000,"9,600",384,16.00,20.80,"1,920.00"
+2026-10-04,Acme Outdoor,DG-05 Demand Gen,Demand Gen,USD,192000000,"10,286",137,3.00,3.90,450.00
+2026-10-05,Acme Outdoor,PR-03 Brand,Search,USD,336000000,"2,240",448,28.00,36.40,"2,240.00"
+2026-10-05,Acme Outdoor,PR-07 Prospecting,Performance Max,USD,925710000,"18,514",555,31.00,40.30,"2,945.00"
+2026-10-05,Acme Outdoor,NB-11 Generic,Search,USD,655710000,"8,743",350,15.00,19.50,"1,800.00"
+2026-10-05,Acme Outdoor,DG-05 Demand Gen,Demand Gen,USD,48000000,"2,571",34,1.00,1.30,150.00
+2026-10-06,Acme Outdoor,PR-03 Brand,Search,USD,313200000,"2,050",410,26.00,33.80,"2,080.00"
+2026-10-06,Acme Outdoor,PR-07 Prospecting,Performance Max,USD,993600000,"20,000",600,24.00,31.20,"2,280.00"
+2026-10-06,Acme Outdoor,NB-11 Generic,Search,USD,536380000,"7,248",292,12.00,15.60,"1,440.00"
+2026-10-06,Acme Outdoor,DG-05 Demand Gen,Demand Gen,USD,52000000,"2,686",37,1.00,1.30,150.00
+2026-10-07,Acme Outdoor,PR-03 Brand,Search,USD,338260000,"2,214",443,28.00,36.40,"2,240.00"
+2026-10-07,Acme Outdoor,PR-07 Prospecting,Performance Max,USD,904890000,"18,214",546,22.00,28.60,"2,090.00"
+2026-10-07,Acme Outdoor,NB-11 Generic,Search,USD,498960000,"6,743",272,11.00,14.30,"1,320.00"
+2026-10-07,Acme Outdoor,DG-05 Demand Gen,Demand Gen,USD,260000000,"13,428",183,4.00,5.20,600.00
+2026-10-08,Acme Outdoor,PR-03 Brand,Search,USD,350790000,"2,296",459,29.00,37.70,"2,320.00"
+2026-10-08,Acme Outdoor,PR-07 Prospecting,Performance Max,USD,762940000,"15,357",461,19.00,24.70,"1,805.00"
+2026-10-08,Acme Outdoor,NB-11 Generic,Search,USD,698550000,"9,440",381,16.00,20.80,"1,920.00"
+2026-10-08,Acme Outdoor,DG-05 Demand Gen,Demand Gen,USD,39000000,"2,014",27,0.00,0.00,0.00
+2026-10-09,Acme Outdoor,PR-03 Brand,Search,USD,319460000,"2,091",418,26.00,33.80,"2,080.00"
+2026-10-09,Acme Outdoor,PR-07 Prospecting,Performance Max,USD,709720000,"14,286",428,17.00,22.10,"1,615.00"
+2026-10-09,Acme Outdoor,NB-11 Generic,Search,USD,623700000,"8,429",340,14.00,18.20,"1,680.00"
+2026-10-09,Acme Outdoor,DG-05 Demand Gen,Demand Gen,USD,234000000,"12,086",165,4.00,5.20,600.00
+2026-10-10,Acme Outdoor,PR-03 Brand,Search,USD,269350000,"1,763",353,22.00,28.60,"1,760.00"
+2026-10-10,Acme Outdoor,PR-07 Prospecting,Performance Max,USD,993600000,"20,000",600,24.00,31.20,"2,280.00"
+2026-10-10,Acme Outdoor,NB-11 Generic,Search,USD,673600000,"9,103",367,15.00,19.50,"1,800.00"
+2026-10-10,Acme Outdoor,DG-05 Demand Gen,Demand Gen,USD,65000000,"3,357",46,1.00,1.30,150.00
+2026-10-11,Acme Outdoor,PR-03 Brand,Search,USD,250560000,"1,640",328,20.00,26.00,"1,600.00"
+2026-10-11,Acme Outdoor,PR-07 Prospecting,Performance Max,USD,887140000,"17,857",536,21.00,27.30,"1,995.00"
+2026-10-11,Acme Outdoor,NB-11 Generic,Search,USD,698540000,"9,440",381,16.00,20.80,"1,920.00"
+2026-10-11,Acme Outdoor,DG-05 Demand Gen,Demand Gen,USD,208000000,"10,743",146,3.00,3.90,450.00
+2026-10-12,Acme Outdoor,PR-03 Brand,Search,USD,350780000,"2,296",459,29.00,37.70,"2,320.00"
+2026-10-12,Acme Outdoor,PR-07 Prospecting,Performance Max,USD,958110000,"19,286",579,23.00,29.90,"2,185.00"
+2026-10-12,Acme Outdoor,NB-11 Generic,Search,USD,636170000,"8,597",347,15.00,19.50,"1,800.00"
+2026-10-12,Acme Outdoor,DG-05 Demand Gen,Demand Gen,USD,52000000,"2,686",36,1.00,1.30,150.00
+Total: Campaigns,--,--,--,USD,27118300000,"484,350","19,040",930.00,1209.00,"89,430.00"
+Total: Account,--,--,--,USD,27118300000,"484,350","19,040",930.00,1209.00,"89,430.00"

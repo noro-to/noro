@@ -3,14 +3,14 @@ name: ci
 on:
   push:
     branches: ["**"]
-    tags: ["v*"]
   pull_request:
 
 permissions:
   contents: read
 
 jobs:
-  build:
+  python:
+    name: Python engine and rules
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -23,37 +23,79 @@ jobs:
         run: pip install pyyaml
 
       - name: Build rules.json
-        run: python tools/build_rules.py
+        run: python scripts/build_rules.py
+
+      - name: rules.json is up to date
+        run: git diff --exit-code engine/rules.json
 
       - name: Run tests
         run: python -m unittest discover -s tests/engine -v && python -m unittest discover -s tests/rules -v
 
-      - name: Build noro.zip
-        run: python tools/build_zip.py
-
-      - uses: actions/upload-artifact@v7
-        with:
-          name: noro-zip
-          path: dist/noro.zip
-          if-no-files-found: error
-
-  release:
-    if: startsWith(github.ref, 'refs/tags/v')
-    needs: build
+  node:
+    name: TypeScript framework (Node ${{ matrix.node }})
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        node: ["22", "24"]
     steps:
-      - uses: actions/download-artifact@v8
-        with:
-          name: noro-zip
-          path: dist
+      - uses: actions/checkout@v7
 
-      - name: Attach noro.zip to the release
-        env:
-          GH_TOKEN: ${{ github.token }}
-          GH_REPO: ${{ github.repository }}
-          TAG: ${{ github.ref_name }}
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.11"
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run build
+      # No API keys in CI: the model calls are mocked in tests.
+      - run: npm test
+
+  package:
+    name: npm package installs and runs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+          cache: npm
+
+      - run: npm ci
+      - name: Pack, install globally, run from another folder
         run: |
-          gh release view "$TAG" > /dev/null 2>&1 || gh release create "$TAG" --title "$TAG" --generate-notes
-          gh release upload "$TAG" dist/noro.zip --clobber
+          npm pack --pack-destination "$RUNNER_TEMP"
+          npm i -g "$RUNNER_TEMP"/noro-to-noro-*.tgz
+          mkdir "$RUNNER_TEMP/elsewhere"
+          cp fixtures/exports/google-ads.csv "$RUNNER_TEMP/elsewhere/"
+          cd "$RUNNER_TEMP/elsewhere"
+          NORO_MOCK_MODELS=1 noro this google-ads.csv --yes
+
+  docker:
+    name: Docker image builds and runs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: docker/setup-buildx-action@v4
+
+      - uses: docker/build-push-action@v7
+        with:
+          context: .
+          load: true
+          tags: noro:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Run the image on a fixture (mocked models)
+        run: |
+          mkdir -p "$RUNNER_TEMP/work"
+          cp fixtures/exports/google-ads.csv "$RUNNER_TEMP/work/"
+          docker run --rm --user "$(id -u):$(id -g)" -e NORO_MOCK_MODELS=1 \
+            -v "$RUNNER_TEMP/work:/work" -w /work noro:ci this google-ads.csv --yes
