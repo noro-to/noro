@@ -2,8 +2,8 @@
 """Build engine/rules.json from rules/**/*.yaml.
 
 Usage:
-  python3 tools/build_rules.py            # validate and write rules.json
-  python3 tools/build_rules.py --check    # validate; exit 1 if rules.json is stale
+  python3 scripts/build_rules.py            # validate and write rules.json
+  python3 scripts/build_rules.py --check    # validate; exit 1 if rules.json is stale
 
 PyYAML is a dev-only dependency. The engine reads only the JSON this writes.
 Exit codes: 0 ok, 1 validation error or stale output.
@@ -196,7 +196,7 @@ def main(argv=None):
     if args.check:
         current = out.read_text(encoding="utf-8") if out.exists() else ""
         if current != text:
-            print(f"build_rules: {out} is stale; run python3 tools/build_rules.py", file=sys.stderr)
+            print(f"build_rules: {out} is stale; run python3 scripts/build_rules.py", file=sys.stderr)
             return 1
         print(f"build_rules: {len(rules)} rules, {out} is up to date")
         return 0

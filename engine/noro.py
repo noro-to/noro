@@ -341,7 +341,7 @@ def load_rules(path):
     """Load rules.json ({"version", "rules": [...]}) or a bare list and return the rules."""
     p = Path(path)
     if not p.is_file():
-        raise NoroError(f"rules file not found: {p} (build it with tools/build_rules.py)")
+        raise NoroError(f"rules file not found: {p} (build it with scripts/build_rules.py)")
     try:
         data = json.loads(p.read_text(encoding="utf-8"))
     except ValueError as exc:

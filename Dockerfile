@@ -21,7 +21,7 @@ COPY --from=build /src/package.json ./
 COPY --from=build /src/node_modules ./node_modules
 COPY --from=build /src/dist ./dist
 COPY engine/noro.py engine/rules.json ./engine/
-COPY personas ./personas
+COPY prompts/panel ./prompts/panel
 COPY LICENSE README.md ./
 RUN ln -s /opt/noro/dist/cli.js /usr/local/bin/noro \
  && mkdir -p /work && chown node:node /work

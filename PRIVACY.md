@@ -36,4 +36,4 @@ When an AI agent runs noro (plugin, skill or `noro mcp`), the agent receives the
 
 ## Reporting
 
-Don't post exports, reports, client names or keys in public issues. Security problems: see [SECURITY.md](../SECURITY.md). Privacy questions: [CONTACT EMAIL].
+Don't post exports, reports, client names or keys in public issues. Security problems: see [SECURITY.md](SECURITY.md). Privacy questions: [CONTACT EMAIL].

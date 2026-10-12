@@ -1,6 +1,6 @@
 # noro engine spec
 
-This file documents the Python rules engine (`engine/noro.py`) and the rule schema. The engine's CLI contract below has not changed since v0.1. In v0.2 the TypeScript framework calls it as a tool for the check step (`src/check/`), with a ledger built from the facts table instead of from an original report. The pipeline itself is described in the [README](README.md); the v0.1 Claude skill this spec was first written for is retired (see [CHANGELOG.md](CHANGELOG.md)).
+This file documents the Python rules engine (`engine/noro.py`) and the rule schema. The engine's CLI contract below has not changed since v0.1. In v0.2 the TypeScript framework calls it as a tool for the check step (`src/check/`), with a ledger built from the facts table instead of from an original report. The pipeline itself is described in the [README](../README.md); the v0.1 Claude skill this spec was first written for is retired (see [CHANGELOG.md](../CHANGELOG.md)).
 
 **Data rule:** all test data is synthetic. No real employer or client data anywhere.
 

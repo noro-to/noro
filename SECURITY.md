@@ -40,7 +40,7 @@ In scope:
 
 - the noro CLI, MCP server, plugins and skill in this repository
 - the npm package `@noro-to/noro` and the image `ghcr.io/noro-to/noro`
-- anything that makes noro send data the [privacy notes](legal/PRIVACY.md) say it doesn't send, leak an API key, or run code from an export, report, adapter or persona file
+- anything that makes noro send data the [privacy notes](PRIVACY.md) say it doesn't send, leak an API key, or run code from an export, report, adapter or persona file
 - the website noro.to
 
 Out of scope:

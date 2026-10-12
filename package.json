@@ -34,13 +34,13 @@
     "!dist/**/*.map",
     "engine/noro.py",
     "engine/rules.json",
-    "personas",
+    "prompts/panel",
     "skills",
     ".claude-plugin",
     ".env.example",
     "CHANGELOG.md",
     "SECURITY.md",
-    "legal/PRIVACY.md"
+    "PRIVACY.md"
   ],
   "engines": {
     "node": ">=22.19.0"

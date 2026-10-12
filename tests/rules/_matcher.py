@@ -1,6 +1,6 @@
 """Minimal stand-in for the engine's load_rules/scan, used only when
 engine/noro.py is not importable. Implements the phrase, regex,
-count and unless semantics from SPEC.md and nothing else. Stdlib only.
+count and unless semantics from docs/engine.md and nothing else. Stdlib only.
 """
 import json
 import re

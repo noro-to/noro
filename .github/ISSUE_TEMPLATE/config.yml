@@ -4,5 +4,5 @@ contact_links:
     url: https://github.com/noro-to/noro/security/advisories/new
     about: Report vulnerabilities privately, not in a public issue. See SECURITY.md.
   - name: Privacy notes
-    url: https://github.com/noro-to/noro/blob/main/legal/PRIVACY.md
+    url: https://github.com/noro-to/noro/blob/main/PRIVACY.md
     about: What noro sends to model providers and what it stores locally. Full policy at https://noro.to/privacy

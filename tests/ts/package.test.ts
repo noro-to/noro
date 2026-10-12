@@ -32,10 +32,10 @@ describe('v0.2 distribution: the npm package', () => {
     expect(pkg.repository.url).toContain('github.com/noro-to/noro');
   });
   it('ships the runtime files and no source maps', () => {
-    for (const f of ['dist', '!dist/**/*.map', 'engine/noro.py', 'engine/rules.json', 'personas', '.env.example']) expect(pkg.files).toContain(f);
+    for (const f of ['dist', '!dist/**/*.map', 'engine/noro.py', 'engine/rules.json', 'prompts/panel', '.env.example']) expect(pkg.files).toContain(f);
     expect(pkg.files).not.toContain('engine');
     expect(pkg.files).not.toContain('src');
-    for (const f of ['engine/noro.py', 'engine/rules.json', 'personas', '.env.example']) expect(existsSync(join(ROOT, f)), f).toBe(true);
+    for (const f of ['engine/noro.py', 'engine/rules.json', 'prompts/panel', '.env.example']) expect(existsSync(join(ROOT, f)), f).toBe(true);
   });
   it('the lockfile carries the same name', () => {
     const lock = JSON.parse(readFileSync(join(ROOT, 'package-lock.json'), 'utf8'));
@@ -53,10 +53,10 @@ describe('v0.2 distribution: docs point at the scoped package', () => {
   });
   it('README links the install docs, privacy and security', () => {
     const readme = read('README.md');
-    for (const link of ['docs/install/README.md', 'legal/PRIVACY.md', 'https://noro.to/privacy', 'SECURITY.md', 'NORO_MODEL=claude-cli:claude-opus-5-5', '--model openrouter:anthropic/claude-opus-5.5']) {
+    for (const link of ['docs/install/README.md', 'PRIVACY.md', 'https://noro.to/privacy', 'SECURITY.md', 'NORO_MODEL=claude-cli:claude-opus-5-5', '--model openrouter:anthropic/claude-opus-5.5']) {
       expect(readme, link).toContain(link);
     }
-    for (const f of ['SECURITY.md', 'legal/PRIVACY.md', 'Dockerfile', '.devcontainer/devcontainer.json', '.github/workflows/release.yml']) expect(existsSync(join(ROOT, f)), f).toBe(true);
+    for (const f of ['SECURITY.md', 'PRIVACY.md', 'Dockerfile', '.devcontainer/devcontainer.json', '.github/workflows/release.yml']) expect(existsSync(join(ROOT, f)), f).toBe(true);
   });
   it('issue templates ask for synthetic data only', () => {
     for (const f of ['add-platform-adapter.yml', 'slop-slipped-through.yml']) {

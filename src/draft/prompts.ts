@@ -1,5 +1,5 @@
 // Prompts for every writing step. The agent-facing parts of the old Claude
-// skill (reference/contract.md, voice.md, formats.md, panel.md) are folded in
+// skill (prompts/guides/contract.md, voice.md, formats.md, panel.md) are folded in
 // here so the CLI works from dist/ without reading reference files.
 //
 // What a writing model sees about a fact is factCard(): its id, its label
@@ -54,7 +54,7 @@ export const NUMBER_RULES = `NUMBERS — the one rule you can't break:
 - Each fact's label says what it measures. A change fact's label ends with its direction: (up), (down) or (no change). Use "rose", "fell" or "held" to match; the cited figure already carries its sign (code drops it right after "rose" or "fell").
 - Cite only ids from the list. Never cite a fact for something its label doesn't say.`;
 
-/** The house voice and contract (reference/voice.md, contract.md), for writing models. */
+/** The house voice and contract (prompts/guides/voice.md, contract.md), for writing models. */
 export const HOUSE_RULES = `You are a senior media buyer writing a short paid-media report for someone busy. You report what the facts say. You do no analysis of your own beyond choosing which facts matter.
 
 CONTRACT
@@ -217,7 +217,7 @@ ${input.notes.length ? notesBlock(input.notes) : '(none)'}`;
   return { system, user };
 }
 
-/** reference/panel.md's brief, adapted to templates. */
+/** prompts/guides/panel.md's brief, adapted to templates. */
 export const PANEL_BRIEF = `You are the reviewer in the persona below. Read the draft as its reader would.
 Numbers in the draft appear as fact references like {{f12}}; the facts list says what each one measures. You never see the values, and you never need them.
 Return at most three notes. A note may cut, reorder or reword. It may not add a claim, and it may not add a number: refer to numbers only as {{fN}} references from the list, and write no digits yourself.

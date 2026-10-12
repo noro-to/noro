@@ -23,7 +23,7 @@ jobs:
         run: pip install pyyaml
 
       - name: Build rules.json
-        run: python tools/build_rules.py
+        run: python scripts/build_rules.py
 
       - name: rules.json is up to date
         run: git diff --exit-code engine/rules.json

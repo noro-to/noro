@@ -1,6 +1,6 @@
 # Reviewers
 
-Each file here is one reviewer on the panel (`reference/panel.md`). To add your own:
+Each file here is one reviewer on the panel (`prompts/guides/panel.md`). To add your own:
 
 1. Copy a file here and rename it, for example `analytics-lead.md`. The file name is the id.
 2. Keep the three parts: **Voice**, **Checks**, **Always sends back**. 150 words or fewer.

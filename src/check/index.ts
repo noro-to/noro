@@ -1,5 +1,5 @@
 // Check: the bridge to the Python engine (engine/noro.py). The engine's CLI
-// contract is in SPEC.md and is not changed here; this module writes temp
+// contract is in docs/engine.md and is not changed here; this module writes temp
 // files, runs `check` / `extract` / `grade` as a subprocess and maps the JSON.
 //
 // generate mode (a draft rendered from the facts table)

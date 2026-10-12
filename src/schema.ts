@@ -57,7 +57,7 @@ export interface Dataset {
 
 // ---------------------------------------------------------------- 2. compute
 
-/** Matches the engine ledger's number kinds (SPEC.md). */
+/** Matches the engine ledger's number kinds (docs/engine.md). */
 export type FactKind = 'currency' | 'percent' | 'pp' | 'multiplier' | 'count' | 'ratio';
 
 export type FactFlag = 'divide_by_zero' | 'small_sample' | 'no_baseline';

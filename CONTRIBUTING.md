@@ -20,7 +20,7 @@ Not sure about a platform's quirks? Open an [adapter issue](https://github.com/n
 ## Add a rule
 
 1. Create one file: `rules/<category>/<slug>.yaml`. Categories are `tells`, `numbers`, `shape`, `specificity`, `actions`, `visual` and `watchout`.
-2. Fill in the fields from the rule schema in [SPEC.md](SPEC.md). The `id` prefix matches the category (`T-` tells, `N-` numbers, `S-` shape, `P-` specificity, `A-` actions, `V-` visual, `W-` watchout).
+2. Fill in the fields from the rule schema in [docs/engine.md](docs/engine.md). The `id` prefix matches the category (`T-` tells, `N-` numbers, `S-` shape, `P-` specificity, `A-` actions, `V-` visual, `W-` watchout).
 3. Add examples:
    - `examples.flag`: sentences the rule must catch. Make the first one an anonymized excerpt of the real report where the slop slipped through.
    - `examples.pass`: close calls the rule must leave alone.
@@ -30,15 +30,15 @@ Not sure about a platform's quirks? Open an [adapter issue](https://github.com/n
 
    ```bash
    pip install pyyaml
-   python tools/build_rules.py
+   python scripts/build_rules.py
    python -m unittest discover -s tests/engine -v && python -m unittest discover -s tests/rules -v
    ```
 
-Never edit `engine/rules.json` by hand. `tools/build_rules.py` writes it.
+Never edit `engine/rules.json` by hand. `scripts/build_rules.py` writes it.
 
 ## Add a persona
 
-1. Copy an existing file in `personas/` (for example `salesperson.md`) to `personas/<name>.md`.
+1. Copy an existing file in `prompts/panel/` (for example `salesperson.md`) to `prompts/panel/<name>.md`.
 2. Keep the same headings. Describe who the reader is, what they check first, and what makes them stop trusting a report.
 3. Give one or two example notes they would leave on a draft.
 4. Personas review the rewrite. They never add claims or numbers to it.

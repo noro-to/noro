@@ -1,6 +1,6 @@
 // Panel: the reviewer personas read the draft as its readers would.
 //
-// Each persona (personas/*.md, plus the user's own in <cwd>/.noro/personas/)
+// Each persona (prompts/panel/*.md, plus the user's own in <cwd>/.noro/personas/)
 // gets one fresh call with only its persona file, the draft and the facts it
 // cites (id + label + classification). Never the chat, the data or the values.
 // In generate mode `text` is the template, so reviewers see {{fN}} references,
@@ -16,8 +16,8 @@ import { buildPanelPrompt } from '../draft/prompts.js';
 import { scrubNumbers } from '../draft/template.js';
 import type { ChatClient, Classification, FactsTable, PanelNote } from '../schema.js';
 
-/** personas/ at the package root, resolved from this module (src/panel or dist/panel). */
-export const BUILTIN_PERSONAS_DIR = fileURLToPath(new URL('../../personas/', import.meta.url));
+/** prompts/panel/ at the package root, resolved from this module (src/panel or dist/panel). */
+export const BUILTIN_PERSONAS_DIR = fileURLToPath(new URL('../../prompts/panel/', import.meta.url));
 
 export interface Persona {
   id: string;

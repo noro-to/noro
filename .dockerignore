@@ -11,9 +11,9 @@ bench
 tests
 fixtures
 examples
-tools
+scripts
 rules
-reference
+prompts/guides
 docs
 *.log
 *.tgz

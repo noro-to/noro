@@ -1,7 +1,7 @@
 // Display formatting for facts. A fact's `display` is the exact text code puts
 // in the report, so it must be text the engine's `extract` reads back as one
 // number of the same kind and unit, within half a unit of its last shown digit
-// of fact.value (SPEC.md tracing rule). tests/ts/compute.test.ts round-trips
+// of fact.value (docs/engine.md tracing rule). tests/ts/compute.test.ts round-trips
 // every display through the real engine.
 //
 // The rule (signed = a change fact: pct change, diff, pp change):

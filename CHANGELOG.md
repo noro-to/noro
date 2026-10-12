@@ -25,7 +25,7 @@ The skill only ran inside Claude.ai and Claude Code, and it could only rewrite a
 - **`noro mcp`**: a stdio MCP server with the tools `noro_this` and `noro_facts`, for Claude Code, Codex, Cursor, VS Code, Windsurf, Zed and Hermes.
 - **The Claude Code and Codex plugin and the skill**, back as a thin wrapper around the CLI: `skills/noro/SKILL.md`, `.claude-plugin/plugin.json` and `marketplace.json` (`/plugin install noro@noro`, `npx skills add noro-to/noro`).
 - **Distribution.** The npm package `@noro-to/noro` (the command is still `noro`), published with provenance. The image `ghcr.io/noro-to/noro` (Node 24, Python 3, amd64 and arm64). A Codespaces devcontainer. A release workflow. A weekly GitHub Actions template in `examples/noro-weekly.yml`, plus cron, systemd and launchd examples in `docs/install/scheduled.md`.
-- **Docs.** `docs/install/` covers every install path, provider and classify option. `SECURITY.md` explains private vulnerability reporting. `legal/PRIVACY.md` lists what leaves your machine. Issue templates ask for synthetic data only.
+- **Docs.** `docs/install/` covers every install path, provider and classify option. `SECURITY.md` explains private vulnerability reporting. `PRIVACY.md` lists what leaves your machine. Issue templates ask for synthetic data only.
 
 ### Fixed: hardening from review
 
@@ -50,16 +50,17 @@ The skill only ran inside Claude.ai and Claude Code, and it could only rewrite a
 
 - Node 22.19 or newer is required (Node 24 recommended). `npm ci` builds through a `prepare` script. `npm run lint` also type-checks the tests and `fixtures/generate.ts`.
 - The engine moved from `skills/noro/scripts/` to `engine/` (`noro.py`, `rules.json`). Its CLI contract is unchanged, and the TypeScript pipeline calls it as a tool for the check step.
-- `personas/` and `reference/` moved up from `skills/noro/`. Their content is unchanged except for the Claude-specific install notes.
-- `tools/build_rules.py` writes `engine/rules.json`.
-- The agent-facing instructions from `skills/noro/SKILL.md` now live in `reference/contract.md` and the draft and panel prompts.
+- The reviewer personas moved from `skills/noro/personas/` to `prompts/panel/`, and the writing guides from `skills/noro/reference/` to `prompts/guides/`. Their content is unchanged except for the Claude-specific install notes.
+- `SPEC.md` is now `docs/engine.md`, `tools/` is now `scripts/` (`scripts/build_rules.py` writes `engine/rules.json`), and the privacy notes are `PRIVACY.md` at the root, next to `SECURITY.md`.
+- Every top-level folder has a short `README.md` saying what is in it and who edits it. `DEVELOP.md` covers building, testing and releasing.
+- The agent-facing instructions from `skills/noro/SKILL.md` now live in `prompts/guides/contract.md` and the draft and panel prompts.
 
 ### Removed
 
 - The v0.1 `.claude-plugin/plugin.json` and `marketplace.json`, which installed the old skill. The v0.2 plugin replaces them and runs the CLI.
 - `tools/build_zip.py` and the `noro.zip` build (the Claude.ai upload).
 - The zip build and release-upload jobs in `.github/workflows/ci.yml`.
-- The v0.1 `skills/noro/SKILL.md` (its instructions are folded into `reference/contract.md` and the prompts). The v0.2 skill at the same path is a thin wrapper around the CLI.
+- The v0.1 `skills/noro/SKILL.md` (its instructions are folded into `prompts/guides/contract.md` and the prompts). The v0.2 skill at the same path is a thin wrapper around the CLI.
 - The Claude.ai and plugin install sections in `README.md` and `docs/getting-started.md`.
 
 ## [0.1.0] - 2026-10-12

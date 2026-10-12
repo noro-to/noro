@@ -123,7 +123,7 @@ A written report (`.md` or `.txt`) enters at step 5 in revision mode: its number
 
 noro has no telemetry, no analytics and no noro server. It sends data only to the model providers you configure, and never sends raw export rows, metric values, formulas or sample sizes. Labels such as campaign names do go out as written, and revision mode sends your prose with its numbers replaced by ids. With a local writer and a local decision model (or `NORO_CLASSIFY=rules`), nothing leaves your machine. Run state stays in `.noro/` in the folder you run from.
 
-Details: [legal/PRIVACY.md](legal/PRIVACY.md). The full policy for the software and noro.to is at [noro.to/privacy](https://noro.to/privacy). To report a vulnerability, see [SECURITY.md](SECURITY.md). Use synthetic data in issues, never real client data.
+Details: [PRIVACY.md](PRIVACY.md). The full policy for the software and noro.to is at [noro.to/privacy](https://noro.to/privacy). To report a vulnerability, see [SECURITY.md](SECURITY.md). Use synthetic data in issues, never real client data.
 
 ## Platforms
 
@@ -143,8 +143,8 @@ Weekly and monthly reports already work from an export file: see [scheduled.md](
 ## Repository
 
 - `src/`: the TypeScript pipeline (`ingest`, `adapters`, `compute`, `classify`, `draft`, `check`, `panel`, `deliver`, `harness`, `cli.ts`)
-- `engine/`: the Python rules engine (`noro.py`, `rules.json`), called by the check step. Contract in [SPEC.md](SPEC.md)
-- `rules/`: one YAML file per rule. `personas/` and `reference/`: the panel and the writing guides
+- `engine/`: the Python rules engine (`noro.py`, `rules.json`), called by the check step. Contract in [docs/engine.md](docs/engine.md)
+- `rules/`: one YAML file per rule. `prompts/panel/` and `prompts/guides/`: the panel and the writing guides
 - `skills/noro/` and `.claude-plugin/`: the agent skill and the Claude Code and Codex plugin
 - `fixtures/`, `bench/corpus/`, `examples/`: synthetic data only
 - `tests/`: Python (`tests/engine`, `tests/rules`) and vitest (`tests/ts`)

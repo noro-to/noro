@@ -1,6 +1,6 @@
 # Panel
 
-Reviewers read the draft as its reader would, before the user sees it. The `reviewers` setting names them. Built-in personas live in `personas/`. The user's own live in `.noro/personas/` or are pasted into Project instructions.
+Reviewers read the draft as its reader would, before the user sees it. The `reviewers` setting names them. Built-in personas live in `prompts/panel/`. The user's own live in `.noro/personas/` or are pasted into Project instructions.
 
 ## How to run it
 
