@@ -19,7 +19,7 @@ import type { Config } from '../config.js';
 import { factsFor } from '../facts.js';
 import { homeDir, loadEnvFiles } from '../env.js';
 import { classifierFor, decideFrom, missingForRun, preflight, SETUP_HINT } from '../preflight.js';
-import type { ChatClient, Decision, JevClient } from '../schema.js';
+import type { ChatClient, Decision, Flag, JevClient } from '../schema.js';
 
 const FORMATS = ['one-page', 'slack', 'email', 'slide-notes'] as const;
 
@@ -44,6 +44,27 @@ function version(): string {
   } catch {
     return '0.0.0';
   }
+}
+
+const APPLIED: Record<Decision['action'], string> = { keep: 'kept', cut: 'cut', reword: 'reworded' };
+
+/**
+ * The flag list under the report text. Without decisions every flag was kept and
+ * the agent should ask the user; with decisions, each flag's applied action.
+ */
+export function flagSummary(flags: Flag[], decisions?: Decision[]): string {
+  const line = (f: Flag) => `${f.text}${f.quote ? `\n  > ${f.quote}` : ''}`;
+  if (!decisions) {
+    return `Flags (all kept; ask the user keep, cut or reword, then call again with decisions):\n${flags.map((f) => `- ${f.id} [${f.source}] ${line(f)}`).join('\n')}`;
+  }
+  const byId = new Map(decisions.map((d) => [d.flagId, d]));
+  return `Flags (decisions applied):\n${flags
+    .map((f) => {
+      const d = byId.get(f.id);
+      const action = APPLIED[d?.action ?? 'keep'];
+      return `- ${f.id} [${f.source}] ${action}${d?.action === 'reword' ? ` as "${d.text}"` : ''}: ${line(f)}`;
+    })
+    .join('\n')}`;
 }
 
 export function createNoroMcpServer(deps: McpDeps = {}): McpServer {
@@ -138,9 +159,7 @@ export function createNoroMcpServer(deps: McpDeps = {}): McpServer {
           warnings: report.warnings,
           classifier: report.summary.classifier ?? classifier.describe,
         };
-        const flagLines = report.flags.length
-          ? `\n\nFlags (all kept; ask the user keep, cut or reword, then call again with decisions):\n${report.flags.map((f) => `- ${f.id} [${f.source}] ${f.text}${f.quote ? `\n  > ${f.quote}` : ''}`).join('\n')}`
-          : '';
+        const flagLines = report.flags.length ? `\n\n${flagSummary(report.flags, decisionList ? report.decisions : undefined)}` : '';
         return { content: [{ type: 'text' as const, text: `${report.text}${flagLines}` }], structuredContent: structured };
       } catch (err) {
         const e = err as Error;

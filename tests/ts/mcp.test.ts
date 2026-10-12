@@ -105,6 +105,14 @@ describe('noro mcp (in process)', () => {
     const second = (await c.request('tools/call', { name: 'noro_this', arguments: { path: FIXTURE, format: 'slack', decisions: [{ flagId: flag.id, action: 'cut' }] } })).result;
     expect(second.isError, second.content?.[0]?.text).toBeFalsy();
     expect(second.structuredContent.decisions.find((d: { flagId: string }) => d.flagId === flag.id)).toEqual({ flagId: flag.id, action: 'cut' });
+    // The text lists what was applied, and no longer asks for decisions.
+    expect(first.content[0].text).toContain('Flags (all kept; ask the user keep, cut or reword');
+    const secondText = second.content[0].text as string;
+    expect(secondText).toContain('Flags (decisions applied):');
+    expect(secondText).not.toContain('ask the user');
+    expect(secondText).not.toContain('all kept');
+    expect(secondText).toContain(`- ${flag.id} [${flag.source}] cut: `);
+    if (s.flags.length > 1) expect(secondText).toContain(`- ${s.flags[1].id} [${s.flags[1].source}] kept: `);
   });
 
   it('a reword without text is refused before the run', async () => {
