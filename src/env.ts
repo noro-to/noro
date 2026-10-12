@@ -69,6 +69,27 @@ export interface EnvLoad {
   sources: EnvSource[];
   /** Where each supplied key came from (keys already in the environment are absent). */
   origin: Record<string, string>;
+  /** Placeholder secrets that were treated as unset, and where they were (doctor warns). */
+  placeholders?: { key: string; label: string }[];
+}
+
+/** Variables that hold a secret: *_API_KEY, *_TOKEN, *_SECRET... */
+const SECRET_NAME = /(?:_API_KEY|_TOKEN|_SECRET(?:_[A-Z0-9_]*)?)$/;
+
+/**
+ * True for an obvious placeholder instead of a real key: all zeros (with or
+ * without a vendor prefix, as in .env.example's old "sk-or-v1-0000..."), an
+ * ellipsis ("sk-or-..."), x's, or "your key here" style text. A placeholder
+ * would otherwise shadow a real key in a later file and fail with HTTP 401.
+ */
+export function isPlaceholderSecret(value: string | undefined): boolean {
+  const v = (value ?? '').trim();
+  if (!v) return false;
+  if (/^(?:[A-Za-z][A-Za-z0-9]{0,7}-)*0+$/.test(v)) return true; // 0000, sk-or-v1-0000, sk-0000
+  if (/\.\.\.|…/.test(v)) return true; // sk-or-..., sk-or-v1-…
+  if (/^(?:[A-Za-z][A-Za-z0-9]{0,7}-)*[xX*]{4,}$/.test(v)) return true; // xxxx, sk-xxxx, ****
+  if (/^<.*>$/.test(v) || /^(?:your|my|insert|replace|paste|enter|put)[-_ ](?:[a-z]+[-_ ])?(?:api[-_ ]?)?(?:key|token|secret)/i.test(v) || /^(?:changeme|todo|placeholder|dummy|none|null)$/i.test(v)) return true;
+  return false;
 }
 
 /**
@@ -82,6 +103,14 @@ export function loadEnvFiles(cwd: string = process.cwd(), home: string = homeDir
   ];
   const sources: EnvSource[] = [];
   const origin: Record<string, string> = {};
+  const placeholders: { key: string; label: string }[] = [];
+  // A placeholder secret in the environment counts as unset, so a file can supply the real one.
+  for (const [k, v] of Object.entries(env)) {
+    if (SECRET_NAME.test(k) && isPlaceholderSecret(v)) {
+      delete env[k];
+      placeholders.push({ key: k, label: 'the environment' });
+    }
+  }
   const seen = new Set<string>();
   for (const [path, label] of files) {
     if (seen.has(path) || !existsSync(path)) continue;
@@ -89,6 +118,10 @@ export function loadEnvFiles(cwd: string = process.cwd(), home: string = homeDir
     const pairs = readEnvFile(path);
     const applied: string[] = [];
     for (const [k, v] of Object.entries(pairs)) {
+      if (SECRET_NAME.test(k) && isPlaceholderSecret(v)) {
+        placeholders.push({ key: k, label });
+        continue;
+      }
       if (env[k] !== undefined) continue;
       env[k] = v;
       applied.push(k);
@@ -96,7 +129,7 @@ export function loadEnvFiles(cwd: string = process.cwd(), home: string = homeDir
     }
     sources.push({ path, label, keys: Object.keys(pairs), applied });
   }
-  return { sources, origin };
+  return { sources, origin, placeholders };
 }
 
 /** A key as a short fingerprint: its first five and last four characters ("sk-or...0000"), never the whole value. */

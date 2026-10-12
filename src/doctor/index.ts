@@ -294,7 +294,10 @@ export async function runDoctor(opts: DoctorOptions = {}): Promise<DoctorResult>
   sections.push({
     name: 'config',
     head: sources.length ? sources.map((s) => `${s.label} (${plural(s.keys.length, 'key')})`).join(', ') : 'no .env files; using the environment only',
-    lines: [],
+    lines: (opts.envLoad?.placeholders ?? []).map(({ key, label }) => ({
+      status: 'warn' as Status,
+      text: `${key} in ${label} is a placeholder, not a key, so noro ignores it${env[key] ? ` and uses the one from ${opts.envLoad?.origin[key] ?? 'the environment'} (${fingerprint(env[key])})` : ''}. Put your real key there, or delete the line`,
+    })),
   });
 
   let config: Config;

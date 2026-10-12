@@ -7,6 +7,8 @@ import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { buildFlags, deliver } from '../../src/deliver/index.js';
+import { isPlaceholderSecret, loadEnvFiles, userEnvPath } from '../../src/env.js';
+import { formatDoctor, runDoctor } from '../../src/doctor/index.js';
 import type { CheckReport, Draft, FactsTable } from '../../src/schema.js';
 
 const ROOT = resolve(import.meta.dirname, '../..');
@@ -73,5 +75,38 @@ describe('D2: cut and reword act on the same whole sentence, and the flag says s
     expect(reworded.text).toBe('Cost per lead for PR-07 Prospecting rose to $41.40. Account spend landed at $13,678.');
     const cut = await deliver({ text: draft.rendered, facts, flags, decide: async (f) => ({ flagId: f.id, action: 'cut' }) });
     expect(cut.text).toBe('Account spend landed at $13,678.');
+  });
+});
+
+describe('D4: placeholder keys count as unset', () => {
+  it('recognizes the shipped placeholder and other obvious ones, not real-looking keys', () => {
+    for (const p of ['sk-or-v1-0000000000000000', '0000', 'sk-or-...', 'sk-or-v1-…', 'sk-xxxxxxxx', '<your key>', 'your-api-key-here', 'changeme']) expect(isPlaceholderSecret(p), p).toBe(true);
+    for (const k of ['sk-or-v1-3f9a0c1d2e4b5a6978', 'sk-ant-api03-AbCdEf0123456789', 'gsk_0aB1cD2eF3gH4iJ5', 'mykeyABC123def456', '']) expect(isPlaceholderSecret(k), k).toBe(false);
+  });
+
+  it('a placeholder in ./.env does not shadow the real key in ~/.config/noro/.env, and doctor warns', async () => {
+    const cwd = tmp();
+    const home = tmp();
+    writeFileSync(join(cwd, '.env'), 'NORO_MODEL=openrouter:anthropic/claude-opus-5.5\nOPENROUTER_API_KEY=sk-or-v1-0000000000000000\n');
+    mkdirSync(join(home, '.config', 'noro'), { recursive: true });
+    writeFileSync(userEnvPath(home), 'OPENROUTER_API_KEY=sk-or-v1-realrealreal123456789\n');
+    const env: NodeJS.ProcessEnv = { ANTHROPIC_API_KEY: 'sk-ant-...' };
+    const load = loadEnvFiles(cwd, home, env);
+    expect(env.OPENROUTER_API_KEY).toBe('sk-or-v1-realrealreal123456789');
+    expect(env.ANTHROPIC_API_KEY).toBeUndefined();
+    expect(load.placeholders).toEqual([
+      { key: 'ANTHROPIC_API_KEY', label: 'the environment' },
+      { key: 'OPENROUTER_API_KEY', label: '.env' },
+    ]);
+    const fetch = (async () => new Response('{}', { status: 200 })) as unknown as typeof globalThis.fetch;
+    const r = await runDoctor({ env, cwd, envLoad: load, fetch });
+    const text = formatDoctor(r);
+    expect(text).toMatch(/warn {2}OPENROUTER_API_KEY in \.env is a placeholder, not a key, so noro ignores it and uses the one from ~\/\.config\/noro\/\.env \(sk-or\.\.\.6789\)/);
+    expect(text).not.toContain('0000');
+  });
+
+  it('.env.example ships no uncommented key', async () => {
+    const lines = readFileSync(join(ROOT, '.env.example'), 'utf8').split('\n');
+    expect(lines.filter((l) => /^\s*[A-Z_]*(?:_API_KEY|_TOKEN)\s*=/.test(l))).toEqual([]);
   });
 });
