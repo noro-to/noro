@@ -29,7 +29,8 @@ const REF = /\{\{\s*(f\d+)\s*\}\}/g;
 
 /** Replace numbers that aren't a fact display (or an allowed identifier) with "N". */
 export function scrubForUser(text: string, facts?: FactsTable, allow: string[] = []): string {
-  const displays = new Set((facts?.facts ?? []).filter((f) => f.value !== null).map((f) => f.display));
+  // A change cited after "rose" or "fell" renders without its sign ("38%" for "+38%"); it is still that fact.
+  const displays = new Set((facts?.facts ?? []).filter((f) => f.value !== null).flatMap((f) => [f.display, f.display.replace(/^[+\-−]/, '')]));
   const masked = facts ? maskIdentifiers(text, allowedIdentifiers(facts, allow)) : text;
   let out = '';
   let at = 0;
@@ -154,6 +155,7 @@ export function buildFlags(check: CheckReport, notes: PanelNote[], labels?: Clas
     f.sentence = sentence;
     const shown = scrubForUser(sentence, facts, allow);
     const same = sentence.replace(/[.!?]$/, '') === f.quote.trim().replace(/[.!?]$/, '');
+    f.text = `${f.text.trimEnd()}${/[.!?:;)"'”’]$/.test(f.text.trimEnd()) ? '' : '.'}`;
     f.text += same ? ' Cut removes this sentence; reword replaces it.' : ` Cut removes the sentence; reword replaces it: "${shown}"`;
   }
   // Same text and quote once.

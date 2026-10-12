@@ -62,7 +62,8 @@ describe('noro this <export> (mocked models, real check)', () => {
     const file = join(ROOT, 'fixtures/exports/google-ads.csv');
     const facts = computeFacts(await ingest(file));
     const report = await runNoro({ file, cwd: ROOT, config, stateDir: tmp(), clients: { chat: createMockChat(), jev: createMockJev() } });
-    const displays = new Set(facts.facts.map((f) => f.display));
+    // A change after "rose"/"fell" renders without its sign, and a flag quoting that sentence shows it so.
+    const displays = new Set(facts.facts.flatMap((f) => [f.display, f.display.replace(/^[+\-]/, '')]));
     for (const f of report.flags) {
       const masked = maskIdentifiers(f.text, allowedIdentifiers(facts));
       for (const m of masked.matchAll(/[$€£+\-]?\d[\d,]*(?:\.\d+)?(?:\s?(?:%|pp|x))?/g)) expect(displays.has(m[0].trim()), `flag ${f.id}: ${m[0]}`).toBe(true);

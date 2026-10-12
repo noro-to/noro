@@ -342,3 +342,16 @@ describe('D9: docs match what noro prints', () => {
     if (!/PyYAML is required/.test(r.stderr)) expect(r.stdout).toMatch(/is up to date/);
   });
 });
+
+describe('D2 follow-up: the sentence in a flag reads as the report does', () => {
+  it('keeps a sign-dropped change ("rose 38%") and ends the flag text before the sentence note', () => {
+    const facts: FactsTable = {
+      currency: 'USD',
+      periods: { current: 'this week' },
+      facts: [{ id: 'f1', key: 'chg', label: 'CPA change', value: 0.38, kind: 'percent', unit: '%', display: '+38%', formula: '(b - a) / a', inputs: [], scope: { metric: 'cpa' }, flags: [] }],
+    };
+    const draft: Draft = { template: 'CPA rose {{f1}}. Spend held.', rendered: 'CPA rose 38%. Spend held.', factIds: ['f1'] };
+    const [flag] = buildFlags({ pass: true, mode: 'generate', untraced: [], length: null, findings: [], engine: null }, [{ persona: 'stats', note: 'Say what the sample is', quote: 'rose', severity: 'consider' }], undefined, { facts, draft });
+    expect(flag.text).toBe('stats (consider): Say what the sample is. Cut removes the sentence; reword replaces it: "CPA rose 38%."');
+  });
+});
