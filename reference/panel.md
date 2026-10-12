@@ -4,9 +4,7 @@ Reviewers read the draft as its reader would, before the user sees it. The `revi
 
 ## How to run it
 
-**Claude Code and Cowork:** start one fresh-context subagent per reviewer, in parallel. Give each only its persona file, `WORK/rewrite.md`, `WORK/ledger.json` and the brief below. Never the chat, the original or your reasoning. A fresh reader catches what the author can't.
-
-**Elsewhere** (Claude.ai, or no subagents): take each persona in turn yourself, working only from the same four things, and say so in the delivery: "Panel run inline."
+`src/panel/` runs each reviewer as a separate model call that sees only its persona file, the draft (with fact ids, not values) and the brief below. Never the original, the facts' values or the writer's reasoning. A fresh reader catches what the author can't.
 
 ## The brief
 

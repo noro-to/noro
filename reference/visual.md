@@ -34,7 +34,7 @@ Load this when the input has an image (screenshot, slide, dashboard, chart) or t
 
 ## Drawing it
 
-In Claude.ai and Claude Code, draw with Python and matplotlib to a PNG, or build an artifact when the user wants it on a page. Every value plotted comes from the confirmed ledger.
+Draw with Python and matplotlib to a PNG. Every value plotted comes from the facts table or the confirmed ledger.
 
 ```python
 import matplotlib; matplotlib.use("Agg")

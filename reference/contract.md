@@ -1,8 +1,4 @@
----
-name: noro
-description: Rewrites an existing ad or paid-media report, written or visual, shorter and slop-free with every number checked. Use for "noro this" or any ask to tighten or de-slop a report.
-license: MIT
----
+> **Note:** this is the agent contract from the retired v0.1 Claude skill (`skills/noro/SKILL.md`), kept for reference. In v0.2 its agent-facing rules live in the draft, panel and revise prompts (`src/draft/prompts.ts`), and code runs the steps it describes. The promises are unchanged.
 
 # noro
 

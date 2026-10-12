@@ -48,6 +48,4 @@ formality: professional   # casual | professional | formal
 
 ## Saving
 
-**Claude Code and Cowork:** write the block to `.noro/settings.yml` in the project or working folder and say so in one line. Read it at the start of every run. The user's own reviewers live in `.noro/personas/<id>.md`.
-
-**Claude.ai:** a skill can't keep files between chats. Show the block and say: "Paste this into your Project instructions, or ask me to remember it, and I'll skip these questions next time." At the start of each run, look for a `# noro settings` block in Project instructions, memory and the chat. The user's own reviewers are pasted the same way (`personas/README.md`).
+Save the block to `.noro/settings.yml` in the working folder and read it at the start of every run. The user's own reviewers live in `.noro/personas/<id>.md`.
