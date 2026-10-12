@@ -62,6 +62,10 @@ function run(bin: string, args: string[], stdin: string, env: NodeJS.ProcessEnv,
     );
     child.on('close', (code) => resolve({ code: code ?? 1, stdout, stderr }));
     child.stdin.on('error', () => {}); // the child may exit before reading stdin
+    // A child that exits without reading stdin (e.g. `auth status`, or a quick
+    // failure) closes the pipe; the write then fails with EPIPE. That's not an
+    // error for us: the exit code and output tell the real story.
+    child.stdin.on('error', () => {});
     child.stdin.end(stdin);
   });
 }
