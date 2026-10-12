@@ -120,3 +120,36 @@ describe('D6: contact placeholders in shipped files say they are placeholders', 
     expect(readFileSync(join(ROOT, 'PRIVACY.md'), 'utf8')).toMatch(/Until then, open a private security advisory on GitHub/);
   });
 });
+
+describe('D7: --model values', () => {
+  const cli = (args: string[], env: Record<string, string> = {}) =>
+    spawnSync(process.execPath, [...CLI, ...args], { cwd: ROOT, env: cleanEnv(env), encoding: 'utf8', input: '', timeout: 60_000 });
+
+  it('an empty --model is a usage error, not the default model', () => {
+    for (const args of [['--model', ''], ['--model='], ['--model', '  ']]) {
+      const r = cli(['this', FIXTURE, '--yes', ...args], { NORO_MOCK_MODELS: '1' });
+      expect(r.status, args.join(' ')).toBe(1);
+      expect(r.stderr).toMatch(/--model needs a value/);
+      expect(r.stderr).toMatch(/Usage:/);
+    }
+  });
+
+  it('a bare provider name means that provider with its default model', async () => {
+    const { loadConfig } = await import('../../src/config.js');
+    expect(loadConfig({}, { model: 'claude-cli' }).draftModel).toBe('claude-cli:claude-opus-5-5');
+    expect(loadConfig({}, { model: 'codex-cli' }).draftModel).toBe('codex-cli:default');
+    expect(loadConfig({}, { model: 'Anthropic' }).draftModel).toBe('anthropic:claude-opus-5-5');
+    expect(loadConfig({ NORO_MODEL: 'claude-cli' }).draftModel).toBe('claude-cli:claude-opus-5-5');
+    expect(loadConfig({ NORO_MODEL: 'claude-cli', NORO_PANEL_MODEL: 'codex-cli' }).panelModel).toBe('codex-cli:default');
+    expect(loadConfig({}, { model: 'openrouter:' }).draftModel).toBe('openrouter:anthropic/claude-opus-5.5');
+    // A bare OpenRouter id is still an OpenRouter id.
+    expect(loadConfig({}, { model: 'deepseek/deepseek-v4-pro' }).draftModel).toBe('openrouter:deepseek/deepseek-v4-pro');
+    expect(() => loadConfig({}, { model: 'openai-compatible' })).toThrow(/needs a model id/);
+  });
+
+  it('the CLI says which writing model it uses', () => {
+    const r = cli(['this', FIXTURE, '--yes'], { NORO_MOCK_MODELS: '1' });
+    expect(r.status, r.stderr).toBe(0);
+    expect(r.stderr).toContain('noro: write with canned test models (NORO_MOCK_MODELS=1)');
+  });
+});

@@ -138,6 +138,8 @@ function parseArgs(argv: string[]): Args | string {
     else rest.push(x);
   }
   if (a.help || a.version) return a;
+  if (a.model !== undefined && a.model.trim() === '') return '--model needs a value like openrouter:anthropic/claude-opus-5.5 (or a provider name, e.g. claude-cli).';
+  if (a.decisions !== undefined && a.decisions.trim() === '') return '--decisions needs a JSON array or a file.';
   if (a.format !== undefined && !FORMAT_NAMES.includes(a.format)) {
     return a.format === '' ? `--format needs a value: ${FORMAT_NAMES.join(', ')}.` : `Unknown format "${a.format}". Valid formats: ${FORMAT_NAMES.join(', ')}.`;
   }
@@ -254,6 +256,12 @@ async function cmdThis(parsed: Args): Promise<number> {
     return 1;
   }
 
+  // Say which writing model runs, so a --model value that resolved to a default is never silent.
+  const writerDescribe = clients?.chat
+    ? 'canned test models (NORO_MOCK_MODELS=1)'
+    : config.panelModel === config.draftModel
+      ? config.draftModel
+      : `${config.draftModel} (panel: ${config.panelModel})`;
   const interactive = !parsed.yes && !decisions && process.stdin.isTTY === true;
   if (!parsed.yes && !decisions && !interactive) process.stderr.write('noro: no terminal to ask in, so every flag is kept (pass --yes to say so).\n');
   const { runNoro, exitCodeFor } = await import('./harness/index.js');
@@ -275,6 +283,7 @@ async function cmdThis(parsed: Args): Promise<number> {
       onStep: (s) => {
         process.stderr.write(`noro: ${s}\n`);
         if (s === 'classify') process.stderr.write(`noro: classify with ${classifier.describe}\n`);
+        if (s === 'draft') process.stderr.write(`noro: write with ${writerDescribe}\n`);
       },
     };
     const report = await runNoro(input);

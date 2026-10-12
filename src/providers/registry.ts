@@ -125,7 +125,15 @@ export function parseModelRef(s: string, setting = 'NORO_MODEL'): ModelRef {
   const value = s.trim();
   if (!value) throw new ConfigError(`${setting} is empty. Use <provider>:<model-id>, e.g. ${DEFAULT_MODEL_REF}.`);
   const at = value.indexOf(':');
-  if (at < 0) return { provider: DEFAULT_PROVIDER, id: value };
+  if (at < 0) {
+    // A bare provider name ("claude-cli", "codex-cli", "anthropic") means that provider's default model.
+    const bare = getProvider(value.toLowerCase());
+    if (bare) {
+      if (!bare.defaultModel) throw new ConfigError(`${setting}=${value}: ${bare.label} needs a model id, e.g. ${bare.id}:my-model.`);
+      return { provider: bare.id, id: bare.defaultModel };
+    }
+    return { provider: DEFAULT_PROVIDER, id: value };
+  }
   const prefix = value.slice(0, at).trim();
   const rest = value.slice(at + 1).trim();
   const info = getProvider(prefix.toLowerCase());

@@ -8,7 +8,9 @@
 //   3. NORO_MODEL
 //   4. NORO_WRITER=claude-cli, kept as an alias for NORO_MODEL=claude-cli:claude-opus-5-5
 //   5. openrouter:anthropic/claude-opus-5.5
-// A value with no provider prefix is an OpenRouter id, except when the base
+// A bare provider name ("claude-cli", "anthropic") means that provider's
+// default model (codex-cli:default, claude-cli:claude-opus-5-5, ...).
+// Any other value with no provider prefix is an OpenRouter id, except when the base
 // writer is claude-cli (NORO_WRITER=claude-cli or NORO_MODEL=claude-cli:...),
 // where a bare NORO_DRAFT_MODEL / NORO_PANEL_MODEL keeps its v0.1 meaning (that
 // model, through Claude Code).
@@ -57,7 +59,7 @@ const nonEmpty = (v: string | undefined) => (v !== undefined && v.trim() !== '' 
 
 /** "provider:id" for a setting, with bare ids read as `bareProvider`. */
 function refFrom(value: string, setting: string, bareProvider?: string): string {
-  if (bareProvider && !value.includes(':')) return `${bareProvider}:${value}`;
+  if (bareProvider && !value.includes(':') && !getProvider(value.toLowerCase())) return `${bareProvider}:${value}`;
   const r = parseModelRef(value, setting);
   return `${r.provider}:${r.id}`;
 }

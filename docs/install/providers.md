@@ -6,7 +6,7 @@ The writing steps (draft, panel, revise) run on one chat model. You choose it wi
 NORO_MODEL=<provider>:<model-id>
 ```
 
-noro splits the value on the first colon, so model ids that contain colons work. A value with no provider prefix means `openrouter`, so older `.env` files keep working. The model id is always the provider's own id for that model.
+noro splits the value on the first colon, so model ids that contain colons work. A provider name on its own (`claude-cli`, `codex-cli`, `anthropic`) means that provider's default model, as does `<provider>:` with nothing after the colon. Any other value with no provider prefix means `openrouter`, so older `.env` files keep working. An empty `--model` is an error. `noro this` prints the writing model it uses (`noro: write with ...`). The model id is always the provider's own id for that model.
 
 | Variable | Use |
 | --- | --- |
