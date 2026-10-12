@@ -6,7 +6,8 @@ body:
   - type: markdown
     attributes:
       value: |
-        **Synthetic or anonymized only.** Change client and brand names and every number before you paste.
+        **Use synthetic data only. Don't paste real client data.** No real exports, reports, client names or API keys.
+        Change client and brand names and every number before you paste.
   - type: textarea
     id: input
     attributes:

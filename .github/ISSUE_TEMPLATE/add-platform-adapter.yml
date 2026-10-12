@@ -7,7 +7,8 @@ body:
     attributes:
       value: |
         An adapter is one YAML file in `src/adapters/` that maps a platform's export columns to noro's standard schema ([docs/schema.md](../blob/main/docs/schema.md)).
-        **Synthetic data only.** Change every account, campaign and number before you paste anything.
+        **Use synthetic data only. Don't paste real client data.** No real exports, reports, client names or API keys.
+        Change every account, campaign and number before you paste anything.
   - type: input
     id: platform
     attributes:
