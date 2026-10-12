@@ -1,0 +1,16 @@
+{
+  "name": "noro",
+  "version": "0.2.0",
+  "description": "Turn ad-platform exports into short paid-media reports where every number is computed by code and traced to a facts table. Runs the noro CLI.",
+  "author": { "name": "noro contributors", "url": "https://github.com/noro-to" },
+  "homepage": "https://noro.to",
+  "repository": "https://github.com/noro-to/noro",
+  "license": "MIT",
+  "keywords": ["paid-media", "reporting", "google-ads", "meta-ads", "amazon-dsp", "mcp"],
+  "mcpServers": {
+    "noro": {
+      "command": "npx",
+      "args": ["-y", "@noro-to/noro", "mcp"]
+    }
+  }
+}
