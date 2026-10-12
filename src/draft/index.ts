@@ -214,9 +214,20 @@ export function templatize(text: string, numbers: FoundNumber[]): Templatized {
       flags: [],
     };
   });
-  const allow = [...new Set(template.replace(/\{\{\s*f\d+\s*\}\}/g, ' ').split(/\s+/))]
-    .map((t) => t.replace(/^[^\p{L}\p{Nd}]+|[^\p{L}\p{Nd}]+$/gu, ''))
-    .filter((t) => /\p{Nd}/u.test(t));
+  // Identifiers the extractor left in place. A token with a letter ("Q4", "PR-03") stands alone; a
+  // digits-only token keeps the word before it ("Oct 6", "Oct 5–11"), so a bare small integer is never
+  // allowed on its own. A standalone four-digit year is allowed as is.
+  const tokens = template
+    .replace(/\{\{\s*f\d+\s*\}\}/g, ' ')
+    .split(/\s+/)
+    .map((t) => t.replace(/^[^\p{L}\p{Nd}]+|[^\p{L}\p{Nd}]+$/gu, ''));
+  const allowSet = new Set<string>();
+  tokens.forEach((t, i) => {
+    if (!/\p{Nd}/u.test(t)) return;
+    if (/\p{L}/u.test(t) || /^(19|20)\d\d$/.test(t)) allowSet.add(t);
+    else if (i > 0 && /^\p{L}+$/u.test(tokens[i - 1])) allowSet.add(`${tokens[i - 1]} ${t}`);
+  });
+  const allow = [...allowSet];
   return { template, facts: { currency: '', periods: { current: '' }, facts }, allow };
 }
 

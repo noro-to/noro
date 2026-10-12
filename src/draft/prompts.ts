@@ -121,7 +121,8 @@ export function draftFacts(facts: FactsTable, labels: Classification[]): Fact[] 
 }
 
 function context(facts: FactsTable, allow: string[] = []): string {
-  const lines = [`Currency: ${facts.currency}.`];
+  const lines: string[] = [];
+  if (facts.currency) lines.push(`Currency: ${facts.currency}.`);
   if (facts.periods.current) lines.push(`Current window: ${facts.periods.current}.`);
   if (facts.periods.previous) lines.push(`Previous window: ${facts.periods.previous}.`);
   const ids = allowedIdentifiers(facts, allow);
