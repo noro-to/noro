@@ -1,0 +1,58 @@
+# Meta Ads Manager: Reports → Export table data → CSV/XLSX, with a daily
+# time breakdown (each row's "Reporting starts" equals its "Reporting ends").
+#
+# Quirks handled here:
+# - The spend header carries the account currency: "Amount spent (USD)",
+#   "Amount spent (EUR)", ... The currency is read from that header.
+# - "Results" depends on each campaign's objective, so it is only a fallback:
+#   "Purchases" is preferred as the conversions column when present.
+# - Clicks are "Link clicks" (clicks to the destination), not "Clicks (all)".
+# - Exports can start with a summary row that has no campaign name.
+# - Zero values are often left blank.
+id: meta
+platform: Meta
+
+detect:
+  required: [Reporting starts, Campaign name]
+  distinctive: [Reporting ends, Amount spent (*), Ad set name, Link clicks, Purchases, Purchases conversion value, Results, Reach]
+
+columns:
+  date: [Reporting starts, Day]
+  account: [Account name]
+  campaign: [Campaign name]
+  adGroup: [Ad set name]
+  spend: [Amount spent (*), Amount spent]
+  impressions: [Impressions]
+  clicks: [Link clicks, Clicks (all)]
+  conversions: [Purchases, Website purchases, Results]
+  conversionValue: [Purchases conversion value, Website purchases conversion value, Purchase conversion value]
+
+# When a row's end date differs from its start date the row covers a period,
+# not a day: Row.period becomes "<start>/<end>" and Row.date is left unset.
+dateEnd: [Reporting ends]
+
+extra:
+  reach: [Reach]
+  clicksAll: [Clicks (all)]
+  results: [Results]
+  resultIndicator: [Result indicator]
+
+micros: []
+
+currency:
+  # "Amount spent (USD)" → USD
+  fromHeader: true
+  default: USD
+
+numbers:
+  thousands: ","
+  decimal: "."
+  zero: ["", "--", "-"]
+
+dates:
+  order: mdy
+
+skipRows:
+  - field: campaign
+    blank: true
+    reason: summary row

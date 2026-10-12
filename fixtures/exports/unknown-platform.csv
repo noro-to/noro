@@ -1,0 +1,57 @@
+Date,Advertiser name,Campaign name,Ad group name,Cost,Impressions,Clicks (destination),CTR,Conversions,Total purchase value,Currency
+2026-09-29,Acme Outdoor,PR-03 Brand,PR-03 - All placements,150.00,2000,400,20.00%,25,2000.00,USD
+2026-09-29,Acme Outdoor,PR-07 Prospecting,PR-07 - All placements,480.00,19200,576,3.00%,32,3040.00,USD
+2026-09-29,Acme Outdoor,NB-11 Generic,NB-11 - All placements,276.43,7372,295,4.00%,12,1440.00,USD
+2026-09-29,Acme Outdoor,DG-05 Demand Gen,DG-05 - All placements,24.00,2572,34,1.32%,1,150.00,USD
+2026-09-30,Acme Outdoor,PR-03 Brand,PR-03 - All placements,162.00,2160,432,20.00%,27,2160.00,USD
+2026-09-30,Acme Outdoor,PR-07 Prospecting,PR-07 - All placements,437.14,17486,525,3.00%,29,2755.00,USD
+2026-09-30,Acme Outdoor,NB-11 Generic,NB-11 - All placements,257.14,6857,274,4.00%,12,1440.00,USD
+2026-09-30,Acme Outdoor,DG-05 Demand Gen,DG-05 - All placements,120.00,12857,172,1.34%,3,450.00,USD
+2026-10-01,Acme Outdoor,PR-03 Brand,PR-03 - All placements,168.00,2240,448,20.00%,28,2240.00,USD
+2026-10-01,Acme Outdoor,PR-07 Prospecting,PR-07 - All placements,368.57,14743,442,3.00%,25,2375.00,USD
+2026-10-01,Acme Outdoor,NB-11 Generic,NB-11 - All placements,360.00,9600,384,4.00%,16,1920.00,USD
+2026-10-01,Acme Outdoor,DG-05 Demand Gen,DG-05 - All placements,18.00,1929,26,1.35%,0,0.00,USD
+2026-10-02,Acme Outdoor,PR-03 Brand,PR-03 - All placements,153.00,2040,408,20.00%,26,2080.00,USD
+2026-10-02,Acme Outdoor,PR-07 Prospecting,PR-07 - All placements,342.86,13714,412,3.00%,23,2185.00,USD
+2026-10-02,Acme Outdoor,NB-11 Generic,NB-11 - All placements,321.43,8571,343,4.00%,14,1680.00,USD
+2026-10-02,Acme Outdoor,DG-05 Demand Gen,DG-05 - All placements,108.00,11571,154,1.33%,3,450.00,USD
+2026-10-03,Acme Outdoor,PR-03 Brand,PR-03 - All placements,129.00,1720,344,20.00%,21,1680.00,USD
+2026-10-03,Acme Outdoor,PR-07 Prospecting,PR-07 - All placements,480.00,19200,576,3.00%,32,3040.00,USD
+2026-10-03,Acme Outdoor,NB-11 Generic,NB-11 - All placements,347.14,9257,370,4.00%,15,1800.00,USD
+2026-10-03,Acme Outdoor,DG-05 Demand Gen,DG-05 - All placements,30.00,3214,43,1.34%,1,150.00,USD
+2026-10-04,Acme Outdoor,PR-03 Brand,PR-03 - All placements,120.00,1600,320,20.00%,20,1600.00,USD
+2026-10-04,Acme Outdoor,PR-07 Prospecting,PR-07 - All placements,428.57,17143,514,3.00%,28,2660.00,USD
+2026-10-04,Acme Outdoor,NB-11 Generic,NB-11 - All placements,360.00,9600,384,4.00%,16,1920.00,USD
+2026-10-04,Acme Outdoor,DG-05 Demand Gen,DG-05 - All placements,96.00,10286,137,1.33%,3,450.00,USD
+2026-10-05,Acme Outdoor,PR-03 Brand,PR-03 - All placements,168.00,2240,448,20.00%,28,2240.00,USD
+2026-10-05,Acme Outdoor,PR-07 Prospecting,PR-07 - All placements,462.86,18514,555,3.00%,31,2945.00,USD
+2026-10-05,Acme Outdoor,NB-11 Generic,NB-11 - All placements,327.86,8743,350,4.00%,15,1800.00,USD
+2026-10-05,Acme Outdoor,DG-05 Demand Gen,DG-05 - All placements,24.00,2571,34,1.32%,1,150.00,USD
+2026-10-06,Acme Outdoor,PR-03 Brand,PR-03 - All placements,156.60,2050,410,20.00%,26,2080.00,USD
+2026-10-06,Acme Outdoor,PR-07 Prospecting,PR-07 - All placements,496.80,20000,600,3.00%,24,2280.00,USD
+2026-10-06,Acme Outdoor,NB-11 Generic,NB-11 - All placements,268.19,7248,292,4.03%,12,1440.00,USD
+2026-10-06,Acme Outdoor,DG-05 Demand Gen,DG-05 - All placements,26.00,2686,37,1.38%,1,150.00,USD
+2026-10-07,Acme Outdoor,PR-03 Brand,PR-03 - All placements,169.13,2214,443,20.01%,28,2240.00,USD
+2026-10-07,Acme Outdoor,PR-07 Prospecting,PR-07 - All placements,452.44,18214,546,3.00%,22,2090.00,USD
+2026-10-07,Acme Outdoor,NB-11 Generic,NB-11 - All placements,249.48,6743,272,4.03%,11,1320.00,USD
+2026-10-07,Acme Outdoor,DG-05 Demand Gen,DG-05 - All placements,130.00,13428,183,1.36%,4,600.00,USD
+2026-10-08,Acme Outdoor,PR-03 Brand,PR-03 - All placements,175.39,2296,459,19.99%,29,2320.00,USD
+2026-10-08,Acme Outdoor,PR-07 Prospecting,PR-07 - All placements,381.47,15357,461,3.00%,19,1805.00,USD
+2026-10-08,Acme Outdoor,NB-11 Generic,NB-11 - All placements,349.27,9440,381,4.04%,16,1920.00,USD
+2026-10-08,Acme Outdoor,DG-05 Demand Gen,DG-05 - All placements,19.50,2014,27,1.34%,0,0.00,USD
+2026-10-09,Acme Outdoor,PR-03 Brand,PR-03 - All placements,159.73,2091,418,19.99%,26,2080.00,USD
+2026-10-09,Acme Outdoor,PR-07 Prospecting,PR-07 - All placements,354.86,14286,428,3.00%,17,1615.00,USD
+2026-10-09,Acme Outdoor,NB-11 Generic,NB-11 - All placements,311.85,8429,340,4.03%,14,1680.00,USD
+2026-10-09,Acme Outdoor,DG-05 Demand Gen,DG-05 - All placements,117.00,12086,165,1.37%,4,600.00,USD
+2026-10-10,Acme Outdoor,PR-03 Brand,PR-03 - All placements,134.68,1763,353,20.02%,22,1760.00,USD
+2026-10-10,Acme Outdoor,PR-07 Prospecting,PR-07 - All placements,496.80,20000,600,3.00%,24,2280.00,USD
+2026-10-10,Acme Outdoor,NB-11 Generic,NB-11 - All placements,336.80,9103,367,4.03%,15,1800.00,USD
+2026-10-10,Acme Outdoor,DG-05 Demand Gen,DG-05 - All placements,32.50,3357,46,1.37%,1,150.00,USD
+2026-10-11,Acme Outdoor,PR-03 Brand,PR-03 - All placements,125.28,1640,328,20.00%,20,1600.00,USD
+2026-10-11,Acme Outdoor,PR-07 Prospecting,PR-07 - All placements,443.57,17857,536,3.00%,21,1995.00,USD
+2026-10-11,Acme Outdoor,NB-11 Generic,NB-11 - All placements,349.27,9440,381,4.04%,16,1920.00,USD
+2026-10-11,Acme Outdoor,DG-05 Demand Gen,DG-05 - All placements,104.00,10743,146,1.36%,3,450.00,USD
+2026-10-12,Acme Outdoor,PR-03 Brand,PR-03 - All placements,175.39,2296,459,19.99%,29,2320.00,USD
+2026-10-12,Acme Outdoor,PR-07 Prospecting,PR-07 - All placements,479.06,19286,579,3.00%,23,2185.00,USD
+2026-10-12,Acme Outdoor,NB-11 Generic,NB-11 - All placements,318.09,8597,347,4.04%,15,1800.00,USD
+2026-10-12,Acme Outdoor,DG-05 Demand Gen,DG-05 - All placements,26.00,2686,36,1.34%,1,150.00,USD

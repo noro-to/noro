@@ -1,0 +1,58 @@
+﻿Date,Advertiser,Order,Order ID,Line item,Line item ID,Total cost,Impressions,Click-throughs,Total purchases,Total sales,Total ROAS
+09/29/2026,Acme Outdoor,PR-03 Brand,5801903347,PR-03 Brand - Audience,7704410921,$450.00,"2,000",400,25,"$2,000.00",4.44
+09/29/2026,Acme Outdoor,PR-07 Prospecting,5811903347,PR-07 Prospecting - Audience,7714410921,"$1,440.00","19,200",576,32,"$3,040.00",2.11
+09/29/2026,Acme Outdoor,NB-11 Generic,5821903347,NB-11 Generic - Audience,7724410921,$829.29,"7,372",295,12,"$1,440.00",1.74
+09/29/2026,Acme Outdoor,DG-05 Demand Gen,5831903347,DG-05 Demand Gen - Audience,7734410921,$72.00,"2,572",34,1,$150.00,2.08
+09/30/2026,Acme Outdoor,PR-03 Brand,5801903347,PR-03 Brand - Audience,7704410921,$486.00,"2,160",432,27,"$2,160.00",4.44
+09/30/2026,Acme Outdoor,PR-07 Prospecting,5811903347,PR-07 Prospecting - Audience,7714410921,"$1,311.43","17,486",525,29,"$2,755.00",2.10
+09/30/2026,Acme Outdoor,NB-11 Generic,5821903347,NB-11 Generic - Audience,7724410921,$771.43,"6,857",274,12,"$1,440.00",1.87
+09/30/2026,Acme Outdoor,DG-05 Demand Gen,5831903347,DG-05 Demand Gen - Audience,7734410921,$360.00,"12,857",172,3,$450.00,1.25
+10/01/2026,Acme Outdoor,PR-03 Brand,5801903347,PR-03 Brand - Audience,7704410921,$504.00,"2,240",448,28,"$2,240.00",4.44
+10/01/2026,Acme Outdoor,PR-07 Prospecting,5811903347,PR-07 Prospecting - Audience,7714410921,"$1,105.72","14,743",442,25,"$2,375.00",2.15
+10/01/2026,Acme Outdoor,NB-11 Generic,5821903347,NB-11 Generic - Audience,7724410921,"$1,080.00","9,600",384,16,"$1,920.00",1.78
+10/01/2026,Acme Outdoor,DG-05 Demand Gen,5831903347,DG-05 Demand Gen - Audience,7734410921,$54.00,"1,929",26,0,$0.00,0.00
+10/02/2026,Acme Outdoor,PR-03 Brand,5801903347,PR-03 Brand - Audience,7704410921,$459.00,"2,040",408,26,"$2,080.00",4.53
+10/02/2026,Acme Outdoor,PR-07 Prospecting,5811903347,PR-07 Prospecting - Audience,7714410921,"$1,028.57","13,714",412,23,"$2,185.00",2.12
+10/02/2026,Acme Outdoor,NB-11 Generic,5821903347,NB-11 Generic - Audience,7724410921,$964.28,"8,571",343,14,"$1,680.00",1.74
+10/02/2026,Acme Outdoor,DG-05 Demand Gen,5831903347,DG-05 Demand Gen - Audience,7734410921,$324.00,"11,571",154,3,$450.00,1.39
+10/03/2026,Acme Outdoor,PR-03 Brand,5801903347,PR-03 Brand - Audience,7704410921,$387.00,"1,720",344,21,"$1,680.00",4.34
+10/03/2026,Acme Outdoor,PR-07 Prospecting,5811903347,PR-07 Prospecting - Audience,7714410921,"$1,440.00","19,200",576,32,"$3,040.00",2.11
+10/03/2026,Acme Outdoor,NB-11 Generic,5821903347,NB-11 Generic - Audience,7724410921,"$1,041.43","9,257",370,15,"$1,800.00",1.73
+10/03/2026,Acme Outdoor,DG-05 Demand Gen,5831903347,DG-05 Demand Gen - Audience,7734410921,$90.00,"3,214",43,1,$150.00,1.67
+10/04/2026,Acme Outdoor,PR-03 Brand,5801903347,PR-03 Brand - Audience,7704410921,$360.00,"1,600",320,20,"$1,600.00",4.44
+10/04/2026,Acme Outdoor,PR-07 Prospecting,5811903347,PR-07 Prospecting - Audience,7714410921,"$1,285.71","17,143",514,28,"$2,660.00",2.07
+10/04/2026,Acme Outdoor,NB-11 Generic,5821903347,NB-11 Generic - Audience,7724410921,"$1,080.00","9,600",384,16,"$1,920.00",1.78
+10/04/2026,Acme Outdoor,DG-05 Demand Gen,5831903347,DG-05 Demand Gen - Audience,7734410921,$288.00,"10,286",137,3,$450.00,1.56
+10/05/2026,Acme Outdoor,PR-03 Brand,5801903347,PR-03 Brand - Audience,7704410921,$504.00,"2,240",448,28,"$2,240.00",4.44
+10/05/2026,Acme Outdoor,PR-07 Prospecting,5811903347,PR-07 Prospecting - Audience,7714410921,"$1,388.57","18,514",555,31,"$2,945.00",2.12
+10/05/2026,Acme Outdoor,NB-11 Generic,5821903347,NB-11 Generic - Audience,7724410921,$983.57,"8,743",350,15,"$1,800.00",1.83
+10/05/2026,Acme Outdoor,DG-05 Demand Gen,5831903347,DG-05 Demand Gen - Audience,7734410921,$72.00,"2,571",34,1,$150.00,2.08
+10/06/2026,Acme Outdoor,PR-03 Brand,5801903347,PR-03 Brand - Audience,7704410921,$469.80,"2,050",410,26,"$2,080.00",4.43
+10/06/2026,Acme Outdoor,PR-07 Prospecting,5811903347,PR-07 Prospecting - Audience,7714410921,"$1,490.40","20,000",600,24,"$2,280.00",1.53
+10/06/2026,Acme Outdoor,NB-11 Generic,5821903347,NB-11 Generic - Audience,7724410921,$804.57,"7,248",292,12,"$1,440.00",1.79
+10/06/2026,Acme Outdoor,DG-05 Demand Gen,5831903347,DG-05 Demand Gen - Audience,7734410921,$78.00,"2,686",37,1,$150.00,1.92
+10/07/2026,Acme Outdoor,PR-03 Brand,5801903347,PR-03 Brand - Audience,7704410921,$507.38,"2,214",443,28,"$2,240.00",4.41
+10/07/2026,Acme Outdoor,PR-07 Prospecting,5811903347,PR-07 Prospecting - Audience,7714410921,"$1,357.33","18,214",546,22,"$2,090.00",1.54
+10/07/2026,Acme Outdoor,NB-11 Generic,5821903347,NB-11 Generic - Audience,7724410921,$748.44,"6,743",272,11,"$1,320.00",1.76
+10/07/2026,Acme Outdoor,DG-05 Demand Gen,5831903347,DG-05 Demand Gen - Audience,7734410921,$390.00,"13,428",183,4,$600.00,1.54
+10/08/2026,Acme Outdoor,PR-03 Brand,5801903347,PR-03 Brand - Audience,7704410921,$526.18,"2,296",459,29,"$2,320.00",4.41
+10/08/2026,Acme Outdoor,PR-07 Prospecting,5811903347,PR-07 Prospecting - Audience,7714410921,"$1,144.41","15,357",461,19,"$1,805.00",1.58
+10/08/2026,Acme Outdoor,NB-11 Generic,5821903347,NB-11 Generic - Audience,7724410921,"$1,047.82","9,440",381,16,"$1,920.00",1.83
+10/08/2026,Acme Outdoor,DG-05 Demand Gen,5831903347,DG-05 Demand Gen - Audience,7734410921,$58.50,"2,014",27,0,$0.00,0.00
+10/09/2026,Acme Outdoor,PR-03 Brand,5801903347,PR-03 Brand - Audience,7704410921,$479.20,"2,091",418,26,"$2,080.00",4.34
+10/09/2026,Acme Outdoor,PR-07 Prospecting,5811903347,PR-07 Prospecting - Audience,7714410921,"$1,064.57","14,286",428,17,"$1,615.00",1.52
+10/09/2026,Acme Outdoor,NB-11 Generic,5821903347,NB-11 Generic - Audience,7724410921,$935.55,"8,429",340,14,"$1,680.00",1.80
+10/09/2026,Acme Outdoor,DG-05 Demand Gen,5831903347,DG-05 Demand Gen - Audience,7734410921,$351.00,"12,086",165,4,$600.00,1.71
+10/10/2026,Acme Outdoor,PR-03 Brand,5801903347,PR-03 Brand - Audience,7704410921,$404.03,"1,763",353,22,"$1,760.00",4.36
+10/10/2026,Acme Outdoor,PR-07 Prospecting,5811903347,PR-07 Prospecting - Audience,7714410921,"$1,490.40","20,000",600,24,"$2,280.00",1.53
+10/10/2026,Acme Outdoor,NB-11 Generic,5821903347,NB-11 Generic - Audience,7724410921,"$1,010.39","9,103",367,15,"$1,800.00",1.78
+10/10/2026,Acme Outdoor,DG-05 Demand Gen,5831903347,DG-05 Demand Gen - Audience,7734410921,$97.50,"3,357",46,1,$150.00,1.54
+10/11/2026,Acme Outdoor,PR-03 Brand,5801903347,PR-03 Brand - Audience,7704410921,$375.84,"1,640",328,20,"$1,600.00",4.26
+10/11/2026,Acme Outdoor,PR-07 Prospecting,5811903347,PR-07 Prospecting - Audience,7714410921,"$1,330.72","17,857",536,21,"$1,995.00",1.50
+10/11/2026,Acme Outdoor,NB-11 Generic,5821903347,NB-11 Generic - Audience,7724410921,"$1,047.82","9,440",381,16,"$1,920.00",1.83
+10/11/2026,Acme Outdoor,DG-05 Demand Gen,5831903347,DG-05 Demand Gen - Audience,7734410921,$312.00,"10,743",146,3,$450.00,1.44
+10/12/2026,Acme Outdoor,PR-03 Brand,5801903347,PR-03 Brand - Audience,7704410921,$526.17,"2,296",459,29,"$2,320.00",4.41
+10/12/2026,Acme Outdoor,PR-07 Prospecting,5811903347,PR-07 Prospecting - Audience,7714410921,"$1,437.17","19,286",579,23,"$2,185.00",1.52
+10/12/2026,Acme Outdoor,NB-11 Generic,5821903347,NB-11 Generic - Audience,7724410921,$954.26,"8,597",347,15,"$1,800.00",1.89
+10/12/2026,Acme Outdoor,DG-05 Demand Gen,5831903347,DG-05 Demand Gen - Audience,7734410921,$78.00,"2,686",36,1,$150.00,1.92
+Total,,,,,,"$40,677.45","484,350",19040,930,"$89,430.00",2.20
