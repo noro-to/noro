@@ -8,24 +8,30 @@
 import type { Classification, ChatClient, Draft, Fact, FactKind, FactsTable, PanelNote } from '../schema.js';
 import { parseJsonObject, stripFence } from './chat.js';
 import { DEFAULT_FORMAT, FORMATS, buildDraftPrompt, buildRetryNote, buildRevisePrompt, noteKey } from './prompts.js';
-import { RawNumberError, renderTemplate, scrubNumbers } from './template.js';
+import { DATE_LABEL, NUMERAL, RawNumberError, isIdentifierShape, renderTemplate, scrubNumbers } from './template.js';
 import type { TemplateOptions } from './template.js';
 
 export { createChatClient, parseJsonObject, stripFence } from './chat.js';
 export { createClaudeCliClient, checkClaudeAuth, ClaudeCliError } from './claude-cli.js';
 export {
+  DATE_LABEL,
+  NUMERAL,
   RawNumberError,
   allowedIdentifiers,
+  findNumberWords,
+  isIdentifierShape,
   maskIdentifiers,
+  renderFragment,
   renderTemplate,
   scrubNumbers,
   segments,
+  stripInvisible,
   templateQuote,
   templateSpan,
   traceNumbers,
   validateTemplate,
 } from './template.js';
-export type { NumberTrace, TemplateErrorKind, TemplateOptions } from './template.js';
+export type { NumberTrace, TemplateErrorKind, TemplateOptions, ValidateOptions } from './template.js';
 export { DEFAULT_FORMAT, FORMATS, HOUSE_RULES, NUMBER_RULES, buildDraftPrompt, buildPanelPrompt, buildRevisePrompt, factCard } from './prompts.js';
 
 /** What the retry is told: the error, with any raw number the model wrote scrubbed out. */
@@ -34,12 +40,14 @@ function retryMessage(err: RawNumberError, facts: FactsTable, opts: TemplateOpti
     err.kind === 'raw_number'
       ? 'it contains numbers written as digits instead of fact references'
       : err.kind === 'spelled_number'
-        ? `it compares numbers in words ("${scrubNumbers(err.offending.join('", "'), facts, opts)}")`
+        ? `it writes numbers in words ("${scrubNumbers(err.offending.join('", "'), facts, opts)}"); write none, not even "one", "first", "half" or "double"`
         : err.kind === 'unknown_fact'
           ? `it cites ids that are not in the list (${err.offending.map((x) => `{{${x}}}`).join(', ')})`
           : err.kind === 'null_fact'
             ? `it cites facts with no value (${err.offending.map((x) => `{{${x}}}`).join(', ')})`
-            : 'it has malformed references';
+            : err.offending.some((x) => !/^\{\{[^}]*\}\}$|^\{\{$|^\}\}$/.test(x))
+              ? 'it runs references into other text; put each {{fN}} on its own, with no digit, unit, sign or other reference against it'
+              : 'it has malformed references';
   return buildRetryNote(what + '.');
 }
 
@@ -146,7 +154,7 @@ export async function reviseDetailed(input: {
 export interface Templatized {
   template: string;
   facts: FactsTable;
-  /** Digit-bearing tokens left in the template (identifiers the extractor ignored). */
+  /** Digit-bearing tokens left in the template: strict identifiers and dates only. */
   allow: string[];
 }
 
@@ -173,12 +181,85 @@ export function findNumbers(text: string): FoundNumber[] {
   return out;
 }
 
+const WRAP_START = /[("'“‘«\[*_]/u;
+const WRAP_END = /[.,;:!?)"'”’»\]*_]/u;
+
+/**
+ * Every number in a pasted report, so none reaches a model: the extractor's numbers, plus every
+ * other run of digits it ignored. A whitespace-delimited token whose digits the extractor left
+ * alone is kept only when it is a strict identifier ("Q4", "H2", "FY26", "PR-07", a year) or part
+ * of a date ("2025-10-06", "Oct 6–12"); anything else ("week 41", "Top 5", "1e3", "x2", "a 2:1",
+ * "50/50", "#1", "3rd") becomes a number too, written exactly as in the report. Numbers joined
+ * with no space ("$95-109", "3-for-1") become one.
+ */
+export function coverNumbers(text: string, numbers: FoundNumber[]): { numbers: FoundNumber[]; allow: string[] } {
+  let kept = [...numbers].sort((a, b) => a.span[0] - b.span[0]);
+  const allow = new Set<string>();
+  const overlaps = (s: number, e: number, spans: [number, number][]) => spans.some(([a, b]) => s < b && e > a);
+
+  // Dates and period labels the extractor left alone stay as they are.
+  const dates: [number, number][] = [];
+  for (const m of text.matchAll(DATE_LABEL)) {
+    const span: [number, number] = [m.index!, m.index! + m[0].length];
+    if (overlaps(span[0], span[1], kept.map((n) => n.span))) continue;
+    dates.push(span);
+    allow.add(m[0]);
+  }
+  const covered = (i: number) => kept.some((n) => i >= n.span[0] && i < n.span[1]) || dates.some(([a, b]) => i >= a && i < b);
+
+  const extra: FoundNumber[] = [];
+  for (const m of text.matchAll(/\S+/gu)) {
+    let s = m.index!;
+    let e = s + m[0].length;
+    while (s < e && WRAP_START.test(text[s])) s++;
+    while (e > s && WRAP_END.test(text[e - 1])) e--;
+    let leftover = false;
+    for (let i = s; i < e; i++) {
+      if (NUMERAL.test(text[i]) && !covered(i)) {
+        leftover = true;
+        break;
+      }
+    }
+    if (!leftover) continue;
+    const core = text.slice(s, e);
+    const inside = kept.filter((n) => n.span[0] < e && n.span[1] > s);
+    if (!inside.length && !overlaps(s, e, dates) && isIdentifierShape(core)) {
+      allow.add(core);
+      continue;
+    }
+    // One number for the whole token, absorbing any extractor numbers inside it.
+    for (const n of inside) {
+      s = Math.min(s, n.span[0]);
+      e = Math.max(e, n.span[1]);
+    }
+    kept = kept.filter((n) => !inside.includes(n));
+    const raw = text.slice(s, e);
+    extra.push({ raw, span: [s, e], value: Number(raw.replace(/[^\d.\-]/g, '')) || 0, kind: 'count' });
+  }
+
+  // Numbers that touch ("$95-109", "1.2/3") are one number as written.
+  const all = [...kept, ...extra].sort((a, b) => a.span[0] - b.span[0]);
+  const merged: FoundNumber[] = [];
+  for (const n of all) {
+    const prev = merged[merged.length - 1];
+    if (prev && n.span[0] - prev.span[1] <= 1 && /^[-–/:.,x×]?$/u.test(text.slice(prev.span[1], n.span[0]))) {
+      const span: [number, number] = [prev.span[0], n.span[1]];
+      merged[merged.length - 1] = { raw: text.slice(span[0], span[1]), span, value: prev.value, kind: prev.kind, unit: prev.unit };
+    } else {
+      merged.push(n);
+    }
+  }
+  return { numbers: merged, allow: [...allow].filter((x) => NUMERAL.test(x)) };
+}
+
 /**
  * Replace each found number with {{fN}} and build a facts table whose displays are the raws as
  * written. Labels carry the templated sentence around the number, so they hold no numbers.
+ * Digits the extractor ignored are covered too (coverNumbers): only strict identifiers and dates
+ * are left in the template, and they are the `allow` list.
  */
-export function templatize(text: string, numbers: FoundNumber[]): Templatized {
-  const sorted = [...numbers].sort((a, b) => a.span[0] - b.span[0]);
+export function templatize(text: string, found: FoundNumber[]): Templatized {
+  const { numbers: sorted, allow } = coverNumbers(text, found);
   let template = '';
   let at = 0;
   const refAt: { id: string; start: number; end: number }[] = [];
@@ -215,20 +296,6 @@ export function templatize(text: string, numbers: FoundNumber[]): Templatized {
       flags: [],
     };
   });
-  // Identifiers the extractor left in place. A token with a letter ("Q4", "PR-03") stands alone; a
-  // digits-only token keeps the word before it ("Oct 6", "Oct 5–11"), so a bare small integer is never
-  // allowed on its own. A standalone four-digit year is allowed as is.
-  const tokens = template
-    .replace(/\{\{\s*f\d+\s*\}\}/g, ' ')
-    .split(/\s+/)
-    .map((t) => t.replace(/^[^\p{L}\p{Nd}]+|[^\p{L}\p{Nd}]+$/gu, ''));
-  const allowSet = new Set<string>();
-  tokens.forEach((t, i) => {
-    if (!/\p{Nd}/u.test(t)) return;
-    if (/\p{L}/u.test(t) || /^(19|20)\d\d$/.test(t)) allowSet.add(t);
-    else if (i > 0 && /^\p{L}+$/u.test(tokens[i - 1])) allowSet.add(`${tokens[i - 1]} ${t}`);
-  });
-  const allow = [...allowSet];
   return { template, facts: { currency: '', periods: { current: '' }, facts }, allow };
 }
 

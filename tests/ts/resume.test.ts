@@ -68,7 +68,7 @@ describe('resume', () => {
     const report = await runNoro({ file: FIXTURE, cwd: ROOT, config, stateDir, clients, onStep: (s) => steps.push(s) });
     expect(steps).toEqual(['check', 'panel', 'deliver']);
     expect(drafts).toBe(1); // the checkpointed draft was used, not a new model call
-    expect(report.text).toContain('PR-07 Prospecting rose +');
+    expect(report.text).toMatch(/PR-07 Prospecting rose \d/);
   });
 
   it('a different input is a different run', async () => {

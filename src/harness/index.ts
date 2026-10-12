@@ -11,7 +11,9 @@
 // repeat (pure code, or a model call whose output is checked again).
 //
 // Resume: a run is keyed by a hash of the input file's bytes, the mode, the
-// format and the three models. Rerunning the same input finds the live task
+// format, the three models and where the models come from (real clients,
+// injected ones, or the CLI's NORO_MOCK_MODELS canned ones), so a mock run
+// never resumes under real models or the other way round. Rerunning the same input finds the live task
 // with that key and waits on it: Pi Durable continues from the last committed
 // phase, so completed steps are not executed again (onStep fires only for
 // steps that run). A finished or failed run is not reused; the next run of
@@ -23,6 +25,11 @@
 //
 // Revision mode (.md / .txt): the task starts at `check`, with the pasted
 // report standing in for the draft.
+//
+// Ingest warnings travel with the run and come back as NoroReport.warnings.
+// A warning that would make every number wrong (a plain cost column that
+// looks like micros) stops the run in the ingest step, before any model call,
+// unless `acceptWarnings` is set or `confirmWarnings` says yes.
 
 import { createHash } from 'node:crypto';
 import { mkdirSync, readFileSync } from 'node:fs';
@@ -41,9 +48,9 @@ import type { Config } from '../config.js';
 import { createClaudeCliClient } from '../draft/claude-cli.js';
 import { createChatClient, draft, reviseDetailed, scrubNumbers, templateQuote, templatize } from '../draft/index.js';
 import type { FoundNumber, ReviseResult } from '../draft/index.js';
-import { DEFAULT_FORMAT } from '../draft/prompts.js';
+import { DEFAULT_FORMAT, FORMATS } from '../draft/prompts.js';
 import { buildFlags, deliver } from '../deliver/index.js';
-import { ingest } from '../ingest/index.js';
+import { IngestWarningError, blockingWarnings, ingest } from '../ingest/index.js';
 import type { IngestOptions } from '../ingest/index.js';
 import { panel } from '../panel/index.js';
 import type {
@@ -96,6 +103,16 @@ export interface RunSummary {
 
 export interface NoroReport extends Report {
   summary: RunSummary;
+  /** Ingest warnings (skipped rows, coerced values, micros converted or suspected). Empty in revision mode. */
+  warnings: string[];
+}
+
+/** A bad argument to runNoro (an unknown format). */
+export class UsageError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'UsageError';
+  }
 }
 
 export interface RunNoroInput {
@@ -108,8 +125,12 @@ export interface RunNoroInput {
   stopAfter?: StepName;
   onStep?: (s: StepName) => void;
   confirmMapping?: IngestOptions['confirmMapping'];
-  /** Output format: slack | email | one-page | slide-notes. Default one-page. */
+  /** Output format: slack | email | one-page | slide-notes. Default one-page. Anything else is a UsageError. */
   format?: string;
+  /** Go on past ingest warnings that would otherwise stop the run (see blockingWarnings). */
+  acceptWarnings?: boolean;
+  /** Asked when such a warning stops the run; return true to go on anyway. */
+  confirmWarnings?: (warnings: string[]) => Promise<boolean>;
 }
 
 const REVISION_EXTS = new Set(['.md', '.txt', '.markdown']);
@@ -127,6 +148,8 @@ interface RunData {
   /** Notes the reviser didn't apply: they become flags. */
   notes?: PanelNote[];
   panel?: { notes: number; applied: number };
+  /** Ingest warnings, carried to the report. */
+  warnings?: string[];
 }
 
 type Checkpoint = { phase: StepName; data: RunData };
@@ -147,9 +170,16 @@ export function runDbPath(stateDir: string, runKey: string): string {
   return join(stateDir, 'runs', `${runKey}.sqlite`);
 }
 
-export function runKeyFor(file: string, mode: string, format: string, cfg: Config): string {
+/** Where the models come from: the configured ones, clients a caller injected, or the CLI's canned mock. */
+export interface ModelSource {
+  injected?: { chat: boolean; jev: boolean };
+  mock?: boolean;
+}
+
+export function runKeyFor(file: string, mode: string, format: string, cfg: Config, source: ModelSource = {}): string {
   const h = createHash('sha256');
-  h.update(JSON.stringify({ v: 1, mode, format, writer: cfg.writer, models: [cfg.draftModel, cfg.panelModel, cfg.classifyModel] }));
+  const origin = { injected: source.injected ?? { chat: false, jev: false }, mock: source.mock ?? false };
+  h.update(JSON.stringify({ v: 2, mode, format, writer: cfg.writer, models: [cfg.draftModel, cfg.panelModel, cfg.classifyModel], origin }));
   h.update(readFileSync(file));
   return h.digest('hex').slice(0, 32);
 }
@@ -204,11 +234,15 @@ export async function runNoro(input: RunNoroInput): Promise<NoroReport> {
   const file = resolve(cwd, input.file);
   const mode: 'generate' | 'revise' = REVISION_EXTS.has(extname(file).toLowerCase()) ? 'revise' : 'generate';
   const format = input.format ?? DEFAULT_FORMAT;
+  if (!FORMATS[format]) throw new UsageError(`Unknown format "${format}". Use one of: ${Object.keys(FORMATS).join(', ')}.`);
   const chat = input.clients?.chat ?? (config.writer === 'claude-cli' ? createClaudeCliClient(config) : createChatClient(config));
   const jev = input.clients?.jev ?? createJevClient(config);
   const decide = input.decide ?? (async (f: Flag): Promise<Decision> => ({ flagId: f.id, action: 'keep' }));
   const stateDir = resolve(cwd, input.stateDir ?? config.stateDir);
-  const runKey = runKeyFor(file, mode, format, config);
+  const runKey = runKeyFor(file, mode, format, config, {
+    injected: { chat: input.clients?.chat !== undefined, jev: input.clients?.jev !== undefined },
+    mock: process.env.NORO_MOCK_MODELS === '1',
+  });
   const personaDirs = [join(cwd, '.noro', 'personas')];
 
   // ------------------------------------------------------------- the steps
@@ -217,13 +251,17 @@ export async function runNoro(input: RunNoroInput): Promise<NoroReport> {
     async ingest() {
       const dataset = await ingest(file, {
         confirmMapping: input.confirmMapping,
-        // ingest resolves ./.noro/adapters against process.cwd(); with another cwd, use the built-ins.
-        ...(cwd !== process.cwd() ? { adaptersDir: builtinAdaptersDir() } : {}),
+        // The built-ins plus <cwd>/.noro/adapters (ingest alone would look under process.cwd()).
+        adaptersDir: [builtinAdaptersDir(), join(cwd, '.noro', 'adapters')],
       });
+      const blocking = blockingWarnings(dataset);
+      if (blocking.length && !input.acceptWarnings && !(input.confirmWarnings && (await input.confirmWarnings(blocking)))) {
+        throw new IngestWarningError(blocking);
+      }
       return { dataset };
     },
     async compute(d) {
-      return { facts: computeFacts(d.dataset!) }; // the dataset is dropped from here on
+      return { facts: computeFacts(d.dataset!), warnings: d.dataset!.warnings }; // the dataset is dropped from here on
     },
     async classify(d) {
       return { ...d, labels: await classify(d.facts!, jev, { model: config.classifyModel }) };
@@ -303,6 +341,7 @@ export async function runNoro(input: RunNoroInput): Promise<NoroReport> {
           panel: d.panel ?? { notes: 0, applied: 0 },
           resumed: false,
         },
+        warnings: d.warnings ?? [],
       };
       return { ...d, result } as RunData & { result: NoroReport };
     },
@@ -398,6 +437,15 @@ export async function runNoro(input: RunNoroInput): Promise<NoroReport> {
   } finally {
     await close();
   }
+}
+
+/**
+ * The CLI exit code for an error out of runNoro: 2 when the report can't pass the check (the check
+ * failed, or a model or a reword kept breaking the digit rule after its retries), 1 otherwise.
+ */
+export function exitCodeFor(err: unknown): 1 | 2 {
+  const name = err instanceof Error ? err.name : '';
+  return name === 'CheckFailedError' || name === 'RawNumberError' ? 2 : 1;
 }
 
 function describeFailure(c: CheckReport): string {

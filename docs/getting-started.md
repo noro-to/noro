@@ -4,7 +4,7 @@ This guide takes you from nothing to your first report in about ten minutes. You
 
 ## What you need
 
-- **Node 22 or newer.** Check with `node --version`. Install it from [nodejs.org](https://nodejs.org).
+- **Node 22.19 or newer** (Node 24 recommended). Check with `node --version`. Install it from [nodejs.org](https://nodejs.org).
 - **Python 3.9 or newer.** Check with `python3 --version`. The rules engine uses only the standard library.
 - **An OpenRouter key.** Sign in at [openrouter.ai](https://openrouter.ai), add credits, and create a key under Keys. It starts with `sk-or-`.
 - **Optional: Claude Code** logged in with your Claude plan, if you want the writing steps to run on your subscription (step 3).

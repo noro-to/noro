@@ -12,14 +12,16 @@
 //
 // Decisions: keep (leave the text), cut (remove the sentence(s) holding the
 // flag's quote), reword (replace the quote with the user's words). A reword
-// may cite {{fN}} or type a figure exactly as the report shows it; any other
-// number is refused and the flag is asked again (three tries, then
-// RawNumberError).
+// is held to the same digit rule as a model's template (validateTemplate):
+// it may cite {{fN}} or type a figure exactly as the report shows it, and
+// any other number — digits, other numerals ("½", "⁴¹"), numbers in words
+// ("doubled", "a third"), references run into other text — is refused and
+// the flag is asked again (three tries, then RawNumberError).
 
-import { RawNumberError, maskIdentifiers, allowedIdentifiers, traceNumbers } from '../draft/template.js';
+import { RawNumberError, maskIdentifiers, allowedIdentifiers, renderFragment, segments, stripInvisible, traceNumbers, validateTemplate } from '../draft/template.js';
 import type { CheckReport, Classification, Decision, Draft, FactsTable, Flag, PanelNote, Report } from '../schema.js';
 
-const NUMBER_TOKEN = /[$€£¥+\-]?\p{Nd}[\p{Nd},]*(?:\.\p{Nd}+)?(?:\s?(?:%|pp\b|x\b|k\b|K\b|M\b|bn\b))?/gu;
+const NUMBER_TOKEN = /[$€£¥+\-]?\p{N}[\p{N},]*(?:\.\p{N}+)?(?:\s?(?:%|pp\b|x\b|k\b|K\b|M\b|bn\b))?/gu;
 const REF = /\{\{\s*(f\d+)\s*\}\}/g;
 
 /** Replace numbers that aren't a fact display (or an allowed identifier) with "N". */
@@ -44,6 +46,11 @@ function renderRefs(text: string, facts?: FactsTable): string {
   return text.replace(REF, (m, id: string) => byId.get(id)?.display ?? m);
 }
 
+/** Render a reviewer's quote or note the way the draft rendered (a change after "rose" may lose its sign). */
+function renderLikeDraft(text: string, facts?: FactsTable): string {
+  return facts ? renderFragment(text, facts) : text;
+}
+
 /** The sentence of `text` that contains [s, e), widened to whole sentences. */
 export function sentenceSpan(text: string, s: number, e: number): [number, number] {
   let start = s;
@@ -62,6 +69,17 @@ function sentenceWith(text: string, needle: string): string | undefined {
   if (at < 0) return undefined;
   const [s, e] = sentenceSpan(text, at, at + needle.length);
   return text.slice(s, e).trim();
+}
+
+/** The sentence of the rendered draft where a fact is first cited (its display may render without a sign). */
+function citedSentence(draft: Draft, facts: FactsTable, factId: string): string | undefined {
+  if (!draft.template.includes('{{')) return undefined;
+  const seg = segments(draft.template, facts).find((x) => x.kind === 'ref' && x.id === factId);
+  const shown = seg ? draft.rendered.slice(seg.r[0], seg.r[1]) : '';
+  const display = facts.facts.find((f) => f.id === factId)?.display ?? '';
+  if (!seg || !shown || (shown !== display && shown !== display.slice(1))) return undefined;
+  const [s, e] = sentenceSpan(draft.rendered, seg.r[0], seg.r[1]);
+  return draft.rendered.slice(s, e).trim();
 }
 
 const WATCHOUT_WORDS: Record<string, string> = {
@@ -102,8 +120,8 @@ export function buildFlags(check: CheckReport, notes: PanelNote[], labels?: Clas
   for (const n of notes) {
     flags.push({
       source: 'panel',
-      text: scrubForUser(`${n.persona} (${n.severity}): ${renderRefs(n.note, facts)}`, facts, allow),
-      ...(n.quote ? { quote: renderRefs(n.quote, facts) } : {}),
+      text: scrubForUser(`${n.persona} (${n.severity}): ${renderLikeDraft(n.note, facts)}`, facts, allow),
+      ...(n.quote ? { quote: renderLikeDraft(n.quote, facts) } : {}),
     });
   }
   if (labels && facts && draft) {
@@ -117,7 +135,7 @@ export function buildFlags(check: CheckReport, notes: PanelNote[], labels?: Clas
       if (c.label !== 'luck_risk' && reasons.length === 0) continue;
       const head = c.label === 'luck_risk' ? 'Classified as a luck risk' : 'Watchout';
       const tail = reasons.length ? `: it ${reasons.join('; it ')}` : '';
-      const quote = draft.rendered.includes(fact.display) ? sentenceWith(draft.rendered, fact.display) : undefined;
+      const quote = citedSentence(draft, facts, c.factId) ?? (draft.rendered.includes(fact.display) ? sentenceWith(draft.rendered, fact.display) : undefined);
       flags.push({
         source: 'watchout',
         text: scrubForUser(`${head} — "${fact.label}" ${fact.display}${tail}${c.watchouts.length ? ` (${c.watchouts.join(', ')})` : ''}.`, facts, allow),
@@ -146,14 +164,32 @@ function tidy(text: string): string {
     .trim();
 }
 
-/** Check a reword: references rendered, every number a fact display. Returns rendered text or an error. */
-function acceptReword(text: string, facts: FactsTable | undefined, allow: string[]): { ok: true; text: string } | { ok: false; why: string } {
-  if (!facts) {
-    return /\p{Nd}/u.test(text) ? { ok: false, why: 'type no numbers in a reword here' } : { ok: true, text };
+/** Why a reword broke the digit rule, in words with no number of the user's echoed back. */
+function rewordWhy(err: RawNumberError): string {
+  switch (err.kind) {
+    case 'spelled_number':
+      return `numbers in words ("${err.offending.join('", "')}"). Cite {{fN}} instead`;
+    case 'unknown_fact':
+    case 'null_fact':
+      return `unknown fact ${err.offending.join(', ')}`;
+    case 'bad_reference':
+      return 'a reference run into other text or malformed. Write a reference as {{f12}} on its own';
+    default:
+      return `numbers that aren't in the facts table: ${err.offending.map(() => 'N').join(', ') || 'N'}. Cite {{fN}} or type a figure exactly as the report shows it`;
   }
-  const byId = new Map(facts.facts.map((f) => [f.id, f]));
-  const unknown = [...text.matchAll(REF)].map((m) => m[1]).filter((id) => !byId.get(id) || byId.get(id)!.value === null);
-  if (unknown.length) return { ok: false, why: `unknown fact ${unknown.join(', ')}` };
+}
+
+/** Check a reword with validateTemplate (exact displays allowed), then render it and trace every number. */
+function acceptReword(raw: string, facts: FactsTable | undefined, allow: string[]): { ok: true; text: string } | { ok: false; why: string } {
+  const text = stripInvisible(raw);
+  try {
+    validateTemplate(text, facts, { allow, displays: true });
+  } catch (err) {
+    if (err instanceof RawNumberError) return { ok: false, why: rewordWhy(err) };
+    throw err;
+  }
+  if (!facts) return { ok: true, text };
+  // References render as the full display, exactly as cited.
   const out = renderRefs(text, facts);
   const { untraced } = traceNumbers(out, facts, { allow });
   if (untraced.length) return { ok: false, why: `numbers that aren't in the facts table: ${untraced.map(() => 'N').join(', ')}. Cite {{fN}} or type a figure exactly as the report shows it` };
@@ -178,6 +214,7 @@ export async function deliver(input: DeliverInput): Promise<Report> {
   for (const flag of input.flags) {
     let asked = flag;
     let decision: Decision | undefined;
+    let lastWhy = '';
     for (let attempt = 0; attempt < 3; attempt++) {
       const d = await input.decide(asked);
       if (d.action !== 'reword') {
@@ -189,9 +226,10 @@ export async function deliver(input: DeliverInput): Promise<Report> {
         decision = { flagId: flag.id, action: 'reword', text: ok.text };
         break;
       }
+      lastWhy = ok.why;
       asked = { ...flag, text: `${flag.text} (Your reword was refused: ${ok.why}.)` };
     }
-    if (!decision) throw new RawNumberError(`Reword for flag ${flag.id} kept adding numbers that aren't in the facts table.`, 'raw_number', []);
+    if (!decision) throw new RawNumberError(`Reword for flag ${flag.id} kept adding numbers that aren't in the facts table (last refusal: ${lastWhy}).`, 'raw_number', []);
     decisions.push({ ...decision, flagId: flag.id } as Decision);
 
     if (decision.action === 'keep' || !flag.quote) continue;

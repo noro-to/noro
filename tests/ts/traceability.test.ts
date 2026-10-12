@@ -15,10 +15,8 @@ import { computeFacts } from '../../src/compute/index.js';
 import { loadConfig } from '../../src/config.js';
 import {
   RawNumberError,
-  allowedIdentifiers,
   buildDraftPrompt,
   draft,
-  maskIdentifiers,
   renderTemplate,
   scrubNumbers,
   templateQuote,
@@ -29,6 +27,7 @@ import { createMockChat, createMockJev, mockDraftFrom } from '../../src/harness/
 import type { MockLog } from '../../src/harness/mock.js';
 import { ingest } from '../../src/ingest/index.js';
 import type { ChatRequest, FactsTable } from '../../src/schema.js';
+import { assertNoNumbers, maskNames, promptNames } from './helpers.js';
 
 const ROOT = resolve(import.meta.dirname, '../..');
 const FIXTURE = join(ROOT, 'fixtures/exports/google-ads.csv');
@@ -50,20 +49,10 @@ async function engineNumbers(text: string): Promise<string[]> {
   return ex.json.numbers.map((n: { raw: string }) => n.raw);
 }
 
-/**
- * What a prompt may contain: after removing {{fN}} references and the allowed identifiers
- * (campaign names, period labels), there must be no digit at all. Static prompt text has none.
- */
-function assertNoNumbers(text: string, table: FactsTable, allow: string[] = []) {
-  const stripped = maskIdentifiers(text.replace(/\{\{\s*f\d+\s*\}\}/g, ' '), allowedIdentifiers(table, allow));
-  const digits = stripped.match(/.{0,30}\p{Nd}.{0,30}/u);
-  expect(digits?.[0] ?? null, 'a digit reached a model prompt').toBeNull();
-}
-
 /** No fact's display or value appears as a standalone token. */
 function assertNoValues(raw: string, table: FactsTable, allow: string[] = []) {
   // Names and period labels may coincide with a display ("12" in "Oct 6–12"); they are not leaks.
-  const text = maskIdentifiers(raw.replace(/\{\{\s*f\d+\s*\}\}/g, ' '), allowedIdentifiers(table, allow));
+  const text = maskNames(raw.replace(/\{\{\s*f\d+\s*\}\}/g, ' '), promptNames(table, allow));
   for (const f of table.facts) {
     if (f.value === null) continue;
     const esc = f.display.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -79,7 +68,9 @@ describe('final report traceability', () => {
     expect(report.traces.length).toBeGreaterThan(0);
     for (const t of report.traces) {
       expect(byId.has(t.factId)).toBe(true);
-      expect(byId.get(t.factId)!.display).toBe(t.raw);
+      const display = byId.get(t.factId)!.display;
+      // A signed change shows without its sign right after "rose" / "fell" ("rose 38%").
+      expect(/^[+\-]/.test(display) ? [display, display.slice(1)] : [display]).toContain(t.raw);
     }
     // Independent of noro's own tracer: the engine's extractor finds exactly the traced numbers.
     const found = await engineNumbers(report.text);
@@ -147,7 +138,9 @@ describe('renderTemplate (the digit rule)', () => {
 
   it('renders references as displays and lists cited ids', () => {
     const d = renderTemplate('CPA for PR-07 Prospecting rose {{f191}} to {{ f189 }} in Oct 6–12. Spend: {{f1}}.', facts);
-    expect(d.rendered).toBe(`CPA for PR-07 Prospecting rose ${f('f191').display} to ${f('f189').display} in Oct 6–12. Spend: ${f('f1').display}.`);
+    // f191 is "+38%": after "rose" the sign is redundant and dropped.
+    expect(f('f191').display.startsWith('+')).toBe(true);
+    expect(d.rendered).toBe(`CPA for PR-07 Prospecting rose ${f('f191').display.slice(1)} to ${f('f189').display} in Oct 6–12. Spend: ${f('f1').display}.`);
     expect(d.factIds).toEqual(['f191', 'f189', 'f1']);
   });
 
@@ -183,7 +176,7 @@ describe('renderTemplate (the digit rule)', () => {
 
   it('maps rendered quotes back to template form without displays', () => {
     const d = renderTemplate('CPA for PR-07 Prospecting rose {{f191}} to {{f189}}. Next: review bids.', facts);
-    const q = templateQuote(d, facts, `rose ${f('f191').display} to`);
+    const q = templateQuote(d, facts, `rose ${f('f191').display.slice(1)} to`);
     expect(q).toBe('rose {{f191}} to');
     expect(templateQuote(d, facts, f('f189').display.slice(1))).toBe('{{f189}}');
   });

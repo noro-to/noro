@@ -31,9 +31,12 @@ async function engineNumbers(text: string): Promise<string[]> {
   return (await runEngine(['extract', p])).json.numbers.map((n: { raw: string }) => n.raw);
 }
 
+/** How a fact can appear in text: its display, or a signed change's display without the sign ("rose 38%"). */
+const shownAs = (display: string) => (/^[+\-−]/.test(display) ? [display, display.slice(1)] : [display]);
+
 async function assertTraced(report: NoroReport, facts: FactsTable) {
   const byId = new Map(facts.facts.map((f) => [f.id, f]));
-  for (const t of report.traces) expect(byId.get(t.factId)?.display).toBe(t.raw);
+  for (const t of report.traces) expect(shownAs(byId.get(t.factId)!.display)).toContain(t.raw);
   const found = await engineNumbers(report.text);
   expect(found.length).toBeGreaterThan(0);
   expect(found.sort()).toEqual(report.traces.map((t) => t.raw).sort());
@@ -45,7 +48,8 @@ describe('noro this <export> (mocked models, real check)', () => {
     const file = join(ROOT, 'fixtures/exports', name);
     const facts = computeFacts(await ingest(file));
     const report = await runNoro({ file, cwd: ROOT, config, stateDir: tmp(), clients: { chat: createMockChat(), jev: createMockJev() } });
-    expect(report.text).toMatch(/^CPA for PR-07 Prospecting rose \+/);
+    // "rose +38%" renders as "rose 38%": the direction word already says the sign.
+    expect(report.text).toMatch(/^CPA for PR-07 Prospecting rose \d/);
     expect(report.decisions).toHaveLength(report.flags.length);
     await assertTraced(report, facts);
     // The real engine agrees: nothing untraced, no rule errors.
@@ -86,7 +90,7 @@ describe('check gate (generate mode)', () => {
       },
     };
     const report = await runNoro({ file: FILE, cwd: ROOT, config, stateDir: tmp(), clients: { chat, jev: createMockJev() } });
-    expect(report.text).toMatch(/^CPA for PR-07 Prospecting rose \+/);
+    expect(report.text).toMatch(/^CPA for PR-07 Prospecting rose \d/);
     expect(report.text).not.toContain('worth noting');
   });
 
@@ -162,7 +166,8 @@ describe('CLI (test-only NORO_MOCK_MODELS=1)', () => {
     const r = cli(['this', 'fixtures/exports/google-ads.csv', '--yes'], { NORO_MOCK_MODELS: '1' });
     expect(r.status, r.stderr).toBe(0);
     expect(r.stdout).toMatch(/^CPA for PR-07 Prospecting rose/);
-    expect(r.stdout).toMatch(/Checked: \d+ numbers traced\. Panel: \d+ notes, \d+ applied\./);
+    expect(r.stdout).toMatch(/Checked: \d+ numbers traced\. Panel: \d+ notes?, \d+ applied\./);
+    expect(r.stdout).not.toMatch(/\b1 notes\b|\b1 numbers\b/);
   });
 
   it('without a key (and no mock) it explains how to set one, exit 1', () => {
@@ -235,7 +240,8 @@ describe('buildFlags and deliver', () => {
     expect(report.text).not.toContain('DG-05');
     expect(s2).toContain('DG-05');
     expect(report.decisions.map((x) => x.action)).toEqual(['keep', 'cut', 'reword']);
-    expect(report.traces).toEqual([{ raw: facts.facts.find((f) => f.id === d.factIds[0])!.display, factId: d.factIds[0] }]);
+    // The change renders after "rose" without its sign, and traces in that form.
+    expect(report.traces).toEqual([{ raw: facts.facts.find((f) => f.id === d.factIds[0])!.display.replace(/^\+/, ''), factId: d.factIds[0] }]);
   });
 
   it('deliver: a reword may cite {{fN}} or an exact display; any other number is refused and asked again', async () => {

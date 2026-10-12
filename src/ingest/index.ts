@@ -34,9 +34,10 @@ export interface IngestOptions {
   /**
    * Directory of adapter YAML files. When set it replaces the default search
    * path, which is the built-in src/adapters/ plus ./.noro/adapters/ (where
-   * saveAdapterAs writes) under the working directory.
+   * saveAdapterAs writes) under the working directory. A list searches each
+   * directory in order (a later adapter id may not repeat an earlier one).
    */
-  adaptersDir?: string;
+  adaptersDir?: string | string[];
   /**
    * Called when no adapter matches. Show the guess to the user and return the
    * mapping they confirm (possibly edited), or null to abort.
@@ -68,6 +69,28 @@ export class UnknownExportError extends Error {
         '\nConfirm the mapping interactively, or add an adapter (see CONTRIBUTING.md, "Add a platform adapter").',
     );
     this.name = 'UnknownExportError';
+  }
+}
+
+/** Marks an ingest warning that should stop a run until the user accepts it. */
+const MICROS_SUSPECT = 'which looks like micros';
+
+/**
+ * Warnings serious enough to stop a run before any model call: a plain cost column whose values
+ * look like micros (every money number in the report would be a million times too big).
+ */
+export function blockingWarnings(d: Pick<Dataset, 'warnings'>): string[] {
+  return d.warnings.filter((w) => w.includes(MICROS_SUSPECT));
+}
+
+/** Ingest found something that would make every number wrong; the user has to accept it to go on. */
+export class IngestWarningError extends Error {
+  constructor(readonly warnings: string[]) {
+    super(
+      `The export looks wrong, so nothing was sent to a model:\n${warnings.map((w) => `  - ${w}`).join('\n')}\n` +
+        'Fix the export (or its adapter), or rerun with --accept-warnings to report on it as it is.',
+    );
+    this.name = 'IngestWarningError';
   }
 }
 
@@ -374,7 +397,7 @@ function mapRows(
     const sorted = rows.map((r) => r.spend).sort((a, b) => a - b);
     const median = sorted[Math.floor(sorted.length / 2)];
     if (median >= 1_000_000) {
-      warnings.push(`"${spendHeader}" has a median of ${median} per row, which looks like micros (1,000,000 = 1 unit). Check the export; if it is micros, map it as a micros column.`);
+      warnings.push(`"${spendHeader}" has a median of ${median} per row, ${MICROS_SUSPECT} (1,000,000 = 1 unit). Check the export; if it is micros, map it as a micros column.`);
     }
   }
   return { rows, kept };

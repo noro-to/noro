@@ -49,8 +49,9 @@ export const NUMBER_RULES = `NUMBERS — the one rule you can't break:
 - You never see metric values, and you never write a number. Code computed every number; you cite them.
 - Cite a fact as {{f12}}: double braces around one fact id from the list. Code replaces it with the exact figure, already formatted (currency sign, %, "pp", "x", and a "+" or "-" sign on changes).
 - Write no digits at all: no figures, no percentages, no counts, no "last week" spelled with a number, no years or dates of your own. The only digits allowed are inside campaign or ad group names and the period labels, copied exactly as given.
-- Don't compare numbers in words either: no "doubled", "halved", "twice as", "threefold", "forty percent". If a change matters, cite the fact that holds it.
-- Each fact's label says what it measures. A change fact's label ends with its direction: (up), (down) or (no change). Use "rose", "fell" or "held" to match; the cited figure already carries its sign.
+- Don't write numbers in words either: no "one", "three", "a dozen", "one in five", "first", "second", "half", "a third", "double", "doubled", "twice", "two-fold", "forty percent". If a number or a change matters, cite the fact that holds it. ("No one", "one of the" and "third-party" are fine.)
+- Put a reference on its own: nothing directly against it ("{{f1}}{{f2}}", "{{f1}}k", "{{f1}}%", "-{{f1}}" are refused).
+- Each fact's label says what it measures. A change fact's label ends with its direction: (up), (down) or (no change). Use "rose", "fell" or "held" to match; the cited figure already carries its sign (code drops it right after "rose" or "fell").
 - Cite only ids from the list. Never cite a fact for something its label doesn't say.`;
 
 /** The house voice and contract (reference/voice.md, contract.md), for writing models. */

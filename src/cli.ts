@@ -3,8 +3,12 @@
 //   export (.csv, .tsv, .xlsx) → generate a report (ingest … deliver)
 //   report (.md, .txt)         → revision mode, entering at check
 // Flags: --yes keeps every flag without asking; --json prints the Report as
-// JSON; --format slack|email|one-page|slide-notes.
-// Exit codes: 0 delivered, 2 the check can't pass, 1 usage or input error.
+// JSON; --format slack|email|one-page|slide-notes; --accept-warnings goes on
+// past an ingest warning that would otherwise stop the run (a cost column
+// that looks like micros). Ingest warnings always go to stderr (and into
+// --json as "warnings").
+// Exit codes: 0 delivered, 2 the report can't pass the check (the check
+// failed, or a model kept writing numbers of its own), 1 usage or input error.
 // Prompts go to stderr, so stdout carries only the report (or its JSON).
 //
 // TEST-ONLY: NORO_MOCK_MODELS=1 swaps both models for canned local ones
@@ -25,7 +29,9 @@ process.emitWarning = ((warning: string | Error, ...rest: unknown[]) => {
   return (emitWarning as (...a: unknown[]) => void)(warning, ...rest);
 }) as typeof process.emitWarning;
 
-const USAGE = `Usage: noro this <file> [--yes] [--json] [--format slack|email|one-page|slide-notes]
+const FORMAT_NAMES = ['slack', 'email', 'one-page', 'slide-notes'];
+
+const USAGE = `Usage: noro this <file> [--yes] [--json] [--format ${FORMAT_NAMES.join('|')}] [--accept-warnings]
 
   <file>  an ad-platform export (.csv, .tsv, .xlsx) to report on,
           or a written report (.md, .txt) to audit and rewrite.
@@ -33,6 +39,8 @@ const USAGE = `Usage: noro this <file> [--yes] [--json] [--format slack|email|on
   --yes     keep every flag without asking
   --json    print the final report as JSON
   --format  output shape (default: one-page)
+  --accept-warnings
+            go on even when the export looks wrong (e.g. cost in micros)
 
 Needs OPENROUTER_API_KEY (in the environment or in .env in this folder).`;
 
@@ -56,23 +64,28 @@ interface Args {
   yes: boolean;
   json: boolean;
   format?: string;
+  acceptWarnings: boolean;
   help: boolean;
 }
 
 function parseArgs(argv: string[]): Args | string {
-  const a: Args = { yes: false, json: false, help: false };
+  const a: Args = { yes: false, json: false, acceptWarnings: false, help: false };
   const rest: string[] = [];
   for (let i = 0; i < argv.length; i++) {
     const x = argv[i];
     if (x === '--yes' || x === '-y') a.yes = true;
     else if (x === '--json') a.json = true;
     else if (x === '--help' || x === '-h') a.help = true;
-    else if (x === '--format') a.format = argv[++i];
+    else if (x === '--accept-warnings') a.acceptWarnings = true;
+    else if (x === '--format') a.format = argv[++i] ?? '';
     else if (x.startsWith('--format=')) a.format = x.slice('--format='.length);
     else if (x.startsWith('-')) return `Unknown option ${x}`;
     else rest.push(x);
   }
   if (a.help) return a;
+  if (a.format !== undefined && !FORMAT_NAMES.includes(a.format)) {
+    return a.format === '' || a.format.startsWith('-') ? `--format needs a value: ${FORMAT_NAMES.join(', ')}.` : `Unknown format "${a.format}". Valid formats: ${FORMAT_NAMES.join(', ')}.`;
+  }
   if (rest[0] !== 'this') return rest.length ? `Unknown command "${rest[0]}". Did you mean "noro this <file>"?` : 'Missing command.';
   if (!rest[1]) return 'Missing <file>.';
   if (rest.length > 2) return `Unexpected argument "${rest[2]}".`;
@@ -108,6 +121,12 @@ async function interactiveMapping(g: GuessedMapping): Promise<ColumnMapping | nu
   if (g.unmapped.length) process.stderr.write(`  unmapped: ${g.unmapped.join(', ')}\n`);
   const a = (await ask('Use this mapping? [y/N] ')).toLowerCase();
   return a === 'y' || a === 'yes' ? g.mapping : null;
+}
+
+async function confirmWarnings(warnings: string[]): Promise<boolean> {
+  process.stderr.write(`\nThe export looks wrong:\n${warnings.map((w) => `  - ${w}`).join('\n')}\n`);
+  const a = (await ask('Report on it anyway? [y/N] ')).toLowerCase();
+  return a === 'y' || a === 'yes';
 }
 
 async function main(argv: string[]): Promise<number> {
@@ -148,17 +167,23 @@ async function main(argv: string[]): Promise<number> {
 
   const interactive = !parsed.yes && process.stdin.isTTY === true;
   if (!parsed.yes && !interactive) process.stderr.write('noro: no terminal to ask in, so every flag is kept (pass --yes to say so).\n');
-  const { runNoro, CheckFailedError } = await import('./harness/index.js');
+  const { runNoro, exitCodeFor } = await import('./harness/index.js');
+  const { FORMATS } = await import('./draft/prompts.js');
+  // FORMAT_NAMES is a static copy for usage text; keep it honest.
+  if (FORMAT_NAMES.join() !== Object.keys(FORMATS).join()) throw new Error('cli FORMAT_NAMES out of sync with FORMATS');
   try {
     const report = await runNoro({
       file,
       config,
       clients,
       format: parsed.format,
+      acceptWarnings: parsed.acceptWarnings,
+      confirmWarnings: interactive ? confirmWarnings : undefined,
       decide: interactive ? interactiveDecide : async (f) => ({ flagId: f.id, action: 'keep' }),
       confirmMapping: process.stdin.isTTY ? interactiveMapping : undefined,
       onStep: (s) => process.stderr.write(`noro: ${s}\n`),
     });
+    for (const w of report.warnings) process.stderr.write(`noro: warning: ${w}\n`);
     if (parsed.json) {
       process.stdout.write(`${JSON.stringify(report, null, 2)}\n`);
     } else {
@@ -166,18 +191,16 @@ async function main(argv: string[]): Promise<number> {
       const words = s.words.original !== undefined ? `, ${s.words.original} → ${s.words.final} words` : '';
       const kept = report.decisions.filter((d) => d.action === 'keep').length;
       process.stdout.write(`${report.text}\n\n---\n`);
-      process.stdout.write(`Checked: ${s.checked} numbers traced${words}. Panel: ${s.panel.notes} notes, ${s.panel.applied} applied.\n`);
+      const n = (count: number, one: string, many = `${one}s`) => `${count} ${count === 1 ? one : many}`;
+      process.stdout.write(`Checked: ${n(s.checked, 'number')} traced${words}. Panel: ${n(s.panel.notes, 'note')}, ${s.panel.applied} applied.\n`);
       if (report.flags.length) process.stdout.write(`Flags: ${report.flags.length} (${kept} kept, ${report.flags.length - kept} cut or reworded).\n`);
     }
     return 0;
   } catch (err) {
     const e = err as Error;
-    if (err instanceof CheckFailedError) {
-      process.stderr.write(`noro: ${e.message}\n`);
-      return 2;
-    }
-    process.stderr.write(`noro: ${e.message}\n`);
-    return 1;
+    const code = exitCodeFor(err);
+    process.stderr.write(`noro: ${code === 2 && e.name === 'RawNumberError' ? "the report can't pass the check: " : ''}${e.message}\n`);
+    return code;
   } finally {
     rl?.close();
   }

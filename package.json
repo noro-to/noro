@@ -9,12 +9,13 @@
     "noro": "dist/cli.js"
   },
   "engines": {
-    "node": ">=22"
+    "node": ">=22.19.0"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json && node -e \"const fs=require('fs');fs.mkdirSync('dist/adapters',{recursive:true});for(const f of fs.readdirSync('src/adapters'))if(/\\.ya?ml$/i.test(f))fs.copyFileSync('src/adapters/'+f,'dist/adapters/'+f);fs.chmodSync('dist/cli.js',0o755)\"",
+    "prepare": "npm run build",
     "test": "vitest run",
-    "lint": "tsc -p tsconfig.json --noEmit",
+    "lint": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.test.json --noEmit",
     "noro": "tsx src/cli.ts"
   },
   "dependencies": {

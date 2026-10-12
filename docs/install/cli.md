@@ -153,7 +153,8 @@ noro this weekly-update.md --format slack
 | --- | --- |
 | `--format slack\|email\|one-page\|slide-notes` | Output shape. Default `one-page` |
 | `--yes` | Keep every flag without asking |
-| `--json` | Print the report as JSON |
+| `--json` | Print the report as JSON (ingest warnings are in `warnings`) |
+| `--accept-warnings` | Go on when the export looks wrong. A cost column that looks like micros otherwise stops the run before any model call |
 | `--model <provider>:<id>` | Use this writing model for this run only. See [providers.md](providers.md#switching-model-for-one-run) |
 | `--decisions <file\|json>` | Apply keep, cut and reword choices without asking. See [agents.md](agents.md#passing-choices-back-with---decisions) |
 

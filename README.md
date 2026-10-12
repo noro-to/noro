@@ -15,7 +15,7 @@ Code computes every number into a facts table. The writing model only ever sees 
 
 ## Quickstart
 
-You need Node 22+ and Python 3.9+.
+You need Node 22.19+ (Node 24 recommended) and Python 3.9+.
 
 ```bash
 git clone https://github.com/noro-to/noro && cd noro
@@ -32,7 +32,7 @@ npx noro this ~/Downloads/campaign-report.csv
 npx noro this weekly-update.md --format slack
 ```
 
-Flags: `--format slack|email|one-page|slide-notes`, `--yes` to keep every flag without asking, `--json` for the report as JSON. Exit codes: 0 delivered, 2 the report can't pass the check, 1 a usage or input error.
+Flags: `--format slack|email|one-page|slide-notes`, `--yes` to keep every flag without asking, `--json` for the report as JSON, `--accept-warnings` to go on when the export looks wrong (a cost column that looks like micros stops the run before any model call otherwise). Ingest warnings are printed to stderr and included in `--json`. Exit codes: 0 delivered, 2 the report can't pass the check, 1 a usage or input error.
 
 ## How it works
 

@@ -58,7 +58,7 @@ export function personaWithoutDigits(text: string): string {
   return text
     .replace(/^(\s*)\d+[.)]\s+/gm, '$1- ')
     .replace(/(?<![\d.,])\d{1,6}(?![\d.,]\d)/g, (m) => intToWords(Number(m)))
-    .replace(/\p{Nd}+/gu, 'N');
+    .replace(/\p{N}+/gu, 'N');
 }
 
 export interface PanelInput {
